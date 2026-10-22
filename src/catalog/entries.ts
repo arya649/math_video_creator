@@ -329,9 +329,39 @@ add({ id: 'teach:step-counter', title: 'step counter', beats: [{ at: 0, do: 'ste
 add({ id: 'teach:recap', title: 'recap of key things', beats: [{ at: 0, do: 'write', id: 'k', tex: '(a+b)^2 = a^2 + 2ab + b^2', key: true, position: [0, 2.5] }, { at: 0.5, do: 'definition', title: 'Square', text: 'A number times itself.', duration: 1 }, { at: 2, do: 'recap' }], still: 4.5 });
 add({ id: 'teach:compare', title: 'compare, one better', beats: [{ at: 0, duration: 4, do: 'compare', left: { title: 'Term by term', tex: 'a^2 + b^2' }, right: { title: 'Expanded', tex: 'a^2 + 2ab + b^2' }, better: 'right' }], still: 2.5 });
 
+// ---- Counting world ----
+const Count = (id: string, title: string, beats: Beat[], still: number, scene: Record<string, unknown> = {}) => add({ id, title, beats, still, scene: { world: 'counting', ...scene } });
+Count('count:number-line', 'number line', [{ at: 0, do: 'number_line', x: [-5, 5] }], 1.5);
+Count('count:jump', 'jumps on a number line', [{ at: 0, do: 'jump', from: -2, by: 5 }, { at: 1, do: 'jump', from: 3, by: -4, side: 'below', color: 'red' }], 2.5, { number_line: { x: [-5, 5] } });
+Count('count:jump-count', 'equal jumps: 4 × 3', [{ at: 0, do: 'jump', from: 0, by: 3, count: 4, label: '+3' }], 3.6, { number_line: { x: [0, 13] } });
+Count('count:interval', 'intervals, open and closed', [{ at: 0, do: 'interval', from: -3, to: 1, open_end: true }, { at: 0.8, do: 'interval', from: 3, to: 'inf', color: 'green' }], 2.2, { number_line: { x: [-5, 5] } });
+Count('count:line-quarters', 'a line in quarters', [{ at: 0, do: 'number_line', x: [0, 2, '1/4'], fractions: true }], 1.5);
+Count('count:zoom-line', 'zooming into a number line', [{ at: 0.3, do: 'zoom_line', x: [0, 1], duration: 2.5 }], 2.2, { number_line: { x: [-5, 5] } });
+Count('count:dots', 'dots in an array', [{ at: 0, do: 'dots', id: 'd', rows: 3, columns: 4 }], 2);
+for (const shape of ['apple', 'coin', 'person', 'star', 'heart', 'ball'] as const) Count(`count:dots-${shape}`, `things: ${shape}`, [{ at: 0, do: 'dots', count: 7, shape, size: 'large' }], 1.6);
+Count('count:group-items', 'grouped by row', [{ at: 0, do: 'dots', id: 'd', rows: 3, columns: 4 }, { at: 1.6, do: 'group_items', who: 'd', by: 'row' }], 3.3);
+Count('count:count-items', 'counting things', [{ at: 0, do: 'dots', id: 'd', count: 8, shape: 'apple', size: 'large' }, { at: 1, do: 'count_items', who: 'd' }], 4.5);
+Count('count:tally', 'tally marks', [{ at: 0, do: 'tally', count: 13 }], 3);
+Count('count:blocks', 'base-ten blocks', [{ at: 0, do: 'blocks', id: 'b', number: 243 }], 2.5);
+Count('count:regroup-carry', 'regroup: ten ones make a ten', [{ at: 0, do: 'blocks', id: 'b', tens: 1, ones: 12, lag: 0.05 }, { at: 1.2, do: 'regroup', who: 'b', carry: true }], 3.2);
+Count('count:regroup-borrow', 'regroup: a ten breaks into ones', [{ at: 0, do: 'blocks', id: 'b', number: 32, lag: 0.05 }, { at: 1, do: 'regroup', who: 'b', borrow: true }], 3.4);
+for (const as of ['bar', 'pie', 'grid', 'line'] as const) Count(`count:fraction-${as}`, `fraction: ${as}`, [{ at: 0, do: 'fraction', as, parts: 4, shade: 3, label: true }], 1.6);
+Count('count:split', 'split: 3/4 = 6/8', [{ at: 0, do: 'fraction', id: 'f', parts: 4, shade: 3, label: true }, { at: 1.3, do: 'split', who: 'f', into: 8 }], 3.3);
+Count('count:line-up', 'line up two fractions', [{ at: 0, do: 'fraction', id: 'a', parts: 3, shade: 2, position: [-3, 2] }, { at: 0, do: 'fraction', id: 'b', parts: 4, shade: 3, size: 'small', position: [3, -2] }, { at: 1.3, do: 'line_up', who: ['a', 'b'] }], 3);
+Count('count:coin', 'coin flips', [{ at: 0, do: 'coin', results: ['H', 'T', 'H'] }], 4.3);
+Count('count:coin-random', 'fifty flips, kept count', [{ at: 0, do: 'coin', random: 50 }], 6.5);
+Count('count:dice', 'two dice', [{ at: 0, do: 'dice', count: 2, results: [[3, 4]] }], 1.8);
+Count('count:dice-rolling', 'a die mid-roll', [{ at: 0, do: 'dice', results: [6] }], 0.5);
+Count('count:spinner', 'a spinner', [{ at: 0, do: 'spinner', parts: ['red', 'blue', 'blue', 'green'], result: 2 }], 3);
+Count('count:cards', 'cards turned over', [{ at: 0, do: 'cards', results: ['A♠', '10♥', 'KD', '7C'] }], 3.2);
+Count('count:tree', 'probability tree', [{ at: 0, do: 'tree', id: 't', outcomes: true, levels: [[{ label: 'H', p: '1/2' }, { label: 'T', p: '1/2' }], [{ label: 'H', p: '1/2' }, { label: 'T', p: '1/2' }]] }], 2.6);
+Count('count:tree-highlight', 'one path lit', [{ at: 0, do: 'tree', id: 't', grow: 'all', levels: [[{ label: 'H', p: '1/2' }, { label: 'T', p: '1/2' }], [{ label: 'H', p: '1/2' }, { label: 'T', p: '1/2' }]] }, { at: 0.8, do: 'highlight', who: 't.HT', how: 'color', color: 'yellow' }], 2.2);
+Count('count:sample-space', 'two dice: sums of 7', [{ at: 0, do: 'sample_space', rows: 6, columns: 6, cell: 'r + c', light: 'r + c == 7', size: 'small' }], 3.6);
+Count('count:table', 'a table-top', [{ at: 0, do: 'dice', count: 2, results: [[5, 2]] }], 1.8, { table: true });
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
   scene: 'Worlds and backgrounds', look: 'Look: themes and colours', voice: 'Narration and captions', eq: 'Equations',
-  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching',
+  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching', count: 'Counting, fractions and chance',
 };

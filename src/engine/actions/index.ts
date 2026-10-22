@@ -7,3 +7,4 @@ import './graph';
 import './geometry';
 import './panels';
 import './teaching';
+import './counting';

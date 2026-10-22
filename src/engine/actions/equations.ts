@@ -2,7 +2,7 @@
 
 import { checkStep } from '../check';
 import {
-  type Ctx, type Spec, SIZES, TEXT_SIZES, arrive, color, glyphStates, makeMath, mathGlyphs, natural, num,
+  ACTIONS, type Ctx, type Done, type Spec, SIZES, TEXT_SIZES, arrive, color, glyphStates, makeMath, mathGlyphs, natural, num,
   positionSpec, readAppear, registerAction, sheetText, sizeOf, str, texOf, things, writeTime,
 } from '../actions';
 import { type Box, type Pt, boundsOf, centerOf } from '../geom';
@@ -380,6 +380,12 @@ registerAction('highlight', {
   params: ['who', 'part', 'which', 'how', 'color', 'stay'],
   required: ['who'],
   build(ctx) {
+    // A group (dots, a path through a tree): every member is lit.
+    if (typeof ctx.spec.who === 'string' && ctx.spec.part === undefined && ctx.world.things.get(ctx.spec.who)?.kind === 'group') {
+      let done: Done = { end: ctx.start };
+      for (const m of ctx.world.things.get(ctx.spec.who)!.members) done = ACTIONS.get('highlight')!.build({ ...ctx, spec: { ...ctx.spec, who: m.id } });
+      return done;
+    }
     const { t, idx } = partOf(ctx);
     const how = choice(ctx.spec.how, HIGHLIGHTS, `${ctx.where}.how`, 'back');
     const col = color(ctx, 'color', ctx.world.theme.accent)!;

@@ -97,12 +97,27 @@ yet are marked "(coming)" there. This file tracks the stages.
   off the frame.
 - 33 more catalogue entries; a `teaching` sample project.
 
-## Stage 6: counting world (next)
+## Stage 6: counting world (built)
 
-Number lines, dots, blocks, fractions, coins, dice, spinners, trees,
-sample spaces.
+- The `counting` world, with a number line from the start if wanted, and a
+  table-top with shadows.
+- Number lines whose marks and numbers fit as they zoom (fractions too);
+  `jump` (single or repeated hops), `interval` (open and closed ends, to
+  infinity), `point_on_line`, `zoom_line`.
+- `dots` (dots, squares, stars, apples, coins, people, balls, hearts; rows
+  or arrays), `group_items`, `count_items`, `tally`.
+- Base-ten `blocks` and `regroup` (carry and borrow).
+- `fraction` as a bar, pie, grid or line; `split`, `combine`, `line_up`.
+- Chance that lands where the script says: `coin`, `dice`, `spinner`,
+  `cards`; seeded `random` throws with running tallies.
+- Probability `tree` (by level or by path, outcomes with their chances,
+  every path named for highlighting) and `sample_space` grids with lit
+  events.
+- `highlight` on a group lights every member.
+- 37 more catalogue entries; a `counting` sample project in English and
+  Hindi.
 
-## Stage 7: space world
+## Stage 7: space world (next)
 
 3D axes, surfaces, solids, revolve, slices, nets.
 

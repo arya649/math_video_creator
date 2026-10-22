@@ -58,7 +58,7 @@ their headings, and the engine says so plainly if a script uses them.
 
 | Built | Coming |
 | --- | --- |
-| The `board`, `graph` and `geometry` worlds; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `counting` and `space` worlds; drawing styles other than `vector`; pictures as backgrounds |
+| The `board`, `graph`, `geometry` and `counting` worlds; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `space` world; drawing styles other than `vector`; pictures as backgrounds |
 | Narration `lines` in every language, cue marks, `@strings`; a voice made with ElevenLabs, or the creator's own recording (timed by a subtitle file, exactly with ElevenLabs, or by an estimate fitted to it) | Voice services other than ElevenLabs |
 | Captions (karaoke and plain, with the on/off switch), muted preview | |
 | Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed`; `wait` (the whole video holds still) | |
@@ -67,6 +67,7 @@ their headings, and the engine says so plainly if a script uses them.
 | Geometry: points, segments, lines, rays, circles, polygons, triangles; 15 constructions (with compass steps); angles, equal marks, measurements; `drag`; `translate`, `rotate`, `reflect`, `enlarge`; `cut` and `rearrange_pieces` | |
 | Shapes: every shape of `draw` except drawing an svg file | `path` from an svg file |
 | Moving: `move`, `turn`, `scale`, `flip`, `wobble`, `morph`, `copy`, `group`, `show`, `hide`, `remove`, `focus` | `pointer`, `trace_path` |
+| Counting: number lines (`jump`, `interval`, `point_on_line`, `zoom_line`), `dots`, `group_items`, `count_items`, `tally`, `blocks`, `regroup`, `fraction`, `split`, `combine`, `line_up`, `coin`, `dice`, `spinner`, `cards`, `tree`, `sample_space` | Pictures from files as counted things |
 | Teaching: `question` and `answer` (with the pause-and-try countdown), `mistake`, `tick`, `cross`, `definition`, `theorem`, `rule`, `formula`, `tip`, `step_counter`, `recap`, `compare` | |
 | On-screen graphics: `title`, `text`, `clear`, `card`, `image` (pictures), `counter`, `chips`, `table`, `chart`, `label`, `credits` | Film clips in `image` |
 | Camera: `rest`, `frame`, `zoom`, `pan`, `follow` | `tilt`, `fly`, `orbit`, `look`; `lift` |
@@ -94,7 +95,7 @@ Contents:
 17. Actions: moving and drawing attention
 18. Actions: graphs and planes
 19. Actions: geometry
-20. Actions: number lines, counting, fractions and chance (coming)
+20. Actions: number lines, counting, fractions and chance
 21. Actions: 3D (coming)
 22. Actions: wonders (fractals, flows, simulations) (coming)
 23. Actions: teaching
@@ -689,7 +690,7 @@ line use `line` unless they name another with `on`.
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `table` | `true` | A soft table-top for things to sit on, with gentle shadows under coins, dice and blocks. Default `false`. |
+| `table` | `true` | A soft table-top across the lower half, with shadows under coins and dice. Default `false`. |
 
 ### space
 
@@ -1718,97 +1719,192 @@ moment after the one before:
 
 ---
 
-## 20. Actions: number lines, counting, fractions and chance (coming)
+## 20. Actions: number lines, counting, fractions and chance
 
 These work in the `counting` world. Actions on a number line use the
 world's `line` unless they name another with `on`.
 
-### number_line
+### number_line (numberline)
 
 ```json
-{ "at_line": 1, "do": "number_line", "x": [-5, 5], "position": "center" }
-{ "at_line": 2, "do": "jump", "from": -2, "by": 5, "label": "+5" }
+{ "at_line": 1, "do": "number_line", "x": [-5, 5] }
+{ "at_line": 2, "do": "jump", "from": -2, "by": 5 }
 { "at_line": 3, "do": "interval", "from": 1, "to": "inf", "open_start": true }
-{ "at_line": 4, "do": "zoom_line", "who": "line", "x": [0, 1], "duration": 3 }
-```
-
-| Action | Keys |
-| --- | --- |
-| `number_line` | `x` (range, and step), `numbers`, `fractions` (`true` to label in fractions), `width`. The first one in a scene is called `line` unless given an `id`. |
-| `jump` | `on`, `from`, `by` (or `to`), `label`, `count` (several equal jumps, as in multiplication). An arc hop with an arrow tip. |
-| `interval` | `on`, `from`, `to` (a number or `"inf"`, `"-inf"`), `open_start`, `open_end`. A bold stretch with filled or hollow ends. |
-| `zoom_line` | `who`, `x`. The line smoothly zooms to a new range, new marks appearing between the old as it goes. |
-
-A point on the number line is `{ "on": "line", "x": 0.75 }`.
-
-### dots, blocks, objects (array)
-
-```json
-{ "at_line": 1, "do": "dots", "id": "d", "rows": 3, "columns": 4, "color": "blue" }
-{ "at_line": 2, "do": "group_items", "who": "d", "by": "row" }
-{ "at_line": 3, "do": "morph", "who": "d", "into": { "do": "write", "tex": "3 \\times 4 = 12" } }
-```
-
-| Action | Keys |
-| --- | --- |
-| `dots` | `count`, or `rows` and `columns`; `shape`: `dot`, `square`, `star`, `apple`, `coin`, `person`, `ball`, or a picture `file`; `size`, `gap`. Each item is `d.1`, `d.2` ... |
-| `blocks` | Base-ten blocks: `number` (such as 243). Hundreds as flats, tens as rods, ones as cubes. |
-| `regroup` | `who`: blocks; `carry`: `true` (ten ones join into a ten) or `borrow` (a ten breaks into ones). |
-| `group_items` | `who`, `by`: `row`, `column`, or a size (`5`). Rings appear round each group. |
-| `count_items` | `who`. Each item lights in turn with its number beside it. |
-| `tally` | `count`, in tally marks drawn in fives. |
-
-### fraction (fraction_bar, pie)
-
-```json
-{ "at_line": 4, "do": "fraction", "id": "fr", "as": "bar", "parts": 4, "shade": 3 }
-{ "at_line": 5, "do": "split", "who": "fr", "into": 8 }
-{ "at_line": 6, "do": "fraction", "id": "p", "as": "pie", "parts": 6, "shade": 2, "position": "right" }
+{ "at_line": 4, "do": "zoom_line", "x": [0, 1], "duration": 3 }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `as` | `bar`, `pie`, `grid`, `line` | The picture. |
-| `parts`, `shade` | numbers | How many equal parts, how many shaded. |
-| `label` | `true` | The fraction written beside it. |
+| `x` | `[from, to]` or `[from, to, step]` | The range. Numbers may be written as fractions: `[0, 2, "1/4"]`. Default `[-5, 5]`. |
+| `fractions` | `true` | Label in fractions (`¼`, `½`, `¾`), with the step given as a fraction. |
+| `numbers` | `false`, or a list | No numbers, or only these. |
+| `width` | sheet units | Default 13. |
+| `position` | a position | Its middle. Default a little below the centre. |
 
-`split` cuts every part into smaller equal parts (showing ¾ = 6⁄8).
-`combine` joins them back. `line_up`: `{ "do": "line_up", "who": ["fr",
-"p"] }` lines up two fractions, one above the other, the same length.
+Marks and numbers are chosen to fit: as the line zooms, finer marks fade in
+between the old ones and numbers appear when there is room. The first line
+in a scene is called `line` unless given an `id`. A place on a line is
+`{ "on": "line", "x": 0.75 }` (in a counting scene `{ "x": 0.75 }` is
+enough).
 
-### coin, dice, spinner, cards
+### jump (hop)
 
-Chance done visibly, always landing where the script says:
+`{ "do": "jump", "from": -2, "by": 5 }` (or `"to": 3`): an arc hop with an
+arrow tip and a label (`+5` unless `label` says otherwise). `count`: several
+equal hops one after another (4 hops of 3, for 4 × 3); `label` can then be
+a list. `side`: `above` (default) or `below`. `color`, `on`.
+
+### interval (stretch)
+
+`from`, `to` (a number, `"inf"` or `"-inf"`), `open_start`, `open_end`
+(hollow ends), `color`, `on`. A bold stretch drawn from left to right, with
+filled or hollow ends, and an arrow where it runs on for ever.
+
+### point_on_line (number_point, dot_on_line)
+
+`{ "do": "point_on_line", "x": 12, "label": true }`: a dot at a number,
+with the number (`true`) or any words (`"label": "start"`) above it
+(`"side": "below"` for under). It stays on its number as the line zooms.
+
+### zoom_line (zoom_number_line)
+
+`who` (default `line`), `x`: the new range. The line zooms smoothly; hops,
+stretches and points zoom with it.
+
+### dots (objects, array, counters)
 
 ```json
-{ "at_line": 2, "do": "coin", "id": "c", "results": ["H", "T", "H", "H"], "lag": 0.6 }
-{ "at_line": 3, "do": "dice", "id": "d", "count": 2, "results": [[3, 4], [6, 6]] }
-{ "at_line": 4, "do": "spinner", "parts": ["red", "blue", "blue", "green"], "result": 2 }
+{ "at_line": 1, "do": "dots", "id": "d", "rows": 3, "columns": 4, "shape": "apple" }
+{ "at_line": 2, "do": "group_items", "who": "d", "by": "row" }
+{ "at_line": 3, "do": "count_items", "who": "d" }
 ```
 
-Coins flip, dice roll and settle, spinners spin and slow, cards turn over,
-landing on the given `results`. `random: 50` instead throws 50 times with
-seeded random results (the same every render), and `tally: true` keeps count
-on screen.
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `count` | 1 to 400 | How many, in rows of ten. Or `rows` and `columns` for an array. |
+| `shape` | `dot`, `square`, `star`, `apple`, `coin`, `person`, `ball`, `heart` | Default `dot`. |
+| `size` | `small`, `medium`, `large`, `huge` | |
+| `gap`, `color`, `position`, `lag` | | `lag`: seconds between one appearing and the next. |
+
+Each thing is `d.1`, `d.2` ..., so any one can be highlighted, moved or
+coloured; `d` is all of them.
+
+### group_items (group_by, ring)
+
+`who`, `by`: `row`, `column`, or a number (`5`: in fives). A ring is drawn
+round each group in turn (`lag`), each in its own colour. The rings are
+`d.groups`.
+
+### count_items (count_up, count_them)
+
+`who`. Each thing lights and grows a little in turn, with its number above
+it and a tick. `from`: the first number (default 1). `lag`, or a `duration`
+for the whole count.
+
+### tally (tally_marks)
+
+`count` (up to 200), in tally marks drawn in fives, one at a time. `size`,
+`color`, `position`, `lag`.
+
+### blocks (base_ten, place_value_blocks)
+
+`{ "do": "blocks", "id": "b", "number": 243 }`: hundreds as flats, tens as
+rods, ones as small cubes. Or `hundreds`, `tens`, `ones` for amounts as
+they stand in the middle of a sum (`"tens": 1, "ones": 12`).
+
+### regroup (exchange, trade)
+
+`{ "do": "regroup", "who": "b", "carry": true }`: ten ones line up into a
+rod and become a ten. `"borrow": true`: a ten breaks into ten ones. The
+other blocks make room.
+
+### fraction (fraction_bar, pie)
+
+```json
+{ "at_line": 4, "do": "fraction", "id": "fr", "as": "bar", "parts": 4, "shade": 3, "label": true }
+{ "at_line": 5, "do": "split", "who": "fr", "into": 8 }
+```
+
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `as` | `bar`, `pie`, `grid`, `line` | The picture. Default `bar`. |
+| `parts`, `shade` | whole numbers | How many equal parts, how many shaded. |
+| `label` | `true` | The fraction written beside it; it changes when the parts do. |
+| `size`, `color`, `position` | | |
+
+### split (cut_parts), combine (join_parts)
+
+`split` cuts every part into smaller equal parts (`"into": 8` turns ¾ into
+⁶⁄₈, the new cuts growing in). `combine` joins them back (`"into": 4`). The
+shaded amount never changes, which is the point.
+
+### line_up (compare_fractions)
+
+`{ "do": "line_up", "who": ["a", "b"] }`: fractions move one above the
+other, made the same length, to be compared.
+
+### coin (flip, coins)
+
+```json
+{ "at_line": 2, "do": "coin", "results": ["H", "T", "H"] }
+{ "at_line": 3, "do": "coin", "random": 50 }
+```
+
+The coin spins in the air and lands on each result in turn; the results so
+far are written underneath. `random`: that many throws with results that
+look random but are the same every time the video is made (`seed`: any
+word, for a different set). `tally: true` (on by itself with `random`)
+keeps count with bars. `lag`: seconds between throws. `size`, `position`.
+
+### dice (die, roll)
+
+`{ "do": "dice", "count": 2, "results": [[3, 4], [6, 6]] }`: 1 to 4 dice
+tumble and settle on each result, with the total under them (`"total":
+false` to leave it out). `random`, `seed`, `tally` (bars for each total),
+`lag`, `size`, `position`. For one die, results can be plain numbers:
+`[6, 2, 3]`.
+
+### spinner (spin, wheel)
+
+`{ "do": "spinner", "parts": ["red", "blue", "blue", "green"], "result": 2 }`:
+the spinner turns, slows and stops with part 2 under the pointer. Parts can
+be `{ "label": "A", "color": "red" }`. `results` (a list) or `random` for
+several spins; `tally`, `size`, `position`.
+
+### cards (card_draw, deal)
+
+`{ "do": "cards", "results": ["A♠", "10♥", "KD", "7C"] }`: up to ten
+playing cards turn over one by one. A card is a rank (A, 2 to 10, J, Q, K)
+and a suit (♠ ♥ ♦ ♣, or S H D C).
 
 ### tree (probability_tree)
 
 ```json
-{ "at_line": 5, "do": "tree", "id": "t", "levels": [
+{ "at_line": 5, "do": "tree", "id": "t", "outcomes": true, "levels": [
   [{ "label": "H", "p": "1/2" }, { "label": "T", "p": "1/2" }],
   [{ "label": "H", "p": "1/2" }, { "label": "T", "p": "1/2" }]
-], "grow": "level" }
+] }
+{ "at_line": 6, "do": "highlight", "who": "t.HT", "how": "color" }
 ```
 
-Branches grow level by level (`level`) or one path at a time (`path`), each
-with its chance written on it. `{ "do": "highlight", "who": "t.HT" }` lights
-one path.
+Up to four levels. Every branch of a level grows the same choices. `grow`:
+`level` (default: a level at a time), `path` (one path at a time) or `all`.
+`outcomes: true` writes each path and its chance (`HT ¼`) at the end.
+`t.HT` names the path H then T, for `highlight`, `color` and the rest.
+`width`, `height`, `position`, `color`.
 
 ### sample_space (outcome_grid)
 
-A grid of every outcome of two things (such as two dice), with cells lit for
-an event: `"rows"`, `"columns"`, `"light"`: a rule in `r` and `c` (`"r + c
-== 7"`).
+```json
+{ "do": "sample_space", "rows": 6, "columns": 6, "cell": "r + c", "light": "r + c == 7" }
+```
+
+A grid of every outcome of two things. `rows` and `columns`: lists of
+labels, or a number (6 means 1 to 6). `cell`: what each cell shows, worked
+out from `r` (its row's label) and `c` (its column's); left out, the pair.
+`light`: a rule; the cells where it holds are lit, and "6 out of 36 = ⅙" is
+written under the grid (`"count": false` to leave that out). `size`,
+`position`, `color`.
 
 ### chart (in counting)
 

@@ -96,6 +96,8 @@ export class SceneWorld {
   waits: { at: number; length: number }[] = [];
   /** The question asked and not yet answered. */
   openQuestion?: { panel: Thing; choices: Thing[]; start: number; extra: Thing[] };
+  /** Number lines in a counting scene, by id. */
+  numberLines = new Map<string, { toSheet(v: number, t?: number): Pt }>();
   /** Every beat built, for the teaching checks. */
   beats: { name: string; at: number; where: string; spec: Record<string, unknown> }[] = [];
   /** The step counter showing now, so the next one takes its place. */
@@ -205,6 +207,11 @@ export class SceneWorld {
       if (typeof v === 'string' && this.values.has(v)) return () => this.values.get(v)!.now;
       throw new ScriptError(`must be a number${this.values.size ? ' or the name of a value' : ''}, not ${JSON.stringify(v)}.`, `${where}.${key}`);
     };
+    const line = typeof spec.on === 'string' ? this.numberLines.get(spec.on) : this.kind === 'counting' && spec.y === undefined ? this.numberLines.get('line') : undefined;
+    if (line && spec.x !== undefined) {
+      const x = num(spec.x, 'x');
+      return () => line.toSheet(x());
+    }
     if (typeof spec.on === 'string' && this.graphs.has(spec.on)) {
       const g = this.graphs.get(spec.on)!;
       if (spec.x === undefined) throw new ScriptError(`needs "x": where on "${spec.on}".`, where);
