@@ -1,6 +1,7 @@
 // Compiling a script into a Movie: scenes, timing, transitions, languages.
 
 import './actions/index';
+import { makeWorldAxes } from './actions/graph';
 import { ACTIONS, BEAT_KEYS, type Ctx, type Done, type Spec, findAction } from './actions';
 import { CameraPlan, SHOT_KEYS, readCamera } from './camera';
 import {
@@ -34,7 +35,7 @@ export const FORMATS: Record<string, { width: number; height: number }> = {
 };
 
 /** Worlds that can be used in a script now. */
-export const WORLDS_BUILT: readonly WorldKind[] = ['board'];
+export const WORLDS_BUILT: readonly WorldKind[] = ['board', 'graph'];
 
 export interface Background {
   style: 'plain' | 'gradient' | 'grid' | 'dots' | 'lined';
@@ -66,11 +67,15 @@ export class CompiledScene {
   /** Put the scene in its state at time t. Nothing is kept from the frame before. */
   applyState(t: number) {
     for (const thing of this.world.order) thing.reset();
+    this.world.resetFrame();
+    this.world.now = t;
     for (const a of this.world.actions) {
       if (t < a.start) break;
       const u = a.duration <= 0 ? 1 : clamp((t - a.start) / a.duration);
       a.apply(u, t);
     }
+    // Graphs, points and anything else that follows values and axes.
+    for (const live of this.world.livers) live(t);
   }
 }
 
@@ -351,6 +356,13 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       return { start: t, duration, lineEnd };
     };
 
+    const makeCtx = (b: Spec, w: string, startAt: number, duration: number | undefined, lineEnd: number | undefined, speed = 1): Ctx => ({
+      spec: b, where: w, world, start: startAt, duration, speed, lineEnd,
+      timeOf: (spec, ww, after) => timeOf(spec, ww, after),
+      act: (a) => pushAction(a, w),
+      buildNested: (spec, ww, st) => buildBeat(spec, ww, st, undefined, undefined),
+    });
+
     const buildBeat = (b: Spec, w: string, startAt: number, duration: number | undefined, lineEnd: number | undefined): Done => {
       if (b.do === undefined) return { end: startAt };
       const [name, def] = findAction(b.do, `${w}.do`);
@@ -364,12 +376,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       const speedWord = b.speed;
       const speed = speedWord === undefined ? 1 : typeof speedWord === 'number' ? speedWord : ({ slow: 0.6, normal: 1, quick: 1.6 } as Record<string, number>)[String(speedWord)];
       if (!speed || speed <= 0) throw new ScriptError('must be "slow", "normal", "quick" or a number above 0.', `${w}.speed`);
-      const ctx: Ctx = {
-        spec: b, where: w, world, start: startAt, duration, speed, lineEnd,
-        timeOf: (spec, ww, after) => timeOf(spec, ww, after),
-        act: (a) => pushAction(a, w),
-        buildNested: (spec, ww, st) => buildBeat(spec, ww, st, undefined, undefined),
-      };
+      const ctx = makeCtx(b, w, startAt, duration, lineEnd, speed);
       try {
         return def.build(ctx);
       } catch (err) {
@@ -377,6 +384,9 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
         throw err;
       }
     };
+
+    // A graph scene has its axes from the start.
+    if (kind === 'graph') makeWorldAxes(makeCtx({}, `${where}.axes`, start, undefined, undefined), s.axes, `${where}.axes`);
 
     // Things there from the start.
     if (s.place !== undefined) {

@@ -24,14 +24,24 @@ yet are marked "(coming)" there. This file tracks the stages.
 - MP4 export with the narration's sound, `.srt` subtitles and the chapter list.
 - The catalogue page (113 entries, each rendered by the engine).
 
-## Stage 2: graph world (next)
+## Stage 2: graph world (built)
 
-Axes and number planes, `plot` (functions, parametric, polar, implicit,
-inequalities), named values and sliders, points, `mark`, `tangent`,
-`secant`, `area` and rectangles, `shift_graph`, vectors, fields,
-`transform_plane`.
+- The `graph` world with its own axes; extra axes; number planes; complex
+  planes; grids, pi ticks, polar grids, log scales, square units; `rescale`.
+- `plot`: functions of x, parametric and polar curves, implicit curves,
+  shaded inequalities, labels, breaks at jumps.
+- Named values with sliders or readouts, `set`, and `\value{a}` inside maths.
+- `point` (drops, coordinates, trace), `slide`, `mark` (roots, max, min,
+  turning, intersections, y-intercept, inflection), `tangent` (slope,
+  rise-and-run triangle), `secant` closing in, `area` (between graphs,
+  rectangles, live value), `refine`, `asymptote`, `limit`, `shift_graph`,
+  `table_of_values`.
+- `vector`, `add_vectors`, `field` (arrows, flow, stream lines),
+  `transform_plane` (matrix, complex function, any map, basis arrows, ghost,
+  undo).
+- 51 more catalogue entries; a `graphs` sample project (`?project=graphs`).
 
-## Stage 3: voice and sound
+## Stage 3: voice and sound (next)
 
 Making the voice with ElevenLabs (exact word times), music with ducking,
 engine-made sound effects, `sound`, Export all.

@@ -1,0 +1,49 @@
+{
+  "title": "Graphs",
+  "symbols": { "f": "blue", "g": "yellow", "a": "yellow" },
+  "lines": [
+    "Here is a parabola.",
+    "Change {a}a, and the whole curve follows.",
+    "The slope of the {tan}tangent changes as it slides.",
+    "The area under the curve is the sum of {rects}thin rectangles.",
+    "Thinner and thinner, the sum becomes {exact}the exact area.",
+    "Now watch the whole plane move under a {mat}matrix."
+  ],
+  "scenes": [
+    {
+      "name": "Parabola",
+      "world": "graph",
+      "axes": { "x": [-4, 4], "y": [-2, 8], "grid": "faint" },
+      "beats": [
+        { "at": 0, "do": "value", "name": "a", "start": 1, "slider": { "position": "top_left", "range": [0, 2] } },
+        { "at_line": 1, "do": "plot", "id": "f", "math": "a * x^2", "label": "$y = ax^2$" },
+        { "at_cue": "a", "do": "set", "name": "a", "to": [2, 0.5, 1], "duration": 4 },
+        { "at_cue": "tan", "do": "tangent", "id": "t", "on": "f", "x": -1.5, "length": 3, "slope": true },
+        { "then": true, "do": "slide", "who": "t", "to": 1.5, "duration": 3 }
+      ]
+    },
+    {
+      "name": "Area",
+      "world": "graph",
+      "start_line": 4,
+      "transition": "fade",
+      "axes": { "x": [-0.5, 3.5], "y": [-0.5, 5] },
+      "beats": [
+        { "at_line": 4, "do": "plot", "id": "g", "math": "0.5 * x^2 + 0.5", "appear": "none" },
+        { "at_cue": "rects", "do": "area", "id": "A", "on": "g", "x": [0, 3], "rectangles": 4, "value": true },
+        { "at_cue": "exact", "do": "refine", "who": "A", "to": 80, "duration": 3 }
+      ]
+    },
+    {
+      "name": "Plane",
+      "world": "graph",
+      "start_line": 6,
+      "transition": "fade",
+      "axes": { "plane": true, "x": [-8, 8], "y": [-4.5, 4.5] },
+      "beats": [
+        { "at_line": 6, "do": "vector", "id": "v", "to": [2, 1], "coords": true },
+        { "at_cue": "mat", "do": "transform_plane", "matrix": [[1, 1], [0, 1]], "basis": true, "ghost": true }
+      ]
+    }
+  ]
+}

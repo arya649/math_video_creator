@@ -184,9 +184,65 @@ for (const tr of ['cut', 'fade', 'black', 'slide', 'slide_left', 'slide_up', 'sl
   });
 }
 
+// ---- Graphs ----
+const G = (id: string, title: string, beats: Beat[], axes: unknown = { x: [-4, 4], y: [-3, 5] }, still = 3, top?: Record<string, unknown>) =>
+  add({ id, title, beats, scene: { world: 'graph', axes }, still, top });
+const sq: Beat = { at: 0, do: 'plot', id: 'f', math: 'x^2 - 1', appear: 'none' };
+G('graph:axes', 'Graph world, axes as they come', [], undefined);
+G('graph:axes-ranges', 'Axes with ranges', [], { x: [-2, 10, 2], y: [-1, 6] });
+G('graph:axes-grid', 'Axes with a faint grid', [], { x: [-4, 4], y: [-3, 5], grid: 'faint' });
+G('graph:axes-equal', 'Axes with square units', [{ at: 0, do: 'plot', implicit: 'x^2 + y^2 = 4', appear: 'none' }], { x: [-4, 4], y: [-3, 3], equal: true });
+G('graph:axes-pi', 'Axes marked in pi', [{ at: 0, do: 'plot', math: 'sin(x)', appear: 'none' }], { x: [-6.3, 6.3], y: [-1.5, 1.5], ticks: 'pi' });
+G('graph:axes-polar', 'Polar grid', [{ at: 0, do: 'plot', r_of_theta: '2 + cos(5*theta)', appear: 'none' }], { x: [-4, 4], y: [-3.4, 3.4], equal: true, grid: true, polar: true, numbers: false });
+G('graph:axes-log', 'Log scale', [{ at: 0, do: 'plot', math: '2^x', x: [0.01, 10], appear: 'none' }], { x: [0, 10], y: [0.5, 1000], log: 'y' });
+G('plane:number-plane', 'Number plane', [], { plane: true });
+G('plane:complex-plane', 'Complex plane', [], { plane: true, complex: true, x: [-4, 4], y: [-2.25, 2.25] });
+G('graph:axes-action', 'axes: another set of axes', [{ at: 0, do: 'axes', id: 'small', x: [0, 5], y: [0, 5], width: 4, height: 3, position: 'right' }], false, 2);
+G('graph:plot', 'plot', [{ at: 0, do: 'plot', id: 'f', math: 'x^3 / 4 - x', duration: 2 }], undefined, 1.2, { symbols: { f: 'blue' } });
+G('graph:plot-label', 'plot with a label', [{ at: 0, do: 'plot', id: 'f', math: 'x^2 - 1', label: '$f(x) = x^2 - 1$' }]);
+G('graph:plot-breaks', 'plot that jumps', [{ at: 0, do: 'plot', math: 'tan(x)', color: 'green' }], { x: [-4.5, 4.5], y: [-4, 4], ticks: 'pi' });
+G('graph:plot-parametric', 'plot: parametric', [{ at: 0, do: 'plot', x_of_t: '3*cos(t)', y_of_t: '2*sin(3*t)', t: [0, 6.2832], color: 'pink' }], { x: [-4, 4], y: [-3, 3] }, 2.5);
+G('graph:plot-polar', 'plot: polar', [{ at: 0, do: 'plot', r_of_theta: '2*sin(4*theta)', color: 'gold' }], { x: [-3, 3], y: [-2.5, 2.5], equal: true }, 2.5);
+G('graph:plot-implicit', 'plot: implicit', [{ at: 0, do: 'plot', implicit: 'x^2/9 + y^2/4 = 1', color: 'teal' }], { x: [-4, 4], y: [-3, 3], equal: true }, 2.5);
+G('graph:plot-inequality', 'plot: an inequality', [{ at: 0, do: 'plot', math: 'y > x^2 - 2', color: 'blue' }]);
+G('graph:plot-dash', 'plot, dashed', [{ at: 0, do: 'plot', math: '2 - x/2', dash: true, color: 'red' }]);
+G('graph:value-slider', 'value with a slider', [{ at: 0, do: 'value', name: 'a', start: 1, slider: { position: 'top_left', range: [0, 3] } }, { at: 0, do: 'plot', math: 'a * x^2 - 1', appear: 'none' }, { at: 0.5, do: 'set', name: 'a', to: 2.5, duration: 2 }], undefined, 1.6);
+G('graph:value-show', 'value shown as a number', [{ at: 0, do: 'value', name: 'k', start: 1, show: 'top_right' }, { at: 0, do: 'plot', math: 'sin(k*x)', appear: 'none' }, { at: 0.3, do: 'set', name: 'k', to: [3, 0.5], duration: 3 }], { x: [-4, 4], y: [-2, 2] }, 1.5);
+G('graph:value-in-maths', 'a value inside maths', [{ at: 0, do: 'value', name: 'm', start: 0.5 }, { at: 0, do: 'plot', math: 'm * x', appear: 'none' }, { at: 0, do: 'write', tex: 'y = \\value{m}\\, x', position: 'top_left', appear: 'none' }, { at: 0.3, do: 'set', name: 'm', to: 2, duration: 2.5 }], undefined, 1.5);
+G('graph:point', 'point on a graph', [sq, { at: 0, do: 'point', id: 'P', position: { on: 'f', x: 1.5 }, label: 'P' }]);
+G('graph:point-drops', 'point with drop lines and coordinates', [sq, { at: 0, do: 'point', id: 'P', position: { on: 'f', x: 1.5 }, drops: true, coords: true }]);
+G('graph:point-slide', 'point sliding, leaving a trace', [sq, { at: 0, do: 'point', id: 'P', position: { on: 'f', x: -2 }, trace: true }, { at: 0.5, do: 'slide', who: 'P', to: 2, duration: 3 }], undefined, 2.5);
+G('graph:mark-roots', 'mark roots', [sq, { at: 0.2, do: 'mark', on: 'f', find: 'roots', label: 'coords' }]);
+G('graph:mark-min', 'mark the lowest point', [{ at: 0, do: 'plot', id: 'f', math: 'x^3/3 - x', appear: 'none' }, { at: 0.2, do: 'mark', on: 'f', find: 'turning', label: 'coords' }], { x: [-3, 3], y: [-2, 2] });
+G('graph:mark-intersections', 'mark where graphs meet', [sq, { at: 0, do: 'plot', id: 'g', math: 'x + 1', appear: 'none' }, { at: 0.2, do: 'mark', on: ['f', 'g'], find: 'intersections', label: 'coords' }]);
+G('graph:tangent', 'tangent', [sq, { at: 0, do: 'tangent', on: 'f', x: 1, length: 4, slope: true }], undefined, 2);
+G('graph:tangent-triangle', 'tangent with its rise and run', [sq, { at: 0, do: 'tangent', on: 'f', x: 0.8, length: 4, triangle: true }], undefined, 2);
+G('graph:tangent-slide', 'tangent sliding', [sq, { at: 0, do: 'tangent', id: 't', on: 'f', x: -2, length: 3, slope: true }, { at: 0.8, do: 'slide', who: 't', to: 2, duration: 3 }], undefined, 2.6);
+G('graph:secant', 'secant closing in', [sq, { at: 0, do: 'secant', on: 'f', x: 0.5, dx: 2, close_in: true }], undefined, 2.5);
+G('graph:area', 'area under a graph', [sq, { at: 0, do: 'area', on: 'f', x: [1, 2.5] }], undefined, 2);
+G('graph:area-between', 'area between two graphs', [sq, { at: 0, do: 'plot', id: 'g', math: 'x + 1', appear: 'none' }, { at: 0, do: 'area', between: ['g', 'f'], x: [-1, 2], color: 'green' }], undefined, 2);
+G('graph:area-rectangles', 'rectangles under a graph', [{ at: 0, do: 'plot', id: 'f', math: '0.5*x^2 + 0.5', appear: 'none' }, { at: 0, do: 'area', on: 'f', x: [0, 3], rectangles: 6, rule: 'middle', value: true }], { x: [-0.5, 3.5], y: [-0.5, 5] }, 2);
+G('graph:area-refine', 'refine: thinner rectangles', [{ at: 0, do: 'plot', id: 'f', math: '0.5*x^2 + 0.5', appear: 'none' }, { at: 0, do: 'area', id: 'A', on: 'f', x: [0, 3], rectangles: 4, value: true, duration: 0.5 }, { at: 0.8, do: 'refine', who: 'A', to: 64, duration: 2.5 }], { x: [-0.5, 3.5], y: [-0.5, 5] }, 3.5);
+G('graph:area-value', 'area growing with a value', [{ at: 0, do: 'value', name: 'b', start: 0.2 }, sq, { at: 0, do: 'area', on: 'f', x: [0, 'b'], value: true, duration: 0.3 }, { at: 0.5, do: 'set', name: 'b', to: 2.5, duration: 2.5 }], undefined, 3.2);
+G('graph:asymptote', 'asymptote', [{ at: 0, do: 'plot', math: '1/(x-1) + 1', appear: 'none' }, { at: 0, do: 'asymptote', x: 1 }, { at: 0.3, do: 'asymptote', y: 1 }]);
+G('graph:limit', 'limit', [{ at: 0, do: 'plot', id: 'f', math: '(x^2 - 1)/(x - 1)', appear: 'none' }, { at: 0.2, do: 'limit', on: 'f', x: 1, duration: 3 }], undefined, 2.6);
+G('graph:shift-graph', 'shift_graph', [sq, { at: 0.5, do: 'shift_graph', who: 'f', to: '(x-2)^2 + 1', ghost: true }], undefined, 1.4);
+G('graph:table-of-values', 'table_of_values', [sq, { at: 0, do: 'table_of_values', on: 'f', x: [-2, -1, 0, 1, 2], position: 'top_left' }], undefined, 3.5);
+G('graph:rescale', 'rescale', [sq, { at: 0.5, do: 'rescale', x: [-10, 10], y: [-5, 20], duration: 2 }], undefined, 1.6);
+G('graph:vector', 'vector', [{ at: 0, do: 'vector', to: [3, 2], label: '\\vec{v}', coords: true }], { plane: true });
+G('graph:add-vectors', 'add_vectors', [{ at: 0, do: 'vector', id: 'v', to: [3, 1], label: '\\vec{v}' }, { at: 0, do: 'vector', id: 'w', to: [1, 2], label: '\\vec{w}', color: 'green' }, { at: 0.8, do: 'add_vectors', who: ['v', 'w'] }], { plane: true }, 2.8);
+G('graph:field-arrows', 'field: arrows', [{ at: 0, do: 'field', x_part: '-y', y_part: 'x' }], { plane: true });
+G('graph:field-flow', 'field: flowing specks', [{ at: 0, do: 'field', x_part: 'y', y_part: '-sin(x)', as: 'flow' }], { plane: true }, 3);
+G('graph:field-lines', 'field: stream lines', [{ at: 0, do: 'field', x_part: 'x - y', y_part: 'x + y', as: 'lines' }], { plane: true });
+G('plane:transform-matrix', 'transform_plane: a matrix', [{ at: 0, do: 'vector', to: [2, 1], appear: 'none' }, { at: 0.3, do: 'transform_plane', matrix: [[1, 1], [0, 1]], basis: true }], { plane: true }, 2.2);
+G('plane:transform-ghost', 'transform_plane with a ghost grid', [{ at: 0.2, do: 'transform_plane', matrix: [[0, -1], [1, 0]], ghost: true }], { plane: true }, 1.6);
+G('plane:transform-complex', 'transform_plane: a complex function', [{ at: 0.2, do: 'transform_plane', map: 'z^2 / 2' }], { plane: true, complex: true, x: [-4, 4], y: [-2.25, 2.25] }, 2.8);
+G('plane:transform-xy', 'transform_plane: any map', [{ at: 0.2, do: 'transform_plane', x_part: 'x + 0.5*sin(y)', y_part: 'y + 0.5*sin(x)' }], { plane: true }, 2.8);
+G('plane:undo', 'transform_plane: undo', [{ at: 0, do: 'transform_plane', matrix: [[2, 0], [0, 0.5]], duration: 1 }, { at: 1.5, do: 'transform_plane', undo: true, duration: 1 }], { plane: true }, 2);
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
   scene: 'Worlds and backgrounds', look: 'Look: themes and colours', voice: 'Narration and captions', eq: 'Equations',
-  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions',
+  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes',
 };

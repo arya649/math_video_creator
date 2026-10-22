@@ -12,6 +12,7 @@ import { bracePts, handLoop, line, roundedRect, strokeGlyph, fillGlyph } from '.
 import { ScriptError, choice, clamp, ease, isObject } from '../util';
 import { selectPart } from '../world';
 import { withAlpha } from '../color';
+import { formatNumber } from '../graph/expr';
 
 // ---- write ----
 
@@ -32,7 +33,8 @@ registerAction('write', {
     let first: Thing | undefined;
     list.forEach((item, i) => {
       const where = Array.isArray(src) ? `${ctx.where}.${spec.tex !== undefined ? 'tex' : 'math'}[${i}]` : ctx.where;
-      const tex = texOf(item, spec.tex === undefined, where);
+      const raw = texOf(item, spec.tex === undefined, where);
+      const tex = fillValues(raw, world, where);
       const id = list.length > 1 ? `${baseId}.${i + 1}` : baseId;
       const at = i === 0 ? positionSpec(spec) : { below: first ? world.last!.id : undefined, align: spec.align ?? '=' };
       const t = makeMath(ctx, id, tex, size, at, where);
@@ -40,6 +42,13 @@ registerAction('write', {
       world.add(t, where);
       world.last = t;
       if (!first) first = t;
+      if (raw !== tex) {
+        // Live numbers: the maths is set again whenever a value changes.
+        world.livers.push(() => {
+          if (!t.shown() || t.state.glyphStates) return;
+          t.state.glyphs = mathGlyphs(world, fillValues(raw, world, where), size, where).glyphs;
+        });
+      }
       const d = ctx.duration !== undefined ? ctx.duration / list.length : writeTime(t.base.glyphs.length) / ctx.speed;
       if (spec.hidden !== true) arrive(ctx, t, how, start, d, from);
       end = start + d;
@@ -48,6 +57,15 @@ registerAction('write', {
     return { end, thing: first };
   },
 }, ['show_math', 'tex']);
+
+/** Put each value's number in place of \value{name}. */
+function fillValues(tex: string, world: import('../world').SceneWorld, where: string): string {
+  return tex.replace(/\\value\{([a-zA-Z][\w]*)\}/g, (_m, name: string) => {
+    const v = world.values.get(name);
+    if (!v) throw new ScriptError(`\\value{${name}} names a value this scene does not have. Make it first with { "do": "value", "name": "${name}" }.`, where);
+    return formatNumber(v.now, v.decimals);
+  });
+}
 
 // ---- steps: one form of an equation into the next ----
 

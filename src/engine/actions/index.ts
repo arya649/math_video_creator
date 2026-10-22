@@ -3,3 +3,4 @@ import './equations';
 import './shapes';
 import './motion';
 import './graphics';
+import './graph';

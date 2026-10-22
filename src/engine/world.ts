@@ -7,6 +7,10 @@ import type { Theme } from './themes';
 import { colorOf } from './themes';
 import { findRun } from './match';
 import { ScriptError, didYouMean, isObject } from './util';
+import type { Axes, Graph } from './graph/axes';
+import type { Scope } from './graph/expr';
+
+export interface Value { start: number; now: number; decimals: number }
 
 export const WORLDS = ['board', 'graph', 'geometry', 'counting', 'space'] as const;
 export type WorldKind = (typeof WORLDS)[number];
@@ -48,6 +52,16 @@ export class SceneWorld {
   /** Colours tied to symbols: runs of glyph keys, longest first. */
   symbolRuns: { keys: string[]; color: string }[] = [];
   captions = true;
+  /** Colours given to names in `symbols`, for graphs and values. */
+  symbolColors: Record<string, string> = {};
+  /** Named numbers that can change over time. */
+  values = new Map<string, Value>();
+  /** Things worked out afresh every frame, after the actions (graphs, points). */
+  livers: ((t: number) => void)[] = [];
+  axes = new Map<string, Axes>();
+  /** The time of the frame being drawn; Infinity while compiling (everything as last built). */
+  now = Infinity;
+  graphs = new Map<string, Graph>();
 
   constructor(
     public kind: WorldKind,
@@ -95,6 +109,7 @@ export class SceneWorld {
   setSymbols(spec: unknown, where: string) {
     if (spec === undefined) return;
     if (!isObject(spec)) throw new ScriptError('must be { symbol: colour }.', where);
+    this.symbolColors = Object.fromEntries(Object.entries(spec).map(([k, v]) => [k, colorOf(v, this.theme, `${where}.${k}`)]));
     this.symbolRuns = Object.entries(spec)
       .map(([sym, col]) => ({ keys: keysOf(sym), color: colorOf(col, this.theme, `${where}.${sym}`) }))
       .sort((a, b) => b.keys.length - a.keys.length);
@@ -116,6 +131,55 @@ export class SceneWorld {
       }
     }
     return out;
+  }
+
+  /** The named values as they are now (at the frame, or at build time). */
+  scope(): Scope {
+    const out: Scope = {};
+    for (const [k, v] of this.values) out[k] = v.now;
+    return out;
+  }
+
+  /** Before each frame: values and axes back to how they start. */
+  resetFrame() {
+    for (const v of this.values.values()) v.now = v.start;
+    for (const a of this.axes.values()) a.reset();
+  }
+
+  /** The world's own axes (graph and space worlds). */
+  mainAxes(where: string): Axes {
+    const a = this.axes.get('axes') ?? [...this.axes.values()][0];
+    if (!a) throw new ScriptError('there are no axes in this scene. A graph scene has them unless "axes" is false; or make some with the axes action.', where);
+    return a;
+  }
+
+  /**
+   * A position given by maths: { "x": 2, "y": 3 } on axes, or
+   * { "on": "f", "x": 2 } on a graph. Returns a function, so things placed
+   * there follow when the axes, the graph or its values change.
+   */
+  mathPoint(spec: Record<string, unknown>, where: string): (() => Pt) | null {
+    const num = (v: unknown, key: string): (() => number) => {
+      if (typeof v === 'number') return () => v;
+      if (typeof v === 'string' && this.values.has(v)) return () => this.values.get(v)!.now;
+      throw new ScriptError(`must be a number${this.values.size ? ' or the name of a value' : ''}, not ${JSON.stringify(v)}.`, `${where}.${key}`);
+    };
+    if (typeof spec.on === 'string' && this.graphs.has(spec.on)) {
+      const g = this.graphs.get(spec.on)!;
+      if (spec.x === undefined) throw new ScriptError(`needs "x": where on "${spec.on}".`, where);
+      const x = num(spec.x, 'x');
+      return () => {
+        const xv = x();
+        return g.axes.toSheet([xv, g.f(xv, this.scope())]);
+      };
+    }
+    if ('x' in spec || 'y' in spec) {
+      const a = typeof spec.on === 'string' ? this.axes.get(spec.on) : this.mainAxes(where);
+      if (!a) throw new ScriptError(`there are no axes called "${String(spec.on)}".${didYouMean(String(spec.on), [...this.axes.keys(), ...this.graphs.keys()])}`, `${where}.on`);
+      const x = num(spec.x ?? 0, 'x'), y = num(spec.y ?? 0, 'y');
+      return () => a.toSheet([x(), y()]);
+    }
+    return null;
   }
 
   /** A screen place, in sheet units, with the camera at rest. */
@@ -194,6 +258,8 @@ export class SceneWorld {
       if (['above', 'below', 'left_of', 'right_of', 'over', 'under'].some((k) => k in spec)) {
         return centerOf(this.relationBox(spec, where));
       }
+      const m = this.mathPoint(spec, where);
+      if (m) return m();
       throw new ScriptError('is not a position this world understands yet. Use a screen place, an id, a named spot or [x, y].', where);
     }
     throw new ScriptError(`must be a position, not ${JSON.stringify(spec)}.`, where);

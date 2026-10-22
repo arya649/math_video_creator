@@ -58,11 +58,12 @@ their headings, and the engine says so plainly if a script uses them.
 
 | Built | Coming |
 | --- | --- |
-| The `board` world; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `graph`, `geometry`, `counting` and `space` worlds; drawing styles other than `vector`; pictures as backgrounds |
+| The `board` and `graph` worlds; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `geometry`, `counting` and `space` worlds; drawing styles other than `vector`; pictures as backgrounds |
 | Narration `lines` in every language, cue marks, `@strings`, word-by-word timing estimated from the words, your own recording with its subtitle file, voice times files | Making the voice from inside the engine (text-to-speech) |
 | Captions (karaoke and plain, with the on/off switch), muted preview | |
 | Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed` | `wait` |
 | Equations: `write`, `steps`, `rearrange`, `work`, `highlight`, `box`, `cancel`, `brace`, `label_part`, `substitute`, `pull_out`, `color`, `swap` | `solve`, `evaluate`; checking that steps are equal |
+| Graphs: axes, number planes, `plot` (functions, parametric, polar, implicit, inequalities), values and sliders, points, `mark`, `tangent`, `secant`, `area`, `refine`, `asymptote`, `limit`, `shift_graph`, `table_of_values`, vectors, fields, `transform_plane`, `rescale` | |
 | Shapes: every shape of `draw` except drawing an svg file | `path` from an svg file |
 | Moving: `move`, `turn`, `scale`, `flip`, `wobble`, `morph`, `copy`, `group`, `show`, `hide`, `remove`, `focus` | `pointer`, `trace_path` |
 | On-screen graphics: `title`, `text`, `clear` | `card`, `image`, `counter`, `chips`, `table`, `chart`, `label`, `credits` |
@@ -89,7 +90,7 @@ Contents:
 15. Actions: equations
 16. Actions: shapes
 17. Actions: moving and drawing attention
-18. Actions: graphs and planes (coming)
+18. Actions: graphs and planes
 19. Actions: geometry (coming)
 20. Actions: number lines, counting, fractions and chance (coming)
 21. Actions: 3D (coming)
@@ -1193,15 +1194,22 @@ surprise.
 
 ---
 
-## 18. Actions: graphs and planes (coming)
+## 18. Actions: graphs and planes
 
 These work in the `graph` world. The world's own axes are called `axes`;
-`on` can be left out wherever it would name them.
+`on` can be left out wherever it would name them. Everything drawn on a
+set of axes moves with them: when they are rescaled, or when the plane is
+transformed.
+
+Graphs and the sums in them are written in plain maths (section 30):
+`"x^2 - 2"`, `"a * sin(k * x)"`, `"y = 3x + 1"`. Labels and titles can use
+LaTeX between dollar signs.
 
 ### axes (coordinate_system)
 
-Makes another set of axes, beside the world's own (or the first, in a scene
-with `"axes": false`). The same keys set up the world's own axes.
+A graph scene's own axes are set with the scene's `axes` (section 10). The
+`axes` action makes another set, beside them (or the first, in a scene with
+`"axes": false`).
 
 ```json
 { "at_line": 1, "do": "axes", "id": "ax2", "x": [-5, 5], "y": [-3, 8], "width": 6, "position": "right" }
@@ -1209,24 +1217,30 @@ with `"axes": false`). The same keys set up the world's own axes.
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `x`, `y` | `[from, to]` or `[from, to, step]` | Range of each axis, and the gap between tick marks. Default step: chosen to give clear numbers. |
-| `width`, `height` | sheet units | Size on the sheet. Default: fill most of the frame. |
-| `numbers` | `true`, `false`, or `"x"`, `"y"` | Numbers along the axes. Default `true`. |
-| `labels` | `["x", "y"]` | Names at the ends of the axes. Default `x`, `y`. |
+| `x`, `y` | `[from, to]` or `[from, to, step]` | Range of each axis, and the gap between tick marks. Default step: chosen to give clear numbers. Left out: the axes fill the frame with one unit per sheet unit. |
+| `width`, `height` | sheet units | Size on the sheet. Default: given ranges fill most of the frame, leaving room for captions. |
+| `equal` | `true` | Keep one unit the same length across and up, so circles are round. |
+| `position` | a position | Where the middle of the axes goes. |
+| `numbers` | `true`, `false`, `"x"`, `"y"` | Numbers along the axes. Default `true`. |
+| `labels` | `["x", "y"]`, or `false` | Names at the ends of the axes, in LaTeX. Default `x`, `y`. |
 | `grid` | `true`, `false`, `"faint"` | Grid lines. Default `false`. |
 | `ticks` | `"pi"` | Mark the x axis in multiples of π, for trigonometry. |
-| `arrows` | `true`, `false` | Arrow tips at the axis ends. Default `true`. |
+| `arrows` | `true`, `false` | Arrow tips at the axis ends. Default `true` (not on a number plane). |
 | `log` | `"x"`, `"y"`, `"both"` | Log scale. |
-| `polar` | `true` | A polar grid of circles and spokes, instead of squares. |
-| `plane` | `true` | A full number plane: grid lines across the whole frame, with the main axes brighter. Needed for `transform_plane`. |
+| `polar` | `true` | Add a polar grid of circles and spokes. |
+| `plane` | `true` | A full number plane: blue grid lines across the whole frame, with the main axes brighter. |
 | `complex` | `true` | Label it as the complex plane (`Re`, `Im`, and `i` on the upright axis). |
+| `appear` | `"draw"` | In a scene's `axes`: draw them on as the scene starts. Otherwise they are there from the start. |
 
-Things can be placed on axes with positions like `{ "x": 2, "y": 3 }` (the
-world's axes) or `{ "on": "ax2", "x": 2, "y": 3 }`.
+### rescale
 
-The axes can grow or change range later, smoothly, with `rescale`:
-`{ "do": "rescale", "who": "axes", "x": [-10, 10] }`. Everything drawn on them
-follows.
+Changes the range of axes smoothly; everything drawn on them follows.
+
+```json
+{ "at_line": 7, "do": "rescale", "x": [-10, 10], "y": [-5, 20], "duration": 2 }
+```
+
+`who` names other axes. Give `x`, `y`, or both, and `ease` as for `move`.
 
 ### plot (graph, curve, function)
 
@@ -1242,21 +1256,25 @@ follows.
 | Key | Values | Meaning |
 | --- | --- | --- |
 | `on` | an axes id | Default the world's `axes`. |
-| `math` or `tex` | an expression in `x`, or `y = ...`, or an inequality | The function. An inequality shades the region where it is true. |
-| `x_of_t`, `y_of_t`, `t` | expressions and a range | A curve traced by `t`. |
+| `math` | an expression in `x`, or `y = ...`, or an inequality in `x` and `y` | The function. An inequality shades the region where it is true, with its edge dashed when the inequality is strict. |
+| `x_of_t`, `y_of_t`, `t` | expressions and a range | A curve traced by `t`. Default range 0 to 2π. |
 | `r_of_theta`, `theta` | an expression and a range | A polar curve. Default range 0 to 2π. |
 | `implicit` | an equation in `x` and `y` | A curve where the equation holds. |
-| `x` | `[from, to]` | Draw only this part. |
-| `label` | text, maths in `$` | A name near the end of the curve. `label_at`: `{ "x": 2 }` to put it elsewhere. |
-| `color`, `width`, `dash`, `glow` | | As for shapes. Default colour: from `symbols` by `id`, else the next theme colour. |
-| `draw` | `left_to_right`, `from_middle`, `all` | How the curve is drawn on. Default `left_to_right`. |
+| `x` | `[from, to]` | Draw only this part. The ends can be numbers or names of values. |
+| `label` | text, maths in `$` | A name near the right end of the curve. `label_at`: `{ "x": 2 }` to put it elsewhere. |
+| `color`, `line_width`, `dash`, `glow` | | As for shapes. Default colour: from `symbols` by `id`, else the next theme colour. |
+| `fill`, `fill_opacity` | | For an inequality: the colour of the shaded region and how solid. Default the curve's colour, 0.35. |
+| `draw` | `left_to_right`, `all` | How the curve arrives: drawn on from the left, or faded in whole. Default `left_to_right`. |
 | `breaks` | `true`, `false` | Leave gaps where the function jumps or runs off to infinity, instead of joining across. Default `true`. |
 
-Every expression can use the named values of the scene (below).
+Every expression can use the named values of the scene (below). A graph
+drawn from `math` as a function of `x` can be named by its `id` in
+positions (`{ "on": "f", "x": 2 }`), and by `point`, `tangent`, `area` and
+the rest.
 
-### value (parameter, slider)
+### value (parameter)
 
-A named number that can change over time. Every graph, label, counter or
+A named number that can change over time. Every graph, label, area or
 equation that uses it changes with it.
 
 ```json
@@ -1267,40 +1285,50 @@ equation that uses it changes with it.
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `name` | a letter or short name | Required. |
-| `start` | number | Its value at first. |
-| `slider` | `false`, or `{ "at", "range", "label" }` | A small slider on screen whose knob shows the value. |
+| `name` | a letter or short name | Required. Not `x`, `y`, `t`, `z`, `e`, `i`, `pi` or `theta`. |
+| `start` | number | Its value at first. Default 1. |
+| `slider` | `{ "position", "range" }` | A small slider on screen whose knob and number show the value. |
 | `show` | a position | Instead of a slider: just its number, `a = 1.25`, at that place. |
 | `decimals` | number | How many decimals to show. Default 2. |
+| `color` | a colour | Default: from `symbols` by name, else the accent. |
 
-`set` changes a value over its beat. `to` as a list goes through each value
-in turn. `ease` as for `move`.
+Values work in every world. Make a value before anything that uses it.
 
-Equations can show the live value: `"tex": "y = \\value{a} x^2"` writes the
-current number in place of `\value{a}`.
+### set
+
+Changes a value over its beat. `to` as a list goes through each value in
+turn. `ease` as for `move`.
+
+Equations can show a value's number as it changes:
+`"tex": "y = \\value{a} x^2"` writes the current number in place of
+`\value{a}`.
 
 ### point (dot_on)
 
-A dot on a graph or axes, which can be moved.
+A dot on a graph or axes, which can slide.
 
 ```json
 { "at_line": 3, "do": "point", "id": "P", "position": { "on": "f", "x": 1 }, "label": "P", "drops": true, "coords": true }
-{ "at_line": 4, "do": "slide", "who": "P", "to": { "on": "f", "x": 3 }, "duration": 4 }
+{ "at_line": 4, "do": "slide", "who": "P", "to": 3, "duration": 4 }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
+| `position` | `{ "on": a graph, "x": n }`, `{ "x": n, "y": n }`, or any position | Required. Where it is. |
 | `drops` | `true`, `"x"`, `"y"` | Dashed lines down to the x axis and across to the y axis. |
 | `coords` | `true` | Its coordinates written beside it, updating as it moves: `(1.00, 1.00)`. |
-| `label` | text | A name beside it. |
-| `trace` | `true`, or a colour | Leaves a line behind it as it moves. |
+| `label` | maths | A name beside it. |
+| `trace` | `true`, or a colour | Leaves a line behind it as it slides. |
+| `color`, `radius` | | Default the accent; 0.09. |
 
-`slide` moves a point along whatever it is on: along its graph, or across
-its axes.
+### slide
+
+Moves a point, a tangent or a secant along what it is on: `to` is the new
+`x`. `ease` as for `move`.
 
 ### mark (feature)
 
-Finds and marks a special point on a graph:
+Finds and marks special points of a graph:
 
 ```json
 { "at_line": 5, "do": "mark", "on": "f", "find": "roots" }
@@ -1308,7 +1336,8 @@ Finds and marks a special point on a graph:
 ```
 
 `find`: `roots`, `max`, `min`, `turning`, `intersections` (of two graphs),
-`y_intercept`, `inflection`. `label`: `true`, `"coords"`, or text.
+`y_intercept`, `inflection`. Only points inside the axes are marked.
+`label`: `"coords"`, or text.
 
 ### tangent (slope_line)
 
@@ -1320,68 +1349,75 @@ Finds and marks a special point on a graph:
 | Key | Values | Meaning |
 | --- | --- | --- |
 | `on`, `x` | a graph, a number | Required. Where it touches. |
-| `length` | sheet units | How long the line is drawn. |
+| `length` | sheet units | How long the line is drawn. Default 4. |
 | `slope` | `true` | Shows the slope's value beside it, updating as it slides. |
-| `triangle` | `true` | A small rise-over-run triangle on the line, with `dx` and `dy` written on its sides. |
-
-`slide` on a tangent moves where it touches to a new `x`.
+| `triangle` | `true` | A rise-over-run triangle on the line, with `dx` and `dy` written on its sides. |
+| `color`, `line_width` | | |
 
 ### secant (chord)
 
-A line through two points of a graph: `on`, `x`, `dx`. `"close_in": true`
-over its beat makes `dx` shrink towards nothing, so the secant turns into the
-tangent: the meaning of a derivative.
+A line through two points of a graph: `on`, `x`, `dx` (default 2).
+`"close_in": true` makes `dx` shrink towards nothing over the beat, so the
+secant turns into the tangent: the meaning of a derivative.
 
 ### area (integral, shade)
 
 ```json
 { "at_line": 9, "do": "area", "on": "f", "x": [0, 2], "color": "blue" }
 { "at_line": 10, "do": "area", "between": ["f", "g"], "x": [-1, 1] }
-{ "at_line": 11, "do": "area", "on": "f", "x": [0, 2], "rectangles": 4, "rule": "left" }
-{ "at_line": 12, "do": "refine", "who": "rects", "to": 64, "duration": 5 }
+{ "at_line": 11, "do": "area", "id": "A", "on": "f", "x": [0, 2], "rectangles": 4, "rule": "left" }
+{ "at_line": 12, "do": "refine", "who": "A", "to": 64, "duration": 5 }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `on` or `between` | a graph, or two | Required. |
-| `x` | `[from, to]` | Required. May use named values, so the area can grow as one changes. |
+| `on` or `between` | a graph, or two (the upper first) | Required. |
+| `x` | `[from, to]` | Required. Numbers or names of values, so the area can grow as a value changes. |
 | `rectangles` | number | Fill the area with this many rectangles instead. |
-| `rule` | `left`, `right`, `middle`, `trapezium` | Where each rectangle meets the curve. |
-| `value` | `true` | Shows the area's size beside it, updating. |
-| `fill_from` | `left`, `bottom` | Fill sweeps in from that side. |
+| `rule` | `left`, `right`, `middle`, `trapezium` | Where each rectangle meets the curve. Default `left`. |
+| `value` | `true` | Shows the area's size inside it, updating: `= 2.67`, or `≈ 2.45` for the sum of rectangles. |
+| `fill_from` | `left`, `bottom` | The fill sweeps in from that side. Default `left`. |
+| `color`, `fill_opacity` | | Default: the graph's colour; 0.5. |
 
-`refine` makes rectangles thinner and more numerous over its beat.
+### refine
+
+Makes the rectangles of an area thinner and more numerous over its beat:
+`who` (the area), `to` (the number of rectangles at the end).
 
 ### asymptote, limit
 
-`{ "do": "asymptote", "x": 2 }` or `"y": 0`: a dashed line the
-graph approaches. `{ "do": "limit", "on": "f", "x": 2, "from": "both" }`:
-dots run along the graph towards `x` from one side or both, with their
-values shown, closing in.
+`{ "do": "asymptote", "x": 2 }` or `"y": 0`: a dashed line the graph
+approaches. `{ "do": "limit", "on": "f", "x": 2, "from": "both" }`: dots run
+along the graph towards `x` from the `left`, the `right` or `both`, with
+their values shown, closing in over the beat.
 
 ### shift_graph (transform_graph)
 
-Moves, stretches or reflects a graph, so `y = x²` becomes `y = (x − 3)² + 1`
-with a ghost of the old one left behind:
+A graph changes smoothly into another: shifted, stretched, flipped. Points,
+tangents and areas on it follow.
 
 ```json
 { "at_line": 6, "do": "shift_graph", "who": "f", "to": "(x-3)^2 + 1", "ghost": true }
 ```
 
-Show the change with arrows between matching points with `"arrows": true`.
+`ghost: true` leaves a faint dashed copy of the graph as it was.
 
 ### table_of_values (values_table)
 
 A small table of `x` and `f(x)` that fills in row by row, a dot appearing on
-the graph for each row: `"on": "f"`, `"x": [-2, -1, 0, 1, 2]`, `"at"`.
+the graph for each row: `"on": "f"`, `"x": [-2, -1, 0, 1, 2]`, `"position"`
+(default `top_left`), `"lag"` (seconds between rows).
 
 ### vector (arrow_on)
 
-`{ "do": "vector", "id": "v", "to": [2, 1], "label": "$\\vec{v}$" }`.
+`{ "do": "vector", "id": "v", "to": [2, 1], "label": "\\vec{v}" }`.
 `from` defaults to the origin. `"coords": true` writes its column beside it.
+Default colour: from `symbols` by id, else yellow.
 
-`{ "do": "add_vectors", "who": ["v", "w"] }`: the second slides to the tip of
-the first, and the sum is drawn.
+### add_vectors
+
+`{ "do": "add_vectors", "who": ["v", "w"] }`: the second slides to the tip
+of the first, and the sum is drawn (`id` names it).
 
 ### field (vector_field, flow)
 
@@ -1390,31 +1426,34 @@ the first, and the sum is drawn.
 { "at_line": 6, "do": "field", "x_part": "y", "y_part": "-sin(x)", "as": "flow" }
 ```
 
-`as`: `arrows` (a grid of arrows sized by strength), `flow` (thousands of
-small specks streaming along the field), `lines` (stream lines drawn on).
-`density`, `color`; colour can be `"by_strength"`.
+`as`: `arrows` (a grid of arrows, longer where the field is stronger),
+`flow` (small specks streaming along the field), `lines` (stream lines).
+`density` (default 1), `color` (default `"by_strength"`: colour shows how
+strong the field is), `seed` (a different arrangement of the specks).
 
 ### transform_plane (apply_matrix, warp)
 
-The whole grid of a number plane moves, so the viewer sees what a matrix or a
-function does to every point at once.
+The whole plane moves, so the viewer sees what a matrix or a function does
+to every point at once. Everything drawn on the axes moves with it: graphs,
+points, vectors.
 
 ```json
-{ "at_line": 3, "do": "axes", "id": "p", "plane": true }
-{ "at_line": 4, "do": "transform_plane", "who": "p", "matrix": [[2, 1], [0, 1]], "duration": 3 }
-{ "at_line": 7, "do": "transform_plane", "who": "p", "map": "z^2", "duration": 4 }
+{ "at_line": 3, "do": "transform_plane", "matrix": [[2, 1], [0, 1]], "basis": true }
+{ "at_line": 7, "do": "transform_plane", "map": "z^2", "duration": 4 }
+{ "at_line": 9, "do": "transform_plane", "undo": true }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `who` | axes made with `plane: true` | Required. |
+| `who` | axes | Default the world's `axes`. Best with `"plane": true`. |
 | `matrix` | `[[a, b], [c, d]]` | A 2×2 matrix. |
 | `map` | an expression in `z` | A complex function, for a complex plane. |
 | `x_part`, `y_part` | expressions in `x`, `y` | Any map of the plane. |
-| `basis` | `true` | Show the two basis arrows (`î` green, `ĵ` red by default), carried along. |
-| `carry` | list of ids | Other things on the plane (vectors, shapes, points) carried along with it. |
+| `basis` | `true` | Show the two basis arrows (`î` green, `ĵ` red, named `i_hat` and `j_hat`), carried along. |
 | `ghost` | `true` | Keep a faint copy of the grid as it was. |
 | `undo` | `true` | Go back to the plain grid. |
+
+Transforms add up: a second one acts on the plane as the first left it.
 
 ---
 
