@@ -62,7 +62,22 @@ export interface ThingState {
   glowColor?: string;
 }
 
-export type ThingKind = 'math' | 'shape' | 'text' | 'group' | 'decoration';
+export type ThingKind = 'math' | 'shape' | 'text' | 'group' | 'decoration' | 'image';
+
+/** A picture drawn by a thing of kind "image". */
+export interface ImageSpec {
+  file: string;
+  /** Size in sheet units. */
+  w: number;
+  h: number;
+  frame: 'none' | 'rounded' | 'circle' | 'polaroid';
+  tone: 'none' | 'mono' | 'faded' | 'warm' | 'cold';
+  motion: 'none' | 'in' | 'out' | 'left' | 'right';
+  /** When it first appears and how long it is seen, for its slow move. */
+  start: number;
+  length: number;
+  caption?: string;
+}
 
 export class Thing {
   base: ThingState;
@@ -90,6 +105,10 @@ export class Thing {
   tex?: string;
   /** Size of its maths, for maths. */
   size = 0.5;
+  /** A picture, for kind "image". */
+  image?: ImageSpec;
+  /** What the recap shows for it, when it is marked "key". */
+  keyText?: { tex?: string; text?: string; title?: string };
   /** The reason written beside its latest step; it fades at the next step. */
   note?: Thing;
 

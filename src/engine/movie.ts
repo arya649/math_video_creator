@@ -1,5 +1,6 @@
 // Compiling a script into a Movie: scenes, timing, transitions, languages.
 
+import { teachingChecks } from './teach-check';
 import './actions/index';
 import { makeWorldAxes } from './actions/graph';
 import { setupGeometryWorld } from './actions/geometry';
@@ -44,6 +45,9 @@ export interface Background {
   spacing: number;
 }
 
+/** A moment the whole video holds still (voice included) for the viewer. */
+export interface Wait { at: number; length: number }
+
 /** A music track, with its times worked out. */
 export interface MusicTrack {
   file: string;
@@ -79,10 +83,11 @@ export class CompiledScene {
   ) {}
 
   /** Put the scene in its state at time t. Nothing is kept from the frame before. */
-  applyState(t: number) {
+  applyState(t: number, hold?: { at: number; u: number }) {
     for (const thing of this.world.order) thing.reset();
     this.world.resetFrame();
     this.world.now = t;
+    this.world.hold = hold;
     for (const a of this.world.actions) {
       if (t < a.start) break;
       const u = a.duration <= 0 ? 1 : clamp((t - a.start) / a.duration);
@@ -126,7 +131,36 @@ export class Movie {
     public music: MusicTrack[] = [],
     /** One-off sounds: the engine's own and sound files. */
     public sounds: SoundEvent[] = [],
-  ) {}
+    /** Moments the whole video holds still for the viewer, in script time. */
+    public waits: Wait[] = [],
+  ) {
+    this.scriptDuration = duration;
+    this.duration = duration + waits.reduce((a, w) => a + w.length, 0);
+  }
+
+  /** How long the script runs, without the waits. */
+  scriptDuration: number;
+
+  /**
+   * Video time to script time. During a wait the script's clock stands still;
+   * `hold` says which wait, and how far through it the video is.
+   */
+  toScript(T: number): { t: number; hold?: { at: number; u: number } } {
+    let shift = 0;
+    for (const w of this.waits) {
+      if (T < w.at + shift) break;
+      if (T < w.at + shift + w.length) return { t: w.at, hold: { at: w.at, u: (T - (w.at + shift)) / w.length } };
+      shift += w.length;
+    }
+    return { t: T - shift };
+  }
+
+  /** Script time to video time: later by every wait before it. */
+  toVideo(t: number): number {
+    let shift = 0;
+    for (const w of this.waits) if (w.at < t) shift += w.length;
+    return t + shift;
+  }
 
   sceneAt(t: number): number {
     let i = 0;
@@ -179,6 +213,8 @@ export interface CompileOptions {
   captions?: boolean;
   /** Draw smaller than the format's size (previews, the catalogue). Keeps the shape. */
   scale?: number;
+  /** Widths and heights of pictures opened with the script, by name. */
+  imageSizes?: Record<string, [number, number]>;
 }
 
 /** Pick one language out of every text in the script, and look up @strings. */
@@ -325,7 +361,12 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
   });
 
   const scenes: CompiledScene[] = [];
+  const allWorlds: SceneWorld[] = [];
+  let chapterNow: string | undefined;
   let lastEnd = 0;
+  const checks = isObject(script.checks) ? script.checks : {};
+  if (script.checks !== undefined && !isObject(script.checks)) throw new ScriptError('must be { "maths": false } or { "teaching": false }, or name teaching checks to turn off.', 'checks');
+  const checkMaths = checks.maths !== false;
   rawScenes.forEach((s, i) => {
     const where = `scenes[${i}]${typeof s.name === 'string' ? ` ("${s.name}")` : ''}`;
     warnKeys(s, SCENE_KEYS, where);
@@ -337,6 +378,13 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     const start = starts[i];
     const end = i + 1 < starts.length ? starts[i + 1] : Infinity;
     const world = new SceneWorld(kind, sceneTheme, start, end, sheet.w, sheet.h);
+    allWorlds.push(world);
+    world.allWorlds = allWorlds;
+    world.checkMaths = checkMaths;
+    world.lang = lang;
+    if (typeof s.chapter === 'string') chapterNow = s.chapter;
+    world.chapter = chapterNow;
+    world.imageSizes = opts.imageSizes ?? {};
     world.setSymbols(s.symbols ?? script.symbols, s.symbols !== undefined ? `${where}.symbols` : 'symbols');
     if (s.captions !== undefined) world.captions = s.captions !== false;
     const camera = new CameraPlan(sheet.w, sheet.h);
@@ -410,6 +458,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
         world.sounds.push({ at, kind, duration: dur, volume: v });
       },
       buildNested: (spec, ww, st) => buildBeat(spec, ww, st, undefined, undefined),
+      warn: (m: string) => { warnings.push(`${w}: ${m}`); },
     });
 
     const buildBeat = (b: Spec, w: string, startAt: number, duration: number | undefined, lineEnd: number | undefined): Done => {
@@ -426,6 +475,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       const speed = speedWord === undefined ? 1 : typeof speedWord === 'number' ? speedWord : ({ slow: 0.6, normal: 1, quick: 1.6 } as Record<string, number>)[String(speedWord)];
       if (!speed || speed <= 0) throw new ScriptError('must be "slow", "normal", "quick" or a number above 0.', `${w}.speed`);
       const ctx = makeCtx(b, w, startAt, duration, lineEnd, speed);
+      world.beats.push({ name, at: startAt, where: w, spec: b });
       if (typeof b.sound === 'string') {
         // A sound chosen by the beat itself, as well as (or instead of) its own.
         const kind = choice(b.sound, SOUND_KINDS, `${w}.sound`);
@@ -528,7 +578,9 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     }
   }
 
-  return new Movie(title, lang, languages, theme, width, height, sheet.w, sheet.h, Number(fps), duration, narration, cap, scenes, warnings, audio, music, sounds.sort((a, b) => a.at - b.at));
+  const waits = scenes.flatMap((sc) => sc.world.waits).sort((a, b) => a.at - b.at);
+  if (checks.teaching !== false) warnings.push(...teachingChecks(scenes.map((sc) => sc.world), narration, duration));
+  return new Movie(title, lang, languages, theme, width, height, sheet.w, sheet.h, Number(fps), duration, narration, cap, scenes, warnings, audio, music, sounds.sort((a, b) => a.at - b.at), waits);
 }
 
 function readBackground(s: Spec, theme: Theme, where: string): Background {

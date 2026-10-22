@@ -102,14 +102,21 @@ export async function mixAudio(movie: Movie, files: Map<string, ArrayBuffer>, mi
     return decode(ctx, data);
   };
 
-  // The narration.
+  const V = (t: number) => movie.toVideo(t);
+
+  // The narration, split at each wait so the voice holds still with the picture.
   if (movie.audio) {
     const buf = await get(movie.audio);
     if (buf) {
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
+      const cuts = [0, ...movie.waits.map((w) => w.at), Infinity];
+      for (let i = 0; i + 1 < cuts.length; i++) {
+        const from = cuts[i], to = Math.min(cuts[i + 1], buf.duration);
+        if (to <= from) continue;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(V(from) + (i > 0 ? movie.waits[i - 1].length : 0), from, to - from);
+      }
     }
   }
 
@@ -117,7 +124,8 @@ export async function mixAudio(movie: Movie, files: Map<string, ArrayBuffer>, mi
   const speech: [number, number][] = [];
   for (const l of movie.narration.lines) {
     const last = speech[speech.length - 1];
-    if (last && l.start - last[1] < 0.8) last[1] = l.end; else speech.push([l.start, l.end]);
+    const a = V(l.start), b = V(l.end);
+    if (last && a - last[1] < 0.8) last[1] = b; else speech.push([a, b]);
   }
   for (const m of movie.music) {
     const buf = await get(m.file);
@@ -127,19 +135,20 @@ export async function mixAudio(movie: Movie, files: Map<string, ArrayBuffer>, mi
     src.loop = m.loop;
     const gain = ctx.createGain();
     src.connect(gain).connect(ctx.destination);
-    const end = Math.min(movie.duration, m.end ?? (m.loop ? movie.duration : m.start + buf.duration));
+    const mStart = V(m.start);
+    const end = Math.min(movie.duration, m.end !== undefined ? V(m.end) : m.loop ? movie.duration : mStart + buf.duration);
     const g = gain.gain;
     const level = (t: number) => {
       let v = m.volume;
-      if (m.fadeIn > 0) v *= Math.min(1, (t - m.start) / m.fadeIn);
+      if (m.fadeIn > 0) v *= Math.min(1, (t - mStart) / m.fadeIn);
       if (m.fadeOut > 0) v *= Math.min(1, (end - t) / m.fadeOut);
       return Math.max(0, v);
     };
-    g.setValueAtTime(m.fadeIn > 0 ? 0 : m.volume, m.start);
-    if (m.fadeIn > 0) g.linearRampToValueAtTime(m.volume, m.start + m.fadeIn);
+    g.setValueAtTime(m.fadeIn > 0 ? 0 : m.volume, mStart);
+    if (m.fadeIn > 0) g.linearRampToValueAtTime(m.volume, mStart + m.fadeIn);
     for (const [a, b] of speech) {
-      if (b < m.start || a > end || m.duck >= 1) continue;
-      const down = Math.max(m.start, a - 0.25);
+      if (b < mStart || a > end || m.duck >= 1) continue;
+      const down = Math.max(mStart, a - 0.25);
       g.setValueAtTime(level(down), down);
       g.linearRampToValueAtTime(level(a) * m.duck, Math.max(down + 0.01, a));
       g.setValueAtTime(level(b) * m.duck, b);
@@ -149,14 +158,15 @@ export async function mixAudio(movie: Movie, files: Map<string, ArrayBuffer>, mi
       g.setValueAtTime(level(end - m.fadeOut), end - m.fadeOut);
       g.linearRampToValueAtTime(0, end);
     }
-    src.start(m.start);
+    src.start(mStart);
     src.stop(end);
   }
 
   // One-off sounds.
   let seed = 1;
   for (const s of movie.sounds) {
-    if (s.at >= movie.duration) continue;
+    const sAt = V(s.at);
+    if (sAt >= movie.duration) continue;
     let buf: AudioBuffer | null;
     if (s.file) buf = await get(s.file);
     else {
@@ -169,7 +179,7 @@ export async function mixAudio(movie: Movie, files: Map<string, ArrayBuffer>, mi
     src.buffer = buf;
     const gain = ctx.createGain();
     src.connect(gain).connect(ctx.destination);
-    const at = Math.max(0, s.at);
+    const at = Math.max(0, sAt);
     const stop = s.duration && s.file ? at + s.duration : at + buf.duration;
     gain.gain.setValueAtTime(s.fadeIn ? 0 : s.volume, at);
     if (s.fadeIn) gain.gain.linearRampToValueAtTime(s.volume, at + s.fadeIn);

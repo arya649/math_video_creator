@@ -59,7 +59,11 @@ catalog.html, src/catalog/     The catalogue page (entries.ts lists every exampl
 src/engine/
   movie.ts       Compiles a script: languages, narration, scenes, beat timing, transitions
   actions.ts     The action registry and helpers every action uses
-  actions/       The actions, by kind: equations, shapes, motion, graphics
+  actions/       The actions, by kind: equations, shapes, motion, graphics, graph,
+                 geometry, panels (cards, counters, tables, charts, pictures),
+                 teaching (wait, question, mistake, recap...)
+  check.ts       Maths checks: is each step equal to the one before?
+  teach-check.ts Teaching checks: pace and clarity warnings
   world.ts       SceneWorld: what exists in a scene; placing things by words
   thing.ts       Thing: anything on screen; Glyph: one outline
   tex.ts         Maths to outlines (MathJax SVG), plain maths to LaTeX (math.js)
@@ -127,6 +131,15 @@ named parts first, then the longest shared run, then the same symbol moved,
 then neighbours (`+5` becoming `-5`). Paired symbols morph (the same shape
 just moves; different shapes are resampled to the same number of points);
 the rest fade. Pieces crossing the `=` arc over or under it.
+
+**Waits: script time and video time.** A `wait` holds the whole video
+still. The script's clock (every time the compiler works with) never
+includes waits; `Movie.toScript(T)` turns a video time into a script time
+(standing still during a wait, with `hold` saying how far through it), and
+`Movie.toVideo(t)` goes the other way. Anything that reaches the outside
+world in video time (the renderer, sound mixing, subtitles, chapters, the
+scene list) maps through these. Actions read `world.hold` to animate during
+a wait (the countdown ring).
 
 **Sheet units.** The frame at rest is 9 units on its short side (16 x 9 in
 landscape). Line widths are in design pixels for a 1080-pixel short side.

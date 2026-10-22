@@ -11,7 +11,7 @@ const stamp = (t: number) => {
 export interface ChapterList { text: string; warnings: string[] }
 
 export function chapterList(movie: Movie): ChapterList {
-  const chapters = movie.scenes.filter((s) => s.chapter).map((s) => ({ start: s.start, name: s.chapter! }));
+  const chapters = movie.scenes.filter((s) => s.chapter).map((s) => ({ start: movie.toVideo(s.start), name: s.chapter! }));
   const warnings: string[] = [];
   if (!chapters.length) return { text: '', warnings };
   if (chapters[0].start > 0) {

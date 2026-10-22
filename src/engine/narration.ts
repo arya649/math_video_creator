@@ -179,13 +179,13 @@ export function narrationFromSrt(entries: SrtEntry[]): Narration {
 }
 
 /** Write the narration as a subtitle file (for YouTube). */
-export function toSrt(n: Narration): string {
+export function toSrt(n: Narration, toVideo: (t: number) => number = (t) => t): string {
   const stamp = (t: number) => {
     const ms = Math.round(t * 1000);
     const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms % 1000).padStart(3, '0')}`;
   };
-  return n.lines.map((l, i) => `${i + 1}\n${stamp(l.start)} --> ${stamp(l.end)}\n${captionText(l.text)}\n`).join('\n');
+  return n.lines.map((l, i) => `${i + 1}\n${stamp(toVideo(l.start))} --> ${stamp(toVideo(l.end))}\n${captionText(l.text)}\n`).join('\n');
 }
 
 const SUPERS: Record<string, string> = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', n: 'ⁿ', '-': '⁻', '+': '⁺' };

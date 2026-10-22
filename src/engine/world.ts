@@ -78,6 +78,28 @@ export class SceneWorld {
   geoPoint?: (ref: string) => Pt | undefined;
   /** How the geometry world shows angles and lengths. */
   geoSettings = { units: 'degrees' as 'degrees' | 'radians', decimals: 1, angleDecimals: 0 };
+  /** Every scene of the video so far (the recap looks back through them). */
+  allWorlds: SceneWorld[] = [];
+  /** Whether steps are checked as maths. */
+  checkMaths = true;
+  /** The language being made. */
+  lang = 'en';
+  /** The chapter this scene is in (the last one named). */
+  chapter?: string;
+  /** Sizes of the pictures opened with the script. */
+  imageSizes: Record<string, [number, number]> = {};
+  /** Cards on screen, for stacking: where, from when to when, how tall. */
+  cardSlots: { key: string; start: number; end: number; top: number; bottom: number }[] = [];
+  /** The wait the video is holding in, if any, and how far through it (countdowns read this). */
+  hold?: { at: number; u: number };
+  /** Waits asked for in this scene. */
+  waits: { at: number; length: number }[] = [];
+  /** The question asked and not yet answered. */
+  openQuestion?: { panel: Thing; choices: Thing[]; start: number; extra: Thing[] };
+  /** Every beat built, for the teaching checks. */
+  beats: { name: string; at: number; where: string; spec: Record<string, unknown> }[] = [];
+  /** The step counter showing now, so the next one takes its place. */
+  stepCounter?: Thing;
   /** The time of the frame being drawn; Infinity while compiling (everything as last built). */
   now = Infinity;
   graphs = new Map<string, Graph>();

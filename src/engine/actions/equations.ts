@@ -1,5 +1,6 @@
 // Writing and changing equations.
 
+import { checkStep } from '../check';
 import {
   type Ctx, type Spec, SIZES, TEXT_SIZES, arrive, color, glyphStates, makeMath, mathGlyphs, natural, num,
   positionSpec, readAppear, registerAction, sheetText, sizeOf, str, texOf, things, writeTime,
@@ -253,6 +254,7 @@ registerAction('steps', {
     list.forEach((item, i) => {
       const where = Array.isArray(spec.to) ? `${ctx.where}.to[${i}]` : `${ctx.where}.to`;
       const tex = texOf(item, asMath, where);
+      if (world.checkMaths && spec.check !== false && t.tex) { const p = checkStep(t.tex, tex); if (p) ctx.warn(`${where}: ${p} (Add "check": false if that is meant.)`); }
       const newLine = spec.new_line === true ? { id: list.length === 1 && typeof spec.id === 'string' ? spec.id : world.newIdFor(t.id), gap: spec.gap } : undefined;
       t = addStep(ctx, t, tex, start, per, { newLine, where });
       ctx.sound('click', start + per * 0.85);
@@ -283,7 +285,7 @@ registerAction('rearrange', {
 
 registerAction('work', {
   summary: 'A column of working: lines arrive in turn, lined up on "=", each with its reason.',
-  params: ['lines', 'carry', 'numbered', 'fade_old', 'scroll', 'size', 'color', 'as', 'position'],
+  params: ['lines', 'check', 'carry', 'numbered', 'fade_old', 'scroll', 'size', 'color', 'as', 'position'],
   required: ['lines'],
   build(ctx) {
     const { spec, world } = ctx;
@@ -305,6 +307,7 @@ registerAction('work', {
       const time = i === 0 ? { start: ctx.start, duration: undefined } : timed ? ctx.timeOf(line, where, prevEnd + 0.25) : { start: prevEnd + 0.25, duration: undefined };
       let t: Thing;
       let d: number;
+      if (i > 0 && world.checkMaths && line.check !== false && spec.check !== false && lines[i - 1].tex) { const p = checkStep(lines[i - 1].tex!, tex); if (p) ctx.warn(`${where}: ${p} (Add "check": false if that is meant.)`); }
       if (i === 0 || !carry) {
         const at = i === 0 ? positionSpec(spec) : { below: lines[i - 1].id, align: '=' };
         t = makeMath(ctx, `${id}.${i + 1}`, tex, size, at, where);

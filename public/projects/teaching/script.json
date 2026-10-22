@@ -1,0 +1,41 @@
+{
+  "title": "Teaching tools",
+  "theme": "night",
+  "lines": [
+    "Here is a question for you.",
+    "The answer is B: four.",
+    "A common mistake: squaring a sum term by term.",
+    "A definition worth keeping.",
+    "Some numbers, and the steps so far.",
+    "A table and a chart.",
+    "And a picture, then the recap."
+  ],
+  "scenes": [
+    {
+      "name": "Questions",
+      "chapter": "Asking",
+      "beats": [
+        { "at_line": 1, "do": "question", "text": "What is $\\sqrt{16}$?", "choices": ["2", "4", "8", "16"], "hint": "What times itself gives 16?", "wait": 4 },
+        { "at_line": 2, "do": "answer", "choice": "B", "why": "Because 4 × 4 = 16." },
+        { "at_line": 3, "do": "mistake", "tex": "(a+b)^2 = a^2 + b^2", "fix": "(a+b)^2 = a^2 + 2ab + b^2", "reason": "the middle term is missing", "key": true }
+      ]
+    },
+    {
+      "name": "Cards",
+      "chapter": "Showing",
+      "start_line": 4,
+      "beats": [
+        { "at_line": 4, "do": "definition", "title": "Prime", "text": "A whole number above 1 with exactly two factors." },
+        { "at_line": 5, "do": "step_counter", "step": 1, "of": 3 },
+        { "at_line": 5, "do": "counter", "items": [ { "to": 1200000, "label": "people" }, { "to": 98.6, "suffix": "%", "label": "right" } ], "duration": 2 },
+        { "at_line": 5, "offset": 2, "do": "step_counter", "step": 2, "of": 3 },
+        { "at_line": 5, "do": "card", "kicker": "Fact", "title": "Pi", "number": 3.14, "text": "The same for every circle." },
+        { "at_line": 6, "do": "table", "head": ["$x$", "$x^2$"], "rows": [["1","1"],["2","4"],["3","9"]], "position": "left", "light": 2, "duration": 4 },
+        { "at_line": 6, "do": "chart", "kind": "bar", "items": [ {"label": "Mon", "value": 3}, {"label": "Tue", "value": 5}, {"label": "Wed", "value": 2} ], "position": "right", "size": "small", "duration": 4 },
+        { "at_line": 7, "do": "image", "file": "picture.png", "frame": "polaroid", "caption": "A gradient", "position": "left", "motion": "in", "duration": 3 },
+        { "then": true, "do": "chips", "items": ["primes", "squares", "roots"], "duration": 2 },
+        { "then": true, "do": "recap" }
+      ]
+    }
+  ]
+}

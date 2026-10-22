@@ -34,6 +34,8 @@ export interface Ctx {
   sound(kind: SoundKind, at: number, duration?: number): void;
   /** Build another beat description (the target of a morph). */
   buildNested(spec: Spec, where: string, start: number): Done;
+  /** Note a problem that does not stop the video (a step that does not follow). */
+  warn(message: string): void;
 }
 
 export interface Done { end: number; thing?: Thing }

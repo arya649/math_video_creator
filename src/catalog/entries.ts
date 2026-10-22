@@ -109,7 +109,7 @@ add({
   id: 'eq:work', title: 'work: a column of working',
   beats: [{ at: 0, do: 'work', id: 'w', lines: [{ tex: '3x + 5 = 20' }, { tex: '3x = 15', note: 'subtract 5', then: true }, { tex: 'x = 5', note: 'divide by 3', then: true }] }], still: 5.5,
 });
-add({ id: 'eq:work-numbered', title: 'work, numbered, not carried', beats: [{ at: 0, do: 'work', numbered: true, carry: false, lines: ['x^2 - 5x + 6 = 0', '(x-2)(x-3) = 0', 'x = 2 \\text{ or } x = 3'] }], still: 4.5 });
+add({ id: 'eq:work-numbered', title: 'work, numbered, not carried', beats: [{ at: 0, do: 'work', numbered: true, carry: false, lines: ['x^2 - 5x + 6 = 0', { tex: '(x-2)(x-3) = 0', note: 'factorise' }, 'x = 2 \\text{ or } x = 3'] }], still: 4.5 });
 for (const how of ['back', 'color', 'glow', 'pulse', 'wiggle', 'underline', 'circle', 'flash'] as const) {
   add({ id: `eq:highlight-${how}`, title: `highlight: ${how}`, beats: [eq('(a+b)^2 = a^2 + 2ab + b^2'), { at: 1.2, do: 'highlight', who: 'eq', part: '2ab', how }], still: how === 'pulse' || how === 'wiggle' || how === 'flash' ? 1.65 : 2.2 });
 }
@@ -298,9 +298,40 @@ Geo('geo:rearrange-strip', 'rearrange slices into a strip', [{ at: 0, do: 'point
 Geo('geo:cut-strips', 'cut into strips, laid in a row', [{ at: 0, do: 'polygon', id: 'p', points: [[-2, -1.5], [2, -1.5], [2, 1.5], [-2, 1.5]], appear: 'none', labels: false }, { at: 0.2, do: 'cut', who: 'p', into: 'strips', count: 4, id: 'st' }, { at: 0.9, do: 'rearrange_pieces', who: 'st', into: 'row', gap: 0.3, duration: 1.5 }], 2.6);
 Geo('geo:cut-lines', 'cut along lines', [{ at: 0, do: 'polygon', id: 'p', points: [[-3, -2], [3, -2], [3, 2], [-3, 2]], appear: 'none', labels: false }, { at: 0, do: 'line', id: 'd', through: [[-3, -2], [3, 2]], hidden: true }, { at: 0.2, do: 'cut', who: 'p', into: 'lines', lines: ['d'], id: 'h' }, { at: 0.8, do: 'rearrange_pieces', who: 'h', places: [{ position: [-1.5, 0], turn: 0 }, { position: [2.5, 0], turn: 180 }], duration: 1.5 }], 2.6);
 
+// ---- On-screen graphics (stage 5) ----
+add({ id: 'text:card', title: 'card', beats: [{ at: 0, duration: 4, do: 'card', kicker: 'Fact', title: 'Pi', number: 3.14159, text: 'The same for every circle.' }], still: 2.2 });
+add({ id: 'text:card-on', title: 'card pointing at a thing', beats: [eq('E = mc^2'), { at: 0.5, duration: 4, do: 'card', title: 'Speed of light', tex: 'c \\approx 3 \\times 10^8', side: 'right', position: 'bottom', on: 'eq' }], still: 2.4 });
+add({ id: 'text:counter', title: 'counter', beats: [{ at: 0, do: 'counter', items: [{ to: 1200000, label: 'people' }, { to: 98.6, suffix: '%', label: 'right' }], duration: 2 }], still: 3 });
+add({ id: 'text:counter-indian', title: 'counter, Indian grouping', beats: [{ at: 0, do: 'counter', to: 1200000, prefix: '₹', grouping: 'indian', label: 'saved', duration: 1.5 }], still: 2.5 });
+add({ id: 'text:chips', title: 'chips', beats: [{ at: 0, duration: 3, do: 'chips', kicker: 'Today', items: ['primes', 'squares', 'roots', 'powers'] }], still: 2 });
+add({ id: 'text:table', title: 'table', beats: [{ at: 0, duration: 4, do: 'table', head: ['$x$', '$x^2$'], rows: [['1', '1'], ['2', '4'], ['3', '9']], light: 2 }], still: 2.6 });
+for (const kind of ['bar', 'line', 'pie', 'dot'] as const) {
+  add({ id: `text:chart-${kind}`, title: `chart: ${kind}`, beats: [{ at: 0, duration: 4, do: 'chart', kind, title: 'Visitors', items: [{ label: 'Mon', value: 3 }, { label: 'Tue', value: 5 }, { label: 'Wed', value: 2 }, { label: 'Thu', value: 4 }] }], still: 3 });
+}
+add({ id: 'text:label', title: 'label with an arrow', beats: [{ at: 0, do: 'draw', shape: 'circle', id: 'c', size: 'medium' }, { at: 0.4, do: 'label', on: 'c', text: 'a circle', side: 'above', arrow: true }], still: 1.5 });
+add({ id: 'text:credits', title: 'credits', beats: [{ at: 0, do: 'credits', lines: ['# Made by', 'A maths teacher', '# Music', 'Your music here'], duration: 6 }], still: 3 });
+for (const frame of ['rounded', 'circle', 'polaroid'] as const) {
+  add({ id: `text:image-${frame}`, title: `image: ${frame} frame`, beats: [{ at: 0, duration: 4, do: 'image', file: 'picture.png', frame, caption: 'A caption' }], still: 1.5 });
+}
+
+// ---- Teaching ----
+add({ id: 'teach:question', title: 'question with choices', beats: [{ at: 0, do: 'question', text: 'What is $\\sqrt{16}$?', choices: ['2', '4', '8', '16'], hint: 'What times itself gives 16?', wait: 4 }], still: 4.2 });
+add({ id: 'teach:answer', title: 'answer: the right choice', beats: [{ at: 0, do: 'question', text: 'What is $\\sqrt{16}$?', choices: ['2', '4', '8', '16'], wait: false }, { at: 2, do: 'answer', choice: 'B', why: 'Because 4 × 4 = 16.', duration: 3 }], still: 3.2 });
+add({ id: 'teach:answer-text', title: 'answer written out', beats: [{ at: 0, do: 'question', text: 'What is $(3+4)^2$?', wait: false }, { at: 1.5, do: 'answer', tex: '49', why: 'Not 9 + 16 = 25.', duration: 3 }], still: 2.8 });
+add({ id: 'teach:wait', title: 'wait with a countdown', beats: [eq('x^2 = 49'), { at: 1, do: 'wait', for: 4, text: 'Pause and try' }], still: 2.8 });
+add({ id: 'teach:mistake', title: 'mistake, put right', beats: [{ at: 0, do: 'mistake', tex: '(a+b)^2 = a^2 + b^2', fix: '(a+b)^2 = a^2 + 2ab + b^2', reason: 'the middle term is missing' }], still: 3.2 });
+add({ id: 'teach:tick-cross', title: 'tick and cross', beats: [{ at: 0, do: 'write', id: 'a', tex: '2 + 2 = 4', position: [0, 1] }, { at: 0, do: 'write', id: 'b', tex: '2 + 2 = 5', position: [0, -1] }, { at: 0.8, do: 'tick', who: 'a' }, { at: 1.2, do: 'cross', who: 'b' }], still: 2 });
+for (const kind of ['definition', 'theorem', 'rule', 'formula', 'tip'] as const) {
+  const body = kind === 'theorem' ? { title: 'Pythagoras', tex: 'a^2 + b^2 = c^2' } : kind === 'formula' ? { title: 'Area of a circle', tex: 'A = \\pi r^2' } : kind === 'rule' ? { title: 'Index law', tex: 'a^m \\cdot a^n = a^{m+n}' } : kind === 'tip' ? { text: 'Check your answer by putting it back in.' } : { title: 'Prime number', text: 'A whole number above 1 with exactly two factors.' };
+  add({ id: `teach:${kind}`, title: kind, beats: [{ at: 0, duration: 4, do: kind, position: 'center', ...body }], still: 1.5 });
+}
+add({ id: 'teach:step-counter', title: 'step counter', beats: [{ at: 0, do: 'step_counter', step: 1, of: 3 }, eq('2x + 5 = 11'), { at: 1.5, do: 'step_counter', step: 2, of: 3 }, { at: 1.5, do: 'steps', who: 'eq', to: '2x = 6' }], still: 3 });
+add({ id: 'teach:recap', title: 'recap of key things', beats: [{ at: 0, do: 'write', id: 'k', tex: '(a+b)^2 = a^2 + 2ab + b^2', key: true, position: [0, 2.5] }, { at: 0.5, do: 'definition', title: 'Square', text: 'A number times itself.', duration: 1 }, { at: 2, do: 'recap' }], still: 4.5 });
+add({ id: 'teach:compare', title: 'compare, one better', beats: [{ at: 0, duration: 4, do: 'compare', left: { title: 'Term by term', tex: 'a^2 + b^2' }, right: { title: 'Expanded', tex: 'a^2 + 2ab + b^2' }, better: 'right' }], still: 2.5 });
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
   scene: 'Worlds and backgrounds', look: 'Look: themes and colours', voice: 'Narration and captions', eq: 'Equations',
-  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry',
+  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching',
 };

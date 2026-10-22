@@ -61,16 +61,17 @@ their headings, and the engine says so plainly if a script uses them.
 | The `board`, `graph` and `geometry` worlds; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `counting` and `space` worlds; drawing styles other than `vector`; pictures as backgrounds |
 | Narration `lines` in every language, cue marks, `@strings`; a voice made with ElevenLabs, or the creator's own recording (timed by a subtitle file, exactly with ElevenLabs, or by an estimate fitted to it) | Voice services other than ElevenLabs |
 | Captions (karaoke and plain, with the on/off switch), muted preview | |
-| Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed` | `wait` |
-| Equations: `write`, `steps`, `rearrange`, `work`, `highlight`, `box`, `cancel`, `brace`, `label_part`, `substitute`, `pull_out`, `color`, `swap` | `solve`, `evaluate`; checking that steps are equal |
+| Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed`; `wait` (the whole video holds still) | |
+| Equations: `write`, `steps`, `rearrange`, `work`, `highlight`, `box`, `cancel`, `brace`, `label_part`, `substitute`, `pull_out`, `color`, `swap`; every step checked | `solve`, `evaluate` |
 | Graphs: axes, number planes, `plot` (functions, parametric, polar, implicit, inequalities), values and sliders, points, `mark`, `tangent`, `secant`, `area`, `refine`, `asymptote`, `limit`, `shift_graph`, `table_of_values`, vectors, fields, `transform_plane`, `rescale` | |
 | Geometry: points, segments, lines, rays, circles, polygons, triangles; 15 constructions (with compass steps); angles, equal marks, measurements; `drag`; `translate`, `rotate`, `reflect`, `enlarge`; `cut` and `rearrange_pieces` | |
 | Shapes: every shape of `draw` except drawing an svg file | `path` from an svg file |
 | Moving: `move`, `turn`, `scale`, `flip`, `wobble`, `morph`, `copy`, `group`, `show`, `hide`, `remove`, `focus` | `pointer`, `trace_path` |
-| On-screen graphics: `title`, `text`, `clear` | `card`, `image`, `counter`, `chips`, `table`, `chart`, `label`, `credits` |
+| Teaching: `question` and `answer` (with the pause-and-try countdown), `mistake`, `tick`, `cross`, `definition`, `theorem`, `rule`, `formula`, `tip`, `step_counter`, `recap`, `compare` | |
+| On-screen graphics: `title`, `text`, `clear`, `card`, `image` (pictures), `counter`, `chips`, `table`, `chart`, `label`, `credits` | Film clips in `image` |
 | Camera: `rest`, `frame`, `zoom`, `pan`, `follow` | `tilt`, `fly`, `orbit`, `look`; `lift` |
 | Transitions: `cut`, `fade`, `black`, `slide` (all four ways), `wipe` | `morph`, `fly`, `zoom`, `rub`, `page`; `keep` |
-| Export to MP4 (one language, or all) with narration, music, sound files and the engine's own sounds, with its `.srt` subtitle file and YouTube chapter list; script problems and warnings | `sonify`; thumbnail and end screen; maths and teaching checks |
+| Export to MP4 (one language, or all) with narration, music, sound files and the engine's own sounds, with its `.srt` subtitle file and YouTube chapter list; script problems and warnings; maths and teaching checks | `sonify`; thumbnail and end screen |
 
 Contents:
 
@@ -96,7 +97,7 @@ Contents:
 20. Actions: number lines, counting, fractions and chance (coming)
 21. Actions: 3D (coming)
 22. Actions: wonders (fractals, flows, simulations) (coming)
-23. Actions: teaching (coming)
+23. Actions: teaching
 24. The mascot (coming)
 25. On-screen graphics
 26. Camera
@@ -847,16 +848,28 @@ An action that makes several things (`write` of a list, `chips`, `draw` of a
 list, `construct` with several steps) can lay them out one after another
 with `lag`: the seconds between one starting and the next.
 
-### Waiting for the viewer (coming)
+### wait (pause, think): waiting for the viewer
 
-A beat can hold the whole video still, with no narration, for a moment:
+A beat can hold the whole video still, narration included, for a moment:
 
 ```json
-{ "at_cue": "try", "do": "wait", "duration": 5, "countdown": true }
+{ "at_cue": "try", "do": "wait", "for": 5 }
 ```
 
-`wait` stops everything, voice included, for its length, then carries on. It
-is how a "pause and try it" moment is made (section 23).
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `for` | seconds | How long to hold. Default 5. |
+| `countdown` | `true`, `false` | A ring in the corner that empties over the wait, with the seconds left. Default `true`. |
+| `text` | words | A small line under the ring, such as `"Pause and try"`. |
+
+The wait is added to the video: everything after it, the voice, captions,
+music and chapter times, comes that much later. The script's own times
+(`at`, `offset`, line times) do not change, so adding or removing a wait
+never moves anything else in the script. Put it at the end of a line (with
+`at_cue` on a cue at the line's end, or `then` after the beat that asks), so
+the voice is not cut mid-word. `question` makes its own wait (section 23).
+
+`wait` is also called `pause` or `think`.
 
 ### How long things stay
 
@@ -986,7 +999,7 @@ become.
 | `new_line` | `true` | Keep the old line and write the new one below it, lined up on `=`, as in a column of working. The new line is a new thing: its `id` is the beat's `id`, or the old one with `_2`, `_3` ... added (`eq1_2`). Later steps name it by that id. |
 | `note` | text | A short reason, written beside the step in a smaller size, such as `"subtract 5 from both sides"`. |
 | `note_at` | `right`, `left` | Default `right`. |
-| `check` (coming) | `true`, `false` | Check that the new step is really equal to the old (section 29). Default `true`. |
+| `check` | `true`, `false` | Check that the new step is really equal to the old (section 29). Default `true`. |
 | `lag` | seconds | With a list: time between steps. |
 
 ### work (derivation, column)
@@ -1797,7 +1810,7 @@ A grid of every outcome of two things (such as two dice), with cells lit for
 an event: `"rows"`, `"columns"`, `"light"`: a rule in `r` and `c` (`"r + c
 == 7"`).
 
-### chart (coming)
+### chart (in counting)
 
 See section 25.
 
@@ -1952,76 +1965,102 @@ away). For moments of celebration and change.
 
 ---
 
-## 23. Actions: teaching (coming)
+## 23. Actions: teaching
 
-### question (pause_and_try, try_this)
+These work in every world. Their panels sit on the screen, not the sheet, so
+the camera can move behind them.
+
+### question (ask, quiz, try_this)
 
 ```json
-{ "at_cue": "try", "do": "question", "id": "q1", "text": "What is $(3 + 4)^2$?", "wait": 5, "countdown": true }
-{ "at_line": 14, "do": "answer", "who": "q1", "text": "$49$, not $9 + 16 = 25$" }
+{ "at_line": 4, "do": "question", "text": "What is $\\sqrt{16}$?", "choices": ["2", "4", "8", "16"], "hint": "What times itself gives 16?", "wait": 5 }
+{ "at_line": 5, "do": "answer", "choice": "B", "why": "Because 4 × 4 = 16." }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `text` | text with maths | Required. |
-| `wait` | seconds | Hold the video still this long, after the question appears, for the viewer to think (as `wait`). Default 0. |
-| `countdown` | `true` | A ring that empties over the wait. |
-| `choices` | list of texts | Possible answers, labelled A, B, C. `answer` then names the right one, which lights up as the others fade. |
-| `hint` | text | A smaller line that appears half way through the wait. |
-| `position` | a position | Default `center`. |
+| `text` | words, maths in `$` | The question. Or `tex` for a question that is only maths. |
+| `choices` | 2 to 8 texts | Possible answers, labelled A, B, C, appearing in turn. A choice written as `$...$` is maths. |
+| `wait` | seconds, or `false` | Hold the whole video still this long, after the narration line the question is asked in, for the viewer to try it. Default 5. |
+| `countdown` | `true`, `false` | The ring that empties over the wait, with "Pause and try". Default `true`. |
+| `hint` | words | Fades in half way through the wait, under the question. |
+| `position` | a screen place | Default `top`. |
+| `stay` | `true` | Otherwise the question stays until its `answer` is done (or for its `duration`). |
 
-`answer` reveals the answer to a `question`, with a tick. `"choice": "B"`
-for a question with choices.
+### answer (reveal_answer, solution)
 
-### mistake (common_error)
+Answers the last `question` in the scene.
 
-```json
-{ "at_line": 3, "do": "mistake", "tex": "(a+b)^2 = a^2 + b^2", "text": "A common slip" }
-```
+| Key | Meaning |
+| --- | --- |
+| `choice` | For a question with choices: the right one, by letter (`"B"`) or number (`2`). It lights in the `good` colour with a tick and the others fade. |
+| `text`, `tex` | Otherwise, the answer, on a panel under the question. |
+| `why` | One line of reason underneath. |
+| `stay` | `true` keeps the question and answer to the end of the scene. Otherwise they leave at the end of the answer's line (or its `duration`). |
 
-The wrong working is written, then a cross is stamped over it, with the
-`text` beside it. `"fix": "(a+b)^2 = a^2 + 2ab + b^2"` writes the right one
-beneath.
-
-### check, tick, cross
-
-`{ "do": "tick", "on": "eq3" }` or `"cross"`: a tick or cross drawn beside
-a thing, in the theme's `good` or `bad` colour.
-
-### definition, theorem, rule (card)
+### mistake (common_mistake, wrong_way)
 
 ```json
-{ "at_line": 2, "do": "definition", "title": "Prime number", "text": "A whole number above 1 whose only factors are 1 and itself.", "key": true }
-{ "at_line": 9, "do": "theorem", "title": "Pythagoras", "tex": "a^2 + b^2 = c^2", "key": true }
+{ "at_line": 3, "do": "mistake", "tex": "(a+b)^2 = a^2 + b^2", "fix": "(a+b)^2 = a^2 + 2ab + b^2", "reason": "the middle term is missing", "key": true }
 ```
 
-A framed panel with a heading in the accent colour, for things to remember.
-`definition`, `theorem`, `rule`, `formula` and `tip` look slightly different,
-so viewers learn to tell them apart. `position`: a screen position. Default `right`.
+The wrong working is written (or `who` names something already shown),
+then a red cross is stamped over it with the word MISTAKE, and it fades
+back. `reason` writes why under it, in red. `fix` (maths) or `fix_text`
+(words) writes the right version beneath, in green, with a tick. With
+`"key": true` the fix goes into the recap. `position` places a new wrong
+line.
 
-### step_counter (progress_steps)
+### tick, cross (correct, incorrect)
 
-`{ "at_line": 3, "do": "step_counter", "steps": 4, "now": 1, "position": "top_left" }`:
-"Step 1 of 4", with dots. A later beat with a new `now` moves it on.
-Or `"names": ["Expand", "Collect", "Factor", "Solve"]` shows a short row of
-named steps with the present one lit.
+`{ "do": "tick", "who": "eq3" }` or `"cross"`: a tick or a cross beside a
+thing, in the theme's `good` or `bad` colour, with a chime or a low note.
+`side`: `right` (default), `left`, or `over`. Or `position` for a mark
+anywhere. `size`, `color`.
 
-### recap (summary)
+### definition, theorem, rule, formula, tip (define, key_formula)
 
 ```json
-{ "at_line": 30, "do": "recap", "title": "What we saw", "duration": 8 }
+{ "at_line": 2, "do": "definition", "title": "Prime number", "text": "A whole number above 1 whose only factors are 1 and itself." }
+{ "at_line": 9, "do": "theorem", "title": "Pythagoras", "tex": "a^2 + b^2 = c^2" }
 ```
 
-Gathers every thing marked `"key": true` in the video, in order, and lays
-them out as a summary, each sliding in as the narrator reaches it.
-`"only": [ids]` instead picks its own. `"from_chapter": true` takes only
-what was marked in the present chapter.
+A panel with a word above the heading (DEFINITION, THEOREM, RULE, FORMULA,
+TIP), each kind in its own colour so viewers learn to tell them apart.
+`title`, `text`, `tex`; `label` replaces the word above (`"Lemma"`);
+`position` (default `top`); `width`; `stay`. Each goes into the `recap`
+unless given `"key": false`.
 
-### compare (side_by_side)
+### step_counter (step_number, progress)
 
-`{ "do": "compare", "left": "eq1", "right": "eq2", "text": ["Expected", "Actually"] }`:
-moves two things side by side with a heading over each and a thin line
-between.
+`{ "at_line": 3, "do": "step_counter", "step": 1, "of": 4 }`: a small
+"Step 1 / 4" tucked into a corner (`position`, default `top_left`). The next
+`step_counter` takes its place, so the counter moves on through the scene.
+`text` changes the word "Step" (for other languages: `"text": { "en":
+"Step", "hi": "चरण" }`).
+
+### recap (summary, sum_up)
+
+```json
+{ "at_line": 30, "do": "recap", "title": "What we found" }
+```
+
+Gathers everything marked `"key": true` so far in the video (equations,
+working, definitions, mistakes put right, cards), in order, on one card;
+each line rises in as the last settles (`lag`, default 0.6 seconds).
+`"from_chapter": true` takes only what was marked in the present chapter.
+`"items": [...]` gives the lines instead (a line written as `$...$` is
+maths). Up to seven lines fit; with more, the last seven are shown.
+
+### compare (versus, side_by_side)
+
+```json
+{ "do": "compare", "left": { "title": "Term by term", "tex": "a^2 + b^2" }, "right": { "title": "Expanded", "tex": "a^2 + 2ab + b^2" }, "better": "right" }
+```
+
+Two panels side by side with "vs" between. Each side takes `title`, `tex`,
+`text` and `items` (a list of points). `better` marks one side with a tick
+and the other with a cross.
 
 ---
 
@@ -2104,62 +2143,98 @@ Every one takes `stay`, `id`, `appear` (`fade`, `rise`, `pop`, `slide`,
 | `style` | `plain`, `box`, `banner`, `quote`, `note` | `note`: a slightly tilted handwritten note, as written in the margin. |
 | `size`, `color`, `glow`, `by` (for quotes) | | |
 
-### card (coming)
+### card (info, popup, fact)
 
-`title`, `text`, `kicker`, `number`, `unit`, `caption`, `tex` (a formula on
-the card), `side` (`left`, `right`), `position` (`top`, `middle`, `bottom`),
-`on` (a dotted line from the card to a thing on the sheet).
+```json
+{ "at_line": 5, "do": "card", "kicker": "Fact", "title": "Pi", "number": 3.14159, "text": "The same for every circle." }
+```
 
-### image (picture, clip) (coming)
+| Key | Meaning |
+| --- | --- |
+| `title`, `text`, `kicker` | A heading, a sentence, and a small word above in the accent colour. |
+| `number`, `unit` | A large number that counts up to its value as the card arrives. |
+| `tex` | A formula on the card. |
+| `caption` | A small line at the bottom. |
+| `side` | `right` (default) or `left`. |
+| `position` | `top` (default), `middle`, `bottom`. Cards showing at the same time in the same place stack. |
+| `on` | A position on the sheet (an id, a point name): a dotted line from the card to it. |
+| `width` | The least width. |
+
+### image (picture, photo, logo)
+
+```json
+{ "at_line": 7, "do": "image", "file": "bridge.jpg", "frame": "polaroid", "caption": "The Howrah Bridge", "position": "left", "motion": "in" }
+```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `file` | file name | Required the first time. |
-| `position`, `size` | | `size` also `full` for the whole frame. |
-| `frame` | `none`, `rounded`, `circle`, `polaroid` | Default `rounded`. |
+| `file` | `png`, `jpg`, `webp`, `svg` | Required the first time. Put it beside the script. Until it is opened, a plain box with its name is drawn. |
+| `position` | a screen place | Default `center`. |
+| `size` | `small`, `medium`, `large`, `huge`, `full` | Default `medium`. `full` fills the frame behind everything. |
+| `frame` | `none`, `rounded`, `circle`, `polaroid` | Default `rounded`. A polaroid is tilted a little, with its caption on the white card. |
 | `tone` | `none`, `mono`, `faded`, `warm`, `cold` | |
-| `motion` | `none`, `in`, `out`, `left`, `right` | A slow move across it. |
-| `on_sheet` | `true` | Put the picture on the sheet instead of over it, so the camera moves past it and maths can be drawn on top (a parabola over a photo of a bridge). |
-| `clip_from`, `loop` | | For film clips. |
+| `motion` | `none`, `in`, `out`, `left`, `right` | A slow move across it while it is seen. |
+| `caption` | words | Under the picture. |
+| `tilt` | degrees | |
+| `on_sheet` | `true` | Put the picture on the sheet instead of over it, with `position` a point on the sheet: the camera moves past it and maths can be drawn on top. |
 
-A later `image` with the same `id` and no `file` glides it to a new place.
+A later `image` with the same `id` and no `file` glides it to a new place
+and size. Film clips are coming.
 
-### counter (coming)
-
-`to`, `from`, `label`, `kicker`, `decimals`, `prefix` (`"₹"`), `suffix`
-(`"%"`), `plain` (no thousands separators), or `items` for several side by
-side. Can also show a named value live: `"value": "a"`.
-
-Number grouping follows each language (`1,00,000` in Hindi and other Indian
-languages where that is the custom, `100,000` in English, unless `grouping`
-says `"international"` or `"indian"`).
-
-### chips (coming)
-
-`items`, `kicker`, `position`, `lag`.
-
-### table (coming)
+### counter (count, ticker)
 
 ```json
-{ "at_line": 5, "do": "table", "head": ["$x$", "$x^2$"], "rows": [["1", "1"], ["2", "4"], ["3", "9"]], "lag": 0.5 }
+{ "at_line": 5, "do": "counter", "items": [ { "to": 1200000, "label": "people" }, { "to": 98.6, "suffix": "%", "label": "right" } ], "duration": 2 }
 ```
 
-Fills in row by row. `light`: a row or column number to highlight. A later
-`table` beat with the same `id` and `add` adds rows.
+`to`, `from` (default 0), `label`, `kicker`, `decimals`, `prefix`, `suffix`,
+or `items` for several side by side. `"value": "a"` shows a named value
+(section 18) live instead. The count takes the beat's `duration` (default
+1.6 seconds) and holds for `hold` seconds (default 2). `position` (default
+`center`), `size` (default `large`), `color`, `ease` (`"linear"` for an
+even count).
 
-### chart
+Number grouping follows each language: `12,00,000` in Hindi and other
+Indian languages, `1,200,000` in English, unless `grouping` says
+`"international"` or `"indian"`; `"plain": true` has no separators.
 
-`kind`: `bar`, `line`, `pie`, `dot`. `items`: `{ "label", "value", "color" }`.
-`title`, `unit`. Bars grow, lines draw on, pie slices open in turn.
+### chips (pills)
 
-### label (coming)
+`{ "do": "chips", "items": ["primes", "squares", "roots"], "kicker": "Today" }`:
+short words in rounded outlines, each popping in `lag` seconds (default
+0.35) after the last, wrapping onto more rows if needed. `position`, `size`.
 
-`on`, `text`, `side` (`above`, `below`, `left`, `right`, `auto`), `arrow`
-(`true`: a thin line from the label to the thing).
+### table
 
-### credits (coming)
+```json
+{ "at_line": 5, "do": "table", "head": ["$x$", "$x^2$"], "rows": [["1", "1"], ["2", "4"], ["3", "9"]], "light": 2 }
+```
 
-`lines`, with `#` before a heading.
+Fills in row by row, `lag` seconds apart (default 0.45). `head` is the
+heading row. `light`: a row number to light. `position`, `size`.
+
+### chart (bars, graph_chart)
+
+```json
+{ "do": "chart", "kind": "bar", "title": "Visitors", "items": [ { "label": "Mon", "value": 3 }, { "label": "Tue", "value": 5 } ] }
+```
+
+`kind`: `bar` (default), `line`, `pie`, `dot`. `items`: `{ "label",
+"value", "color" }`. `title`, `unit`, `position`, `size`. Bars and dots grow
+with their numbers counting, pie slices open in turn.
+
+### label (tag, pin)
+
+`{ "do": "label", "on": "P", "text": "the vertex", "side": "above", "arrow": true }`:
+words fixed to a thing or a point on the sheet; they move with it (a
+dragged geometry point, a sliding graph point). `side`: `above` (default),
+`below`, `left`, `right`. `arrow`: a thin arrow from the words to the
+place. Stays to the end of the scene unless the beat has a `duration`.
+
+### credits (roll)
+
+`{ "do": "credits", "lines": ["# Made by", "Your name", "# Music", "..."], "duration": 10 }`:
+lines rolling up the screen; a line starting with `#` is a heading.
 
 ### clear (dismiss)
 
@@ -2314,36 +2389,39 @@ When the script is opened the engine lists every problem it finds in plain
 English, with the place in the script and a suggested fix. Problems stop the
 build. Warnings do not, but are worth reading.
 
-### Maths checks (coming)
+### Maths checks
 
-| Check | What it looks at |
-| --- | --- |
-| Steps | Each step of `steps`, `work` and `solve` is equal to the one before (or, for an equation, has the same solutions). A step that is not is reported: "Scene 2, line 3 of the working: 3x = 25 does not follow from 3x + 5 = 20." |
-| Numbers | Numbers on cards, counters and answers that can be worked out from the script (an area, a root, a value) are checked. |
-| Answers | The `answer` to a `question` that is maths is checked. |
+Each step of `steps` and each line of `work` is worked out at a dozen random
+values and compared with the one before. An expression must give the same
+values; an equation must be the same equation (both sides multiplied or
+divided by the same amount is fine) or, with one unknown, have the same
+solutions. A step that does not is reported as a warning:
 
-A step that is meant to be wrong (in `mistake`) is not checked. One step can
-be excused with `"check": false`.
+> scenes[1].beats[3].lines[2]: "2x = 16" does not have the same solutions
+> as "2x + 5 = 11" (x = 3 before, x = 8 after).
 
-### Teaching checks (coming)
+Lines with words in them (`\text`), `\value`, sums, integrals, limits,
+inequalities or `±` are not checked. The wrong working in `mistake` is never
+checked. Excuse one step with `"check": false` on it (or on the whole
+`steps` or `work`), or all of them with `"checks": { "maths": false }`.
 
-Warnings about how the lesson will feel to a viewer:
+### Teaching checks
+
+Warnings about how the lesson will feel to a viewer. They begin with
+"teaching:" and never stop the video.
 
 | Warning | When |
 | --- | --- |
-| Too much at once | More than three new things appear within one second. |
-| Nothing moving | The picture does not change for more than 12 seconds. |
-| Fast speech | A line is spoken faster than 180 words a minute. |
-| Missing reasons | A `work` or `steps` step has no `note`. |
-| Colour clash | A colour given to a symbol in `symbols` is also used for something else. |
-| Crowded | Things overlap, or text runs off the frame. |
-| No question | A video longer than five minutes has no `question`. |
+| Slow start | Nothing appears in the first 8 seconds. |
+| Nothing moving | Nothing changes in a scene for more than 12 seconds. |
+| Too much at once | Five or more beats start within 1.5 seconds (what a scene opens with is not counted). |
+| Fast speech | With a made voice or a timed recording: a line is spoken faster than 3.6 words a second. |
+| Missing reasons | A `work` of three or more lines has no `note` on any line. |
+| No question | A video longer than five minutes has no `question` or `wait`. |
 | No recap | A video longer than five minutes has no `recap`. |
-| Slow start | Nothing appears in the first four seconds. |
-| Missing language | A line, title or label is missing a language of the video. |
+| Off the frame | On-screen words run off the edge of the frame. |
 
-Turn any of them off:
-`"checks": { "teaching": { "missing_reasons": false } }`.
+Turn them all off with `"checks": { "teaching": false }`.
 
 ### Muted viewing
 

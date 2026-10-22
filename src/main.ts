@@ -7,7 +7,7 @@ import '@fontsource/poppins/700.css';
 import '@fontsource/noto-sans-devanagari/400.css';
 import '@fontsource/noto-sans-devanagari/600.css';
 import { type Movie, compileMovie } from './engine/movie';
-import { Renderer } from './engine/render';
+import { Renderer, pictures } from './engine/render';
 import { exportMp4 } from './engine/export';
 import { mixAudio } from './engine/mix';
 import { encodeWav } from './engine/wav';
@@ -89,14 +89,34 @@ async function measureRecordings() {
   }
 }
 
+/** Pictures opened with the script, decoded once, with their sizes. */
+const imageSizes: Record<string, [number, number]> = {};
+async function decodePictures() {
+  for (const [n, buf] of files) {
+    if (!/\.(png|jpe?g|webp|svg)$/i.test(n) || pictures.has(n)) continue;
+    try {
+      const type = /\.svg$/i.test(n) ? 'image/svg+xml' : /\.png$/i.test(n) ? 'image/png' : /\.webp$/i.test(n) ? 'image/webp' : 'image/jpeg';
+      const url = URL.createObjectURL(new Blob([buf], { type }));
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      const bmp = await createImageBitmap(img);
+      URL.revokeObjectURL(url);
+      pictures.set(n, bmp);
+      imageSizes[n] = [bmp.width, bmp.height];
+    } catch { /* shown as a plain box with its name */ }
+  }
+}
+
 function compile(lang?: string): Movie {
-  return compileMovie(script, { lang, texts, voices, audioLengths, captions: captionsBox.checked });
+  return compileMovie(script, { lang, texts, voices, audioLengths, imageSizes, captions: captionsBox.checked });
 }
 
 async function build() {
   if (!script) return;
   await fontsReady();
   await measureRecordings();
+  await decodePictures();
   const lang = langSel.value || undefined;
   try {
     movie = compile(lang);
@@ -125,8 +145,8 @@ async function build() {
   movie.scenes.forEach((s) => {
     const d = document.createElement('div');
     d.className = 'scene';
-    d.innerHTML = `<span>${s.chapter ? `<b>${escape(s.chapter)}</b> · ` : ''}${escape(s.name)}</span><span class="t">${fmt(s.start)}</span>`;
-    d.onclick = () => seek(s.start);
+    d.innerHTML = `<span>${s.chapter ? `<b>${escape(s.chapter)}</b> · ` : ''}${escape(s.name)}</span><span class="t">${fmt(movie!.toVideo(s.start))}</span>`;
+    d.onclick = () => seek(movie!.toVideo(s.start));
     sceneList.append(d);
   });
   describeVoice();
@@ -359,6 +379,7 @@ async function takeFiles(list: FileList | File[]) {
     const buf = await f.arrayBuffer();
     files.set(f.name, buf);
     delete audioLengths[f.name];
+    pictures.delete(f.name);
     takeText(f.name, buf);
     if (/\.json$/i.test(f.name) && !/^voice_/i.test(f.name)) found = f;
   }
@@ -434,7 +455,7 @@ async function exportOne(m: Movie) {
   const base = `${m.title.replace(/[^\w\- ]/g, '').trim() || 'video'}_${m.lang}`;
   // The video, its subtitle file for YouTube, and the chapter list for the description.
   const out: [string, Blob][] = [[`${base}.mp4`, blob]];
-  if (m.narration.lines.length) out.push([`${base}.srt`, new Blob([toSrt(m.narration)], { type: 'text/plain' })]);
+  if (m.narration.lines.length) out.push([`${base}.srt`, new Blob([toSrt(m.narration, (t) => m.toVideo(t))], { type: 'text/plain' })]);
   const chapters = chapterList(m);
   if (chapters.text) out.push([`chapters_${m.lang}.txt`, new Blob([chapters.text], { type: 'text/plain' })]);
   for (const [name, b] of out) {

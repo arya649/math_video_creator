@@ -5,3 +5,5 @@ import './motion';
 import './graphics';
 import './graph';
 import './geometry';
+import './panels';
+import './teaching';

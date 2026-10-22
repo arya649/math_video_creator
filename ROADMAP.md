@@ -75,14 +75,29 @@ yet are marked "(coming)" there. This file tracks the stages.
 - Scene settings: squared paper, numbers, degrees or radians, decimals.
 - A `geometry` sample project.
 
-## Stage 5: teaching tools and graphics (next)
+## Stage 5: teaching tools and graphics (built)
 
-`question`, `answer`, `mistake`, `tick`/`cross`, definition cards,
-`step_counter`, `recap`, `compare`; `card`, `image`, `counter`, `chips`,
-`table`, `chart`, `label`, `credits`; `wait`; maths checks (SymPy or
-Compute Engine) and teaching checks.
+- `wait`: the whole video, voice included, holds still with a countdown;
+  subtitles, chapters, music and sounds all move on by the wait.
+- `question` (choices, hint half way through the hold, pause-and-try
+  countdown) and `answer` (the right choice lit, or written out, with a
+  reason).
+- `mistake` (stamped, reason, put right), `tick`, `cross`.
+- `definition`, `theorem`, `rule`, `formula`, `tip` cards; `step_counter`;
+  `recap` built from everything marked `key` (or one chapter's); `compare`.
+- `card` (counting number, stacking, a dotted line to the sheet), `image`
+  (frames, tones, slow moves, captions, on the sheet, gliding), `counter`
+  (Indian or international grouping by language), `chips`, `table`, `chart`
+  (bar, line, pie, dot), `label` (follows moving points), `credits`.
+- Maths checks: every step of `steps` and `work` compared with the one
+  before at random values (equal expressions, or equations with the same
+  solutions).
+- Teaching checks: slow start, nothing moving, too much at once, fast speech,
+  working without reasons, long videos without a question or recap, words
+  off the frame.
+- 33 more catalogue entries; a `teaching` sample project.
 
-## Stage 6: counting world
+## Stage 6: counting world (next)
 
 Number lines, dots, blocks, fractions, coins, dice, spinners, trees,
 sample spaces.
@@ -104,5 +119,6 @@ end screen, parallel rendering for long videos.
   not exact.
 - Browsers without an H.264 encoder (some Linux Chromium builds) make VP9
   video inside the MP4. Chrome and Edge on Windows and Mac make H.264.
+- Film clips in `image` are not built yet; pictures are.
 - Words (not maths) cannot be morphed; write them as `\text{...}` inside
   maths to morph them.

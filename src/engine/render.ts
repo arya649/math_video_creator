@@ -19,11 +19,17 @@ function makeCanvas(w: number, h: number): AnyCanvas {
   return c;
 }
 
+/** Pictures opened with the script, decoded, by file name. */
+export const pictures = new Map<string, CanvasImageSource & { width: number; height: number }>();
+
+const TONES: Record<string, string> = { none: 'none', mono: 'grayscale(1) contrast(1.05)', faded: 'saturate(0.55) brightness(1.08) contrast(0.9)', warm: 'sepia(0.35) saturate(1.2)', cold: 'saturate(0.8) hue-rotate(12deg) brightness(0.98)' };
+
 export class Renderer {
   private ctx: Ctx2D;
   private spare?: { canvas: AnyCanvas; ctx: Ctx2D };
   /** Captions drawn or not (the page's switch can change it). */
   captions = true;
+  private hold?: { at: number; u: number };
 
   constructor(public canvas: AnyCanvas, public movie: Movie) {
     canvas.width = movie.width;
@@ -40,11 +46,15 @@ export class Renderer {
     return this.spare;
   }
 
-  render(t: number) {
+  /** Draw the frame at video time T. */
+  render(T: number) {
     const { ctx, movie } = this;
     const W = movie.width, H = movie.height;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
+    // The script's clock stands still during a wait.
+    const { t, hold } = movie.toScript(T);
+    this.hold = hold;
     const layers = movie.frame(t);
     layers.forEach((layer, i) => {
       if (i === 0 && layer.alpha >= 1 && !layer.slide && layer.wipe === undefined) {
@@ -91,7 +101,7 @@ export class Renderer {
   drawScene(ctx: Ctx2D, scene: CompiledScene, t: number) {
     const W = this.movie.width, H = this.movie.height;
     const theme = scene.world.theme;
-    scene.applyState(t);
+    scene.applyState(t, this.hold);
     const view = scene.camera.viewAt(t);
     const k = (H / this.movie.frameH) * view.zoom;
     const base = ctx.getTransform();
@@ -179,6 +189,12 @@ export class Renderer {
       ctx.shadowColor = s.glowColor ?? resolve(own, theme.ink);
     }
 
+    if (th.image) {
+      this.drawImage(ctx, th, m, pxPerUnit, scene);
+      ctx.restore();
+      return;
+    }
+
     if (th.text) {
       this.drawText(ctx, th, m, pxPerUnit, resolve(own, theme.ink), base);
       ctx.restore();
@@ -263,6 +279,65 @@ export class Renderer {
       if (reveal < 1) ctx.restore();
     }
     ctx.restore();
+  }
+
+  private drawImage(ctx: Ctx2D, th: Thing, m: Mat, pxPerUnit: number, scene: CompiledScene) {
+    const img = th.image!;
+    const theme = scene.world.theme;
+    const pic = pictures.get(img.file);
+    // Drawn in pixels, y down, turned and placed like the thing.
+    const p = pxPerUnit;
+    const w = img.w * p, h = img.h * p;
+    const a = th.state.drawn;
+    ctx.setTransform(ctx.getTransform().multiply(new DOMMatrix([m[0] / p, m[1] / p, m[2] / p, m[3] / p, m[4], m[5]])));
+    ctx.scale(1, -1);
+    ctx.globalAlpha *= a < 1 ? clamp(a) : 1;
+    // Polaroid: a white card with room for the caption under the picture.
+    const border = img.frame === 'polaroid' ? Math.min(w, h) * 0.05 : 0;
+    const bottom = img.frame === 'polaroid' ? border * 3.2 : 0;
+    if (img.frame === 'polaroid') {
+      ctx.save();
+      ctx.shadowBlur = 0.15 * p; ctx.shadowColor = 'rgba(0,0,0,0.35)';
+      ctx.fillStyle = '#fbfaf6';
+      ctx.fillRect(-w / 2 - border, -h / 2 - border, w + border * 2, h + border + bottom);
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.beginPath();
+    if (img.frame === 'circle') ctx.ellipse(0, 0, Math.min(w, h) / 2, Math.min(w, h) / 2, 0, 0, Math.PI * 2);
+    else if (img.frame === 'rounded') roundRectPath(ctx, -w / 2, -h / 2, w, h, Math.min(w, h) * 0.05);
+    else ctx.rect(-w / 2, -h / 2, w, h);
+    ctx.clip();
+    if (pic) {
+      // A slow move while it is seen.
+      const u = clamp((scene.world.now - img.start) / Math.max(0.5, img.length));
+      const z = img.motion === 'in' ? 1 + 0.08 * u : img.motion === 'out' ? 1.08 - 0.08 * u : img.motion === 'none' ? 1 : 1.08;
+      const dx = img.motion === 'left' ? (0.5 - u) * 0.07 * w : img.motion === 'right' ? (u - 0.5) * 0.07 * w : 0;
+      // Cover the box, keeping the picture's shape.
+      const k = Math.max(w / pic.width, h / pic.height) * z;
+      const pw = pic.width * k, ph = pic.height * k;
+      if ('filter' in ctx) ctx.filter = TONES[img.tone] ?? 'none';
+      ctx.drawImage(pic, -pw / 2 + dx, -ph / 2, pw, ph);
+      if ('filter' in ctx) ctx.filter = 'none';
+    } else {
+      // Not opened yet: a plain box with the file's name.
+      ctx.fillStyle = withAlpha(theme.ink, 0.12);
+      ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.fillStyle = withAlpha(theme.ink, 0.6);
+      ctx.font = fontString(500, false, 'sans-serif', Math.min(w, h) * 0.08);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(img.file, 0, 0);
+    }
+    ctx.restore();
+    if (img.caption) {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const cs = Math.max(0.2 * p, Math.min(w, h) * 0.07);
+      ctx.font = fontString(500, false, theme.fonts.text, cs);
+      if (img.frame === 'polaroid') { ctx.fillStyle = '#2b2b2b'; ctx.fillText(img.caption, 0, h / 2 + bottom / 2); }
+      else { ctx.fillStyle = withAlpha(theme.ink, 0.8); ctx.fillText(img.caption, 0, h / 2 + cs * 1.1); }
+    }
   }
 
   private drawText(ctx: Ctx2D, th: Thing, m: Mat, pxPerUnit: number, col: string, base: DOMMatrix) {
@@ -410,3 +485,12 @@ function thingBox(glyphs: Glyph[]) {
 }
 
 export const _test = { resolve, contourLength, withAlpha };
+
+function roundRectPath(ctx: Ctx2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
