@@ -14,6 +14,7 @@
     button, select, label.btn { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
     button:hover, label.btn:hover { border-color: #444a58; }
     button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+    button:disabled { opacity: 0.45; cursor: default; }
     main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 53px); }
     @media (max-width: 900px) { main { grid-template-columns: 1fr; height: auto; } }
     #stage { display: flex; flex-direction: column; padding: 16px; gap: 10px; min-width: 0; }
@@ -44,6 +45,7 @@
     <label><input id="captions" type="checkbox" checked /> Captions</label>
     <label><input id="muted" type="checkbox" /> Muted preview</label>
     <button id="export" class="primary" disabled>Export MP4</button>
+    <button id="export-all" disabled title="One video for every language of the script">Export all languages</button>
     <span id="status" class="muted"></span>
     <a href="catalog.html" style="margin-left:auto">Catalogue</a>
   </header>
@@ -63,6 +65,14 @@
       <div id="scenes"></div>
       <h2>Narration</h2>
       <div id="narration" class="muted"></div>
+      <h2>Voice</h2>
+      <div id="voice-info" class="muted" style="margin-bottom:8px"></div>
+      <input id="key" type="password" placeholder="ElevenLabs key" title="Or put it in the script (voice.api_key), or open a file ending in key.txt with the script" autocomplete="off" style="width:100%;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit" />
+      <label class="muted" style="display:block;margin:6px 0 10px"><input id="remember" type="checkbox" /> Remember the key on this computer</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="make-voice" disabled title="Make the narration with the script's ElevenLabs voice">Make voice</button>
+        <button id="align" disabled title="Get exact word times for your own recording">Time my recording</button>
+      </div>
     </aside>
   </main>
   <script type="module" src="/src/main.ts"></script>

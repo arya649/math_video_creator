@@ -41,12 +41,23 @@ yet are marked "(coming)" there. This file tracks the stages.
   undo).
 - 51 more catalogue entries; a `graphs` sample project (`?project=graphs`).
 
-## Stage 3: voice and sound (next)
+## Stage 3: voice and sound (built)
 
-Making the voice with ElevenLabs (exact word times), music with ducking,
-engine-made sound effects, `sound`, Export all.
+- The voice two ways, per language: the creator's own recording, or a voice
+  made with ElevenLabs.
+- The ElevenLabs key from the script, a key file, or the page's key box.
+- Made voices: line by line with exact character times, put together with
+  the script's pauses, kept as `voice_<lang>.wav` and `.json`, every line
+  cached in the browser so nothing is paid for twice.
+- Own recordings timed by a subtitle file, exactly by ElevenLabs forced
+  alignment (**Time my recording**), or by the estimate fitted to the
+  recording's length.
+- Maths in lines read aloud (English and Hindi), `say` for pronunciations.
+- Music with fades, loops and ducking under the voice; `sound` files; the
+  engine's own sounds (pen, chalk, pop, click, chime, low, whoosh, swell).
+- The preview plays the full mix; Export all languages.
 
-## Stage 4: geometry world
+## Stage 4: geometry world (next)
 
 Points, constructions with compass arcs, angles, marks, `drag`,
 transformations, cut and rearrange.

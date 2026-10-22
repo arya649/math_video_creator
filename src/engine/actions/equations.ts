@@ -255,6 +255,7 @@ registerAction('steps', {
       const tex = texOf(item, asMath, where);
       const newLine = spec.new_line === true ? { id: list.length === 1 && typeof spec.id === 'string' ? spec.id : world.newIdFor(t.id), gap: spec.gap } : undefined;
       t = addStep(ctx, t, tex, start, per, { newLine, where });
+      ctx.sound('click', start + per * 0.85);
       end = start + per;
       const note = notes[i];
       if (typeof note === 'string') addNote(ctx, t, note, end - per * 0.3, side, `${ctx.where}.note`);

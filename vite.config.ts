@@ -8,13 +8,17 @@ function saver(): Plugin {
     name: 'save-renders',
     configureServer(server) {
       server.middlewares.use('/__save', (req, res) => {
-        const name = new URL(req.url ?? '', 'http://x').searchParams.get('name') ?? 'out.bin';
+        const params = new URL(req.url ?? '', 'http://x').searchParams;
+        const name = params.get('name') ?? 'out.bin';
         const safe = name.replace(/[^\w.\-]/g, '_');
+        // With a project: into that project's folder (made voices); else into renders/.
+        const project = params.get('project')?.replace(/[^\w\-]/g, '_');
+        const dir = project ? resolve('public/projects', project) : resolve('renders');
         const chunks: Buffer[] = [];
         req.on('data', (c: Buffer) => chunks.push(c));
         req.on('end', () => {
-          mkdirSync('renders', { recursive: true });
-          writeFileSync(resolve('renders', safe), Buffer.concat(chunks));
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(resolve(dir, safe), Buffer.concat(chunks));
           res.end('ok');
         });
       });

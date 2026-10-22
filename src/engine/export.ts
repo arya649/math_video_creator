@@ -3,6 +3,7 @@
 import { AudioBufferSource, BufferTarget, CanvasSource, Mp4OutputFormat, Output, Quality, canEncodeAudio, canEncodeVideo } from 'mediabunny';
 import type { Movie } from './movie';
 import { Renderer } from './render';
+import { mixAudio } from './mix';
 
 export interface ExportOptions {
   /** Sound files opened with the script, by name. */
@@ -11,21 +12,6 @@ export interface ExportOptions {
   onProgress?: (done: number) => void;
   /** Stop early (for a quick test). */
   until?: number;
-}
-
-/** Mix the narration (and later music and effects) into one track. */
-export async function mixAudio(movie: Movie, files: Map<string, ArrayBuffer>): Promise<AudioBuffer | null> {
-  if (!movie.audio) return null;
-  const data = files.get(movie.audio);
-  if (!data) throw new Error(`The sound file "${movie.audio}" was not opened with the script.`);
-  const rate = 48000;
-  const ctx = new OfflineAudioContext(2, Math.ceil(movie.duration * rate), rate);
-  const buf = await ctx.decodeAudioData(data.slice(0));
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  src.connect(ctx.destination);
-  src.start(0);
-  return ctx.startRendering();
 }
 
 export async function exportMp4(movie: Movie, opts: ExportOptions): Promise<Blob> {

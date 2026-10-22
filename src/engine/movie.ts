@@ -2,14 +2,14 @@
 
 import './actions/index';
 import { makeWorldAxes } from './actions/graph';
-import { ACTIONS, BEAT_KEYS, type Ctx, type Done, type Spec, findAction } from './actions';
+import { ACTIONS, BEAT_KEYS, type Ctx, type Done, SOUND_KINDS, type SoundKind, type Spec, findAction } from './actions';
 import { CameraPlan, SHOT_KEYS, readCamera } from './camera';
 import {
-  type Narration, type VoiceTimes, estimateNarration, narrationFromSrt, narrationFromVoice, parseSrt, readLines,
+  type Narration, type VoiceTimes, estimateNarration, narrationFromSrt, narrationFromVoice, parseSrt, readLines, scaledNarration,
 } from './narration';
 import { type Theme, readTheme, colorOf } from './themes';
 import { ScriptError, choice, clamp, didYouMean, isObject } from './util';
-import { type Action, SceneWorld, WORLDS, type WorldKind } from './world';
+import { type Action, SceneWorld, type SoundEvent, WORLDS, type WorldKind } from './world';
 
 export const TOP_KEYS = [
   'title', 'languages', 'voice', 'audio', 'subtitles', 'theme', 'style', 'symbols', 'format', 'fps', 'captions', 'music',
@@ -41,6 +41,19 @@ export interface Background {
   style: 'plain' | 'gradient' | 'grid' | 'dots' | 'lined';
   colors?: string[];
   spacing: number;
+}
+
+/** A music track, with its times worked out. */
+export interface MusicTrack {
+  file: string;
+  start: number;
+  end?: number;
+  volume: number;
+  loop: boolean;
+  fadeIn: number;
+  fadeOut: number;
+  /** Share of its volume while the narrator speaks. */
+  duck: number;
 }
 
 export interface CaptionSettings {
@@ -108,6 +121,10 @@ export class Movie {
     public scenes: CompiledScene[],
     public warnings: string[],
     public audio: string | undefined,
+    /** Music under the narration. */
+    public music: MusicTrack[] = [],
+    /** One-off sounds: the engine's own and sound files. */
+    public sounds: SoundEvent[] = [],
   ) {}
 
   sceneAt(t: number): number {
@@ -151,8 +168,10 @@ function transitionLayers(a: CompiledScene, b: CompiledScene, u: number): Layer[
 export interface CompileOptions {
   /** The language to make. Default: the first of the script's languages. */
   lang?: string;
-  /** Times of made voices, per language. */
+  /** Exact times per language: a made voice, or the creator's recording lined up with the words. */
   voices?: Record<string, VoiceTimes>;
+  /** Lengths in seconds of sound files opened with the script, by name. */
+  audioLengths?: Record<string, number>;
   /** Text of subtitle files, by file name. */
   texts?: Record<string, string>;
   /** Override the script's captions (the page's switch). */
@@ -216,16 +235,35 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
 
   // ---- Narration ----
   const lines = readLines(script.lines, lang, languages, 'lines');
+  // The narration's sound and times. Either the creator's own recording
+  // (timed by its subtitle file, by lining it up with the words, or by
+  // stretching the estimate to its length), or a voice the engine made, or
+  // no sound yet (times estimated from the words).
   let narration: Narration;
+  let audio: string | undefined;
   const subs = isObject(script.subtitles) ? script.subtitles[lang] : undefined;
-  if (opts.voices?.[lang]) narration = narrationFromVoice(lines, opts.voices[lang], 'voice');
-  else if (typeof subs === 'string') {
-    const text = opts.texts?.[subs];
-    if (text === undefined) throw new ScriptError(`names the subtitle file "${subs}", which was not opened with the script.`, `subtitles.${lang}`);
-    narration = narrationFromSrt(parseSrt(text));
+  const audioSpec = script.audio === undefined ? undefined : isObject(script.audio) ? script.audio[lang] : languages.length === 1 ? script.audio : undefined;
+  if (script.audio !== undefined && !isObject(script.audio) && typeof script.audio !== 'string') {
+    throw new ScriptError('must be a sound file, or a sound file per language: { "en": "narration_en.mp3" }.', 'audio');
+  }
+  const voice = opts.voices?.[lang];
+  if (typeof audioSpec === 'string') {
+    audio = audioSpec;
+    if (typeof subs === 'string') {
+      const text = opts.texts?.[subs];
+      if (text === undefined) throw new ScriptError(`names the subtitle file "${subs}", which was not opened with the script.`, `subtitles.${lang}`);
+      narration = narrationFromSrt(parseSrt(text));
+    } else if (voice && voice.kind === 'aligned' && (!voice.audio || voice.audio === audioSpec)) {
+      narration = narrationFromVoice(lines, voice, `audio.${lang}`);
+    } else if (opts.audioLengths?.[audioSpec] !== undefined) {
+      narration = scaledNarration(lines, opts.audioLengths[audioSpec]);
+    } else narration = estimateNarration(lines);
+  } else if (voice) {
+    narration = narrationFromVoice(lines, voice, 'voice');
+    audio = voice.audio ?? `voice_${lang}.wav`;
+  } else if (typeof subs === 'string') {
+    throw new ScriptError(`gives a subtitle file for "${lang}" but no recording under "audio".`, `subtitles.${lang}`);
   } else narration = estimateNarration(lines);
-  const audioSpec = isObject(script.audio) ? script.audio[lang] : undefined;
-  const audio = typeof audioSpec === 'string' ? audioSpec : opts.voices?.[lang] ? `voice_${lang}.mp3` : undefined;
 
   const lineByRef = (ref: unknown, where: string) => {
     const l = typeof ref === 'number'
@@ -261,6 +299,10 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     cap.maths = capSpec.maths !== false;
   }
   if (opts.captions !== undefined) cap.on = opts.captions;
+
+  // ---- The engine's own sounds ----
+  const soundLevel = choice(script.sounds, ['none', 'soft', 'lively'] as const, 'sounds', 'soft');
+  const soundVolume = soundLevel === 'lively' ? 0.5 : 0.25;
 
   // ---- Scenes ----
   if (!Array.isArray(script.scenes) || !script.scenes.length) throw new ScriptError('needs at least one scene.', 'scenes');
@@ -360,6 +402,12 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       spec: b, where: w, world, start: startAt, duration, speed, lineEnd,
       timeOf: (spec, ww, after) => timeOf(spec, ww, after),
       act: (a) => pushAction(a, w),
+      sound: (kind: SoundKind, at: number, dur?: number) => {
+        if (soundLevel === 'none' || b.sound === false) return;
+        // Soft keeps the quieter writing sounds quieter still.
+        const v = soundVolume * (kind === 'pen' || kind === 'chalk' ? 0.5 : 1);
+        world.sounds.push({ at, kind, duration: dur, volume: v });
+      },
       buildNested: (spec, ww, st) => buildBeat(spec, ww, st, undefined, undefined),
     });
 
@@ -377,6 +425,13 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       const speed = speedWord === undefined ? 1 : typeof speedWord === 'number' ? speedWord : ({ slow: 0.6, normal: 1, quick: 1.6 } as Record<string, number>)[String(speedWord)];
       if (!speed || speed <= 0) throw new ScriptError('must be "slow", "normal", "quick" or a number above 0.', `${w}.speed`);
       const ctx = makeCtx(b, w, startAt, duration, lineEnd, speed);
+      if (typeof b.sound === 'string') {
+        // A sound chosen by the beat itself, as well as (or instead of) its own.
+        const kind = choice(b.sound, SOUND_KINDS, `${w}.sound`);
+        world.sounds.push({ at: startAt, kind, volume: Math.max(soundVolume, 0.25) });
+      } else if (b.sound !== undefined && b.sound !== false) {
+        throw new ScriptError(`must be false (silent) or one of ${SOUND_KINDS.join(', ')}.`, `${w}.sound`);
+      }
       try {
         return def.build(ctx);
       } catch (err) {
@@ -429,13 +484,49 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
 
   const duration = typeof script.duration === 'number'
     ? script.duration
-    : Math.max(narration.end + 1, lastEnd + 1, scenes[scenes.length - 1].start + 2);
+    : Math.max(narration.end + 1, lastEnd + 1, scenes[scenes.length - 1].start + 2, opts.audioLengths?.[audio ?? ''] ?? 0);
   const last = scenes[scenes.length - 1];
   last.end = duration;
   last.world.end = duration;
   const title = typeof script.title === 'string' ? script.title : isObject(script.title) ? String(script.title[lang] ?? 'Untitled') : 'Untitled';
 
-  return new Movie(title, lang, languages, theme, width, height, sheet.w, sheet.h, Number(fps), duration, narration, cap, scenes, warnings, audio);
+  // ---- Music ----
+  const music: MusicTrack[] = [];
+  if (script.music !== undefined) {
+    const list = Array.isArray(script.music) ? script.music : [script.music];
+    list.forEach((raw, i) => {
+      const w = Array.isArray(script.music) ? `music[${i}]` : 'music';
+      const m = typeof raw === 'string' ? { file: raw } : raw;
+      if (!isObject(m) || typeof m.file !== 'string') throw new ScriptError('must be a sound file, or { "file": "music.mp3", ... }.', w);
+      warnKeys(m, ['file', 'volume', 'start', 'start_line', 'start_cue', 'end', 'end_line', 'end_cue', 'loop', 'fade_in', 'fade_out', 'duck'], w);
+      const when = (key: 'start' | 'end'): number | undefined => {
+        if (typeof m[key] === 'number') return m[key] as number;
+        if (m[`${key}_line`] !== undefined) { const l = lineByRef(m[`${key}_line`], `${w}.${key}_line`); return key === 'start' ? l.start : l.end; }
+        if (m[`${key}_cue`] !== undefined) return cueTime(m[`${key}_cue`], `${w}.${key}_cue`);
+        return undefined;
+      };
+      const num = (k: string, lo: number, hi: number, d: number) => {
+        const v = m[k];
+        if (v === undefined) return d;
+        if (typeof v !== 'number' || v < lo || v > hi) throw new ScriptError(`must be a number from ${lo} to ${hi}.`, `${w}.${k}`);
+        return v;
+      };
+      music.push({
+        file: m.file, start: when('start') ?? 0, end: when('end'), volume: num('volume', 0, 2, 0.3), loop: m.loop === true,
+        fadeIn: num('fade_in', 0, 60, 0), fadeOut: num('fade_out', 0, 60, 0), duck: num('duck', 0, 1, 0.5),
+      });
+    });
+  }
+
+  // ---- One-off sounds ----
+  const sounds: SoundEvent[] = scenes.flatMap((sc) => sc.world.sounds);
+  if (soundLevel !== 'none') {
+    for (const sc of scenes) {
+      if (sc.transition.startsWith('slide') || sc.transition === 'wipe') sounds.push({ at: sc.start - sc.transitionDuration, kind: 'whoosh', volume: soundVolume });
+    }
+  }
+
+  return new Movie(title, lang, languages, theme, width, height, sheet.w, sheet.h, Number(fps), duration, narration, cap, scenes, warnings, audio, music, sounds.sort((a, b) => a.at - b.at));
 }
 
 function readBackground(s: Spec, theme: Theme, where: string): Background {

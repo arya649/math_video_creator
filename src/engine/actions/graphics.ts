@@ -155,3 +155,17 @@ registerAction('clear', {
 }, ['dismiss']);
 
 export const clamp01 = clamp;
+
+registerAction('sound', {
+  summary: 'Play a sound file once, starting at the beat.',
+  params: ['file', 'volume', 'fade_in', 'fade_out'],
+  required: ['file'],
+  build(ctx) {
+    const file = str(ctx, 'file', true)!;
+    const volume = typeof ctx.spec.volume === 'number' ? ctx.spec.volume : 1;
+    if (volume < 0 || volume > 4) throw new ScriptError('must be from 0 to 4.', `${ctx.where}.volume`);
+    const n = (k: string) => (typeof ctx.spec[k] === 'number' ? (ctx.spec[k] as number) : undefined);
+    ctx.world.sounds.push({ at: ctx.start, file, duration: ctx.duration, volume, fadeIn: n('fade_in'), fadeOut: n('fade_out') });
+    return { end: ctx.start };
+  },
+}, ['sfx', 'play']);

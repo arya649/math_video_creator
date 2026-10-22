@@ -77,6 +77,20 @@ add({
   beats: [{ at_cue: 'sq', do: 'write', tex: '(a+b)^2', size: 'large' }, { at: 0, do: 'text', text: { hi: 'योग का वर्ग', en: 'The square of a sum' }, position: 'top', stay: true }], still: 2,
 });
 
+add({
+  id: 'voice:made-voice', title: 'A voice made with ElevenLabs', showTop: true,
+  top: { voice: { provider: 'elevenlabs', en: { voice: 'a voice name', speed: 1 }, say: { sin: 'sine' } } },
+  lines: ['The voice says this line; the engine knows when every word is said.'], beats: [eq('\\sin^2 x + \\cos^2 x = 1')], still: 2.5,
+});
+add({
+  id: 'voice:own-recording', title: 'Your own recording', showTop: true,
+  top: { audio: 'my_recording.mp3' },
+  lines: ['Pictures are timed to your recording.'], beats: [eq('a^2 + b^2 = c^2')], still: 2,
+});
+add({ id: 'sound:engine-sounds', title: 'The engine\'s own sounds', showTop: true, top: { sounds: 'lively' }, beats: [eq('x + 2 = 5'), { at: 1.2, do: 'steps', who: 'eq', to: 'x = 3' }, { at: 2.6, do: 'draw', shape: 'tick', position: 'right' }], still: 3 });
+add({ id: 'sound:beat-sound', title: 'A beat\'s own sound', beats: [{ at: 0, do: 'title', text: 'Chapter one', sound: 'swell', duration: 3 }], still: 1.5 });
+add({ id: 'sound:music', title: 'Music under the voice', showTop: true, top: { music: { file: 'music.mp3', volume: 0.3, loop: true, fade_in: 2, duck: 0.4 } }, lines: ['The music drops while I speak.'], beats: [eq('\\pi \\approx 3.14159')], still: 2 });
+
 // ---- Equations ----
 add({ id: 'eq:write', title: 'write', beats: [eq('\\int_0^1 x^2\\,dx = \\frac{1}{3}')], still: 1.2 });
 add({ id: 'eq:write-plain', title: 'write in plain maths', beats: [{ at: 0, do: 'write', math: '2*x^2 + 3*x - 5 = 0', size: 'large' }] });
@@ -244,5 +258,5 @@ export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
   scene: 'Worlds and backgrounds', look: 'Look: themes and colours', voice: 'Narration and captions', eq: 'Equations',
-  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes',
+  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound',
 };

@@ -12,6 +12,17 @@ import type { Scope } from './graph/expr';
 
 export interface Value { start: number; now: number; decimals: number }
 
+/** One sound at a moment: the engine's own (kind) or a file. */
+export interface SoundEvent {
+  at: number;
+  kind?: string;
+  file?: string;
+  duration?: number;
+  volume: number;
+  fadeIn?: number;
+  fadeOut?: number;
+}
+
 export const WORLDS = ['board', 'graph', 'geometry', 'counting', 'space'] as const;
 export type WorldKind = (typeof WORLDS)[number];
 
@@ -59,6 +70,8 @@ export class SceneWorld {
   /** Things worked out afresh every frame, after the actions (graphs, points). */
   livers: ((t: number) => void)[] = [];
   axes = new Map<string, Axes>();
+  /** Sounds asked for in this scene: the engine's own, and sound files. */
+  sounds: SoundEvent[] = [];
   /** The time of the frame being drawn; Infinity while compiling (everything as last built). */
   now = Infinity;
   graphs = new Map<string, Graph>();

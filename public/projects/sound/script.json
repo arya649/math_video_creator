@@ -1,0 +1,21 @@
+{
+  "title": "Sound test",
+  "audio": "my_recording.mp3",
+  "music": { "file": "music.mp3", "volume": 0.4, "loop": true, "fade_in": 1, "fade_out": 2, "duck": 0.3 },
+  "sounds": "lively",
+  "lines": [
+    "This line is said by my own recording.",
+    "Its times are fitted to the recording's {len}length.",
+    "And a {done}tick at the end."
+  ],
+  "scenes": [
+    {
+      "beats": [
+        { "at_line": 1, "do": "write", "id": "eq", "tex": "x^2 + 1 = 10", "size": "large" },
+        { "at_cue": "len", "do": "steps", "who": "eq", "to": "x^2 = 9" },
+        { "at_cue": "done", "do": "draw", "shape": "tick", "position": "right", "size": 1 },
+        { "at_cue": "done", "offset": 0.6, "do": "text", "text": "Done", "position": "bottom", "sound": "swell" }
+      ]
+    }
+  ]
+}

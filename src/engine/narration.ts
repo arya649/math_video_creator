@@ -24,11 +24,19 @@ export interface Narration {
   cues: Map<string, number>;
   end: number;
   /** Where the times came from. */
-  source: 'voice' | 'subtitles' | 'estimate' | 'none';
+  source: 'voice' | 'aligned' | 'subtitles' | 'scaled' | 'estimate' | 'none';
 }
 
-/** Times recorded with a made voice (voice_<language>.json). */
+/**
+ * Exact times of every line and word: from a voice the engine made
+ * (voice_<language>.json beside voice_<language>.wav), or from lining up the
+ * creator's own recording with the script's words.
+ */
 export interface VoiceTimes {
+  /** "made": the engine made the voice. "aligned": the creator's recording, timed. */
+  kind?: 'made' | 'aligned';
+  /** The sound file these times belong to. */
+  audio?: string;
   lines: { start: number; end: number; words: WordTime[] }[];
 }
 
@@ -112,6 +120,17 @@ export function estimateNarration(lines: ScriptLine[], lead = 0.6): Narration {
   return { lines: out, cues, end: t, source: lines.length ? 'estimate' : 'none' };
 }
 
+/** The estimate, stretched or squeezed to fit a recording of known length. */
+export function scaledNarration(lines: ScriptLine[], length: number): Narration {
+  const est = estimateNarration(lines);
+  if (!lines.length || est.end <= 0) return est;
+  const k = Math.max(0.05, length - 0.3) / (est.end - lines[lines.length - 1].pause);
+  const s = (t: number) => t * k;
+  const out = est.lines.map((l) => ({ ...l, start: s(l.start), end: s(l.end), words: l.words.map((w) => ({ ...w, start: s(w.start), end: s(w.end) })) }));
+  const cues = new Map([...est.cues].map(([n, t]) => [n, s(t)]));
+  return { lines: out, cues, end: length, source: 'scaled' };
+}
+
 export function narrationFromVoice(lines: ScriptLine[], times: VoiceTimes, where: string): Narration {
   if (times.lines.length !== lines.length) {
     throw new ScriptError(`the voice has ${times.lines.length} lines but the script has ${lines.length}. Make the voice again.`, where);
@@ -123,7 +142,7 @@ export function narrationFromVoice(lines: ScriptLine[], times: VoiceTimes, where
     for (const c of marks) cues.set(c.name, c.word < v.words.length ? v.words[c.word].start : v.end);
     return { n: i + 1, id: line.id, text, start: v.start, end: v.end, words: v.words };
   });
-  return { lines: out, cues, end: out.length ? out[out.length - 1].end : 0, source: 'voice' };
+  return { lines: out, cues, end: out.length ? out[out.length - 1].end : 0, source: times.kind === 'aligned' ? 'aligned' : 'voice' };
 }
 
 // ---- Subtitle files ----

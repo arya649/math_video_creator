@@ -183,6 +183,8 @@ export function drawShape(ctx: Ctx, start: number): { end: number; thing: Thing 
   const { how, from } = readAppear(ctx, 'draw');
   const d = natural(ctx, 1);
   if (spec.hidden !== true) arrive(ctx, t, how, start, d, from);
+  if (spec.shape === 'tick') ctx.sound('chime', start + d * 0.8);
+  if (spec.shape === 'cross') ctx.sound('low', start + d * 0.5);
   if (typeof spec.label === 'string') {
     const at = spec.label_at !== undefined ? world.point(spec.label_at, `${ctx.where}.label_at`) : null;
     const lab = sheetText(ctx, world.newId('label'), spec.label, TEXT_SIZES.small, [0, 0], { color: color(ctx, 'color', world.theme.ink) });

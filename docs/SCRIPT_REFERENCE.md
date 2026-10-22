@@ -59,7 +59,7 @@ their headings, and the engine says so plainly if a script uses them.
 | Built | Coming |
 | --- | --- |
 | The `board` and `graph` worlds; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `geometry`, `counting` and `space` worlds; drawing styles other than `vector`; pictures as backgrounds |
-| Narration `lines` in every language, cue marks, `@strings`, word-by-word timing estimated from the words, your own recording with its subtitle file, voice times files | Making the voice from inside the engine (text-to-speech) |
+| Narration `lines` in every language, cue marks, `@strings`; a voice made with ElevenLabs, or the creator's own recording (timed by a subtitle file, exactly with ElevenLabs, or by an estimate fitted to it) | Voice services other than ElevenLabs |
 | Captions (karaoke and plain, with the on/off switch), muted preview | |
 | Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed` | `wait` |
 | Equations: `write`, `steps`, `rearrange`, `work`, `highlight`, `box`, `cancel`, `brace`, `label_part`, `substitute`, `pull_out`, `color`, `swap` | `solve`, `evaluate`; checking that steps are equal |
@@ -69,7 +69,7 @@ their headings, and the engine says so plainly if a script uses them.
 | On-screen graphics: `title`, `text`, `clear` | `card`, `image`, `counter`, `chips`, `table`, `chart`, `label`, `credits` |
 | Camera: `rest`, `frame`, `zoom`, `pan`, `follow` | `tilt`, `fly`, `orbit`, `look`; `lift` |
 | Transitions: `cut`, `fade`, `black`, `slide` (all four ways), `wipe` | `morph`, `fly`, `zoom`, `rub`, `page`; `keep` |
-| Export to MP4 with the narration's sound, with its `.srt` subtitle file and YouTube chapter list; script problems and warnings | Music and sound effects; thumbnail and end screen; maths and teaching checks |
+| Export to MP4 (one language, or all) with narration, music, sound files and the engine's own sounds, with its `.srt` subtitle file and YouTube chapter list; script problems and warnings | `sonify`; thumbnail and end screen; maths and teaching checks |
 
 Contents:
 
@@ -99,7 +99,7 @@ Contents:
 24. The mascot (coming)
 25. On-screen graphics
 26. Camera
-27. Sound (coming, except the narration)
+27. Sound
 28. Long videos: chapters, thumbnail, end screen (thumbnail and end screen coming)
 29. Checks: maths, teaching, muted viewing
 30. Names you can use
@@ -154,7 +154,7 @@ A video is a script plus the files it names:
 | File | Named in the script by | Notes |
 | --- | --- | --- |
 | Script | (the `.json` file itself) | Required. |
-| Narration audio | `voice` (made by the engine), or `audio` per language | mp3, wav, m4a, ogg. See section 7. |
+| Narration audio | `audio` (your recording), or `voice` (made by the engine) | mp3, wav, m4a, ogg. See section 7. |
 | Subtitles | `subtitles` per language | Only when you supply your own recording instead of a made voice. |
 | Music, sound effects | `music` at the top, or `"file"` in a `sound` action | mp3, wav, m4a, ogg. |
 | Pictures | `"file"` in an `image` action, or `"image"` in a background | png, jpg, webp or svg. |
@@ -173,8 +173,10 @@ Two ways to give the engine the files:
 
 Use plain file names, with no folders: `"photo.jpg"`, not `"images/photo.jpg"`.
 
-Voices made by the engine are kept in the project as `voice_<language>.mp3`
-with their timings, and made again only when a line's words change.
+Voices made by the engine are kept as `voice_<language>.wav` with their
+timings in `voice_<language>.json` (section 7). Open them with the script
+next time. An ElevenLabs key can be opened as a file whose name ends in
+`key.txt`.
 
 ---
 
@@ -218,7 +220,7 @@ with their timings, and made again only when a line's words change.
 | `title` | no | text, or text per language | Name of the video; also the exported file name. |
 | `languages` | no | list of language codes (section 30) | The languages to make the video in. The first is the main one. Default `["en"]`. |
 | `voice` | no | object (section 7) | How the narration is spoken in each language. |
-| `audio`, `subtitles` | no | a file per language | Your own recording and its subtitle file, instead of a made voice. |
+| `audio`, `subtitles` | no | a file, or a file per language | Your own recording, and its subtitle file if you have one (section 7). |
 | `theme` | no | a theme name, or an object (section 5) | Colours and fonts of the whole video. Default `"night"`. |
 | `style` | no | a style name (section 5) | How lines and letters are drawn. Default `"vector"`. |
 | `symbols` | no | `{ symbol: colour }` (section 6) | Colours that mean something, used everywhere. |
@@ -378,42 +380,93 @@ the word order is different. Put the same cues in every language.
 
 Cue names must be unique in the whole video.
 
-### Voices (coming)
+### The voice: two ways
 
-The engine makes the narration with a text-to-speech voice. Each word's exact
-time comes back with the voice, so pictures land precisely on the words.
+Each language's narration comes one of two ways. A script can use either,
+and different languages can use different ways.
+
+| Way | What the creator supplies | What the engine does |
+| --- | --- | --- |
+| **Their own recording** | A sound file under `audio` (and, if they have one, a subtitle file) | Plays it, and times the pictures to it (below). |
+| **A made voice** | A voice under `voice`, and an ElevenLabs key | Makes the narration line by line with that voice, with the exact time of every word. |
+
+If a language has a recording under `audio`, the recording is used, even if
+a `voice` is given too.
+
+### The ElevenLabs key
+
+The key is needed to make a voice, and to time a recording exactly. It can
+be given in any of three places; the first one found is used:
+
+1. In the script: `"voice": { "api_key": "..." }`. Simple, but anyone the
+   script is shared with can use the key; the engine warns about this.
+2. In a file opened with the script, whose name ends in `key.txt` (such as
+   `elevenlabs_key.txt`), holding only the key.
+3. Typed into the **key** box on the engine's page. **Remember the key on
+   this computer** keeps it in this browser only.
+
+The key is only ever sent to ElevenLabs.
+
+### A made voice
 
 ```json
 "voice": {
   "provider": "elevenlabs",
+  "model": "eleven_multilingual_v2",
   "en": { "voice": "Narrator A", "speed": 1, "style": 0.3 },
-  "hi": { "voice": "Narrator B" }
+  "hi": { "voice": "Narrator B" },
+  "say": { "sin": "sine", "lim": "limit" }
 }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `provider` | `"elevenlabs"`, `"openai"`, `"google"`, `"azure"` | Which service makes the voice. Needs that service's key in the engine's settings. Default `"elevenlabs"`. |
+| `provider` | `"elevenlabs"` | Which service makes the voice. Default `"elevenlabs"`. (Other services are coming.) |
+| `api_key` | text | The key, if it is kept in the script (above). |
+| `model` | an ElevenLabs model id | Default `"eleven_multilingual_v2"`, which speaks many languages. |
 | a language code | object | The voice for that language. |
-| `voice` | a voice name or id | Which voice. |
-| `speed` | 0.7 to 1.3 | Default 1. |
-| `style`, `stability` | 0 to 1 | How expressive, and how even, if the service offers it. |
-| `say` | `{ word: how to say it }` | Words the voice says wrongly, and how to say them: `{ "sin": "sine", "lim": "limit" }`. Can be given per language. |
+| `voice` | a voice name or id | Which voice: its name in the ElevenLabs account, or its id. |
+| `speed` | 0.7 to 1.2 | Default 1. A line's own `speed` multiplies it. |
+| `style`, `stability` | 0 to 1 | How expressive, and how even. |
+| `say` | `{ word: how to say it }` | Words the voice says wrongly, and how to say them. Given at the top of `voice` for every language, or inside a language for that one. A piece of maths can be given too: `{ "$x^2$": "x squared" }`. |
+
+Press **Make voice** on the engine's page. The engine makes each line, puts
+them together with the pauses the script asks for, and keeps two files:
+`voice_<language>.wav` (the sound) and `voice_<language>.json` (the time of
+every line and word). In a project folder they are saved there; otherwise
+they download, and are opened with the script next time. With them, the
+video is timed exactly and nothing is made again.
+
+Every line made is also kept in the browser. Making the voice again (after
+changing some lines) only pays for the lines whose words or voice changed.
 
 Maths written inside a line between dollar signs, `"so $x^2$ grows fast"`,
-is read aloud in words in each language ("x squared", "x का वर्ग") and shown
-in the captions as maths.
+is read aloud in words ("x squared"), in English and Hindi; for other
+languages, give how to say each piece under `say`. In the captions it is
+shown as maths.
 
-### Your own recording instead
+### Your own recording
 
 ```json
 "audio": { "en": "narration_en.mp3", "hi": "narration_hi.mp3" },
-"subtitles": { "en": "narration_en.srt", "hi": "narration_hi.srt" }
+"subtitles": { "en": "narration_en.srt" }
 ```
 
-The subtitle file's lines are used as the `lines`. Cue marks can be written
-inside the subtitle text in the same way. Word times are then estimated from
-word lengths: close, not exact.
+With one language, `"audio": "narration.mp3"` is enough. The `lines` are
+still written in the script: they are what the captions show and where the
+cue marks are. They should match what is said.
+
+The pictures are timed to the recording, best first:
+
+| What is opened with the script | How it is timed |
+| --- | --- |
+| `voice_<language>.json` made by **Time my recording** | Exactly: every word. |
+| A subtitle file under `subtitles` | By its lines; words inside each line are estimated. (Its lines are used as the `lines`; cue marks can be written inside the subtitle text.) |
+| Only the recording | The estimate from the words, stretched or squeezed so the last line ends with the recording. Close, not exact. |
+
+**Time my recording** on the engine's page (it needs the key) sends the
+recording and the lines to ElevenLabs, which finds when every word is said,
+and keeps the result as `voice_<language>.json`.
 
 ### Words on screen in every language
 
@@ -438,8 +491,8 @@ maths, `\text{area}`, can be given per language with `@` names:
 ### Making the videos
 
 The engine makes one video per language. Pick the language in the engine's
-page and export. (**Export all**, to make every one at once, is coming.) Each language's video follows its
-own voice: scenes, beats and cues move to fit how long each line takes in
+page and **Export MP4**, or **Export all languages** to make every one in
+turn. Each language's video follows its own voice: scenes, beats and cues move to fit how long each line takes in
 that language.
 
 ---
@@ -2088,7 +2141,7 @@ reaches the bottom of the frame, the camera moves down with it by itself.
 
 ---
 
-## 27. Sound (coming, except the narration)
+## 27. Sound
 
 ### Music
 
@@ -2112,21 +2165,27 @@ reaches the bottom of the frame, the camera moves down with it by itself.
 ### Sounds made by the engine
 
 With `"sounds": "soft"` or `"lively"`, the engine adds small sounds by
-itself: a quiet chalk or pen sound while things are written (in the style's
-own kind: chalk on `chalk`, pen on `sketch`), a soft pop as things appear, a
-gentle click when pieces snap into place in `steps`, a soft whoosh on fast
-camera moves, a chime on `tick` and `answer`, a low note on `cross`. They are
-made by the engine, not files, and are the same on every render.
+itself: a quiet pen sound while things are written or drawn (chalk on the
+`board` theme), a soft pop as things pop or grow in, a gentle click when
+pieces snap into place in `steps`, a whoosh on `slide` and `wipe`
+transitions, a chime on a `tick`, a low note on a `cross`. They are made by
+the engine, not files, and are the same on every render. `"lively"` plays
+them louder; `"none"` turns them off.
 
 Any beat can take `"sound": false` to stay silent, or `"sound": "chime"` to
 pick its own: `pop`, `click`, `chime`, `whoosh`, `low`, `tick`, `chalk`,
 `pen`, `swell`.
 
-### sound (sfx)
+### sound (sfx, play)
 
-`{ "at_cue": "boom", "do": "sound", "file": "drum.mp3", "volume": 0.8 }`.
+`{ "at_cue": "boom", "do": "sound", "file": "drum.mp3", "volume": 0.8 }`:
+plays a sound file once. `volume` 0 to 4 (default 1), `fade_in`, `fade_out`
+(seconds), and `duration` to cut it off.
 
-### sonify (hear_graph)
+The preview plays the same mix as the export: narration, music, sound files
+and the engine's sounds.
+
+### sonify (hear_graph) (coming)
 
 `{ "do": "sonify", "who": "f", "x": [-3, 3], "duration": 4 }`: a dot runs
 along the graph while a tone rises and falls with its height.

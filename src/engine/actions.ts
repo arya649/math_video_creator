@@ -30,11 +30,17 @@ export interface Ctx {
   /** Timing of a nested item (a line of `work`), from its own keys. */
   timeOf(spec: Spec, where: string, after: number): { start: number; duration?: number };
   act(a: Omit<Action, 'order' | 'where'>): void;
+  /** Ask for one of the engine's own sounds (it is left out if the script turns sounds off). */
+  sound(kind: SoundKind, at: number, duration?: number): void;
   /** Build another beat description (the target of a morph). */
   buildNested(spec: Spec, where: string, start: number): Done;
 }
 
 export interface Done { end: number; thing?: Thing }
+
+/** The engine's own small sounds. */
+export const SOUND_KINDS = ['pop', 'click', 'chime', 'whoosh', 'low', 'tick', 'chalk', 'pen', 'swell'] as const;
+export type SoundKind = (typeof SOUND_KINDS)[number];
 
 export interface ActionDef {
   summary: string;
@@ -177,6 +183,8 @@ export function readAppear(ctx: Ctx, fallback: Appear): { how: Appear; from?: Pt
 /** Make a thing arrive. It is hidden until `start`. */
 export function arrive(ctx: Ctx, t: Thing, how: Appear, start: number, duration: number, from?: Pt) {
   const home: Pt = [t.base.x, t.base.y];
+  if (how === 'write' || how === 'draw') ctx.sound(ctx.world.theme.name === 'board' ? 'chalk' : 'pen', start, duration);
+  else if (how === 'pop' || how === 'grow') ctx.sound('pop', start);
   ctx.act({
     start, duration,
     apply(u) {
