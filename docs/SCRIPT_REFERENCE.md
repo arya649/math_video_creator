@@ -58,12 +58,13 @@ their headings, and the engine says so plainly if a script uses them.
 
 | Built | Coming |
 | --- | --- |
-| The `board` and `graph` worlds; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `geometry`, `counting` and `space` worlds; drawing styles other than `vector`; pictures as backgrounds |
+| The `board`, `graph` and `geometry` worlds; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `counting` and `space` worlds; drawing styles other than `vector`; pictures as backgrounds |
 | Narration `lines` in every language, cue marks, `@strings`; a voice made with ElevenLabs, or the creator's own recording (timed by a subtitle file, exactly with ElevenLabs, or by an estimate fitted to it) | Voice services other than ElevenLabs |
 | Captions (karaoke and plain, with the on/off switch), muted preview | |
 | Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed` | `wait` |
 | Equations: `write`, `steps`, `rearrange`, `work`, `highlight`, `box`, `cancel`, `brace`, `label_part`, `substitute`, `pull_out`, `color`, `swap` | `solve`, `evaluate`; checking that steps are equal |
 | Graphs: axes, number planes, `plot` (functions, parametric, polar, implicit, inequalities), values and sliders, points, `mark`, `tangent`, `secant`, `area`, `refine`, `asymptote`, `limit`, `shift_graph`, `table_of_values`, vectors, fields, `transform_plane`, `rescale` | |
+| Geometry: points, segments, lines, rays, circles, polygons, triangles; 15 constructions (with compass steps); angles, equal marks, measurements; `drag`; `translate`, `rotate`, `reflect`, `enlarge`; `cut` and `rearrange_pieces` | |
 | Shapes: every shape of `draw` except drawing an svg file | `path` from an svg file |
 | Moving: `move`, `turn`, `scale`, `flip`, `wobble`, `morph`, `copy`, `group`, `show`, `hide`, `remove`, `focus` | `pointer`, `trace_path` |
 | On-screen graphics: `title`, `text`, `clear` | `card`, `image`, `counter`, `chips`, `table`, `chart`, `label`, `credits` |
@@ -91,7 +92,7 @@ Contents:
 16. Actions: shapes
 17. Actions: moving and drawing attention
 18. Actions: graphs and planes
-19. Actions: geometry (coming)
+19. Actions: geometry
 20. Actions: number lines, counting, fractions and chance (coming)
 21. Actions: 3D (coming)
 22. Actions: wonders (fractals, flows, simulations) (coming)
@@ -670,7 +671,7 @@ everything built from them follows when they move (section 19).
 | `grid` | `false`, `true`, `"faint"` | Squared paper behind the figure. Default `false`. |
 | `numbers` | `true` | Numbers along the grid's middle lines, so points can be read off. |
 | `units` | `degrees`, `radians` | How angles are shown. Default `degrees`. |
-| `decimals` | number | Decimals for lengths and angles shown. Default 1. |
+| `decimals` | number | Decimals for lengths and angles shown. Default: 1 for lengths, whole degrees for angles. |
 
 ### counting
 
@@ -1510,78 +1511,114 @@ Transforms add up: a second one acts on the plane as the first left it.
 
 ---
 
-## 19. Actions: geometry (coming)
+## 19. Actions: geometry
 
-These work in the `geometry` world.
+These work in the `geometry` world. The sheet's units are the lengths:
+`[3, 1]` is 3 across and 1 up from the middle of the frame.
 
-Geometry is built in steps, each depending on what was made before. When a
-free point moves, everything built from it follows, so a figure can be
-shown to stay true however it is changed.
+Geometry is built in steps, each depending on what was made before. Every
+point, line and shape is worked out afresh at every moment from what it was
+built from, so when a free point moves (`drag`), everything built from it
+follows, and a figure can be shown to stay true however it is changed.
 
-### point, segment, line, ray, circle, polygon
+Geometry is named by its `id`. Corners of a polygon or triangle are named
+`tri.A`, its sides `tri.AB`, a circle's centre `c.center`, and a segment's
+ends and middle `s.start`, `s.end`, `s.middle`. A point can also be named
+just by its own id (`"A"`), and any of these can be used as a position by
+other actions (`"position": "A"`).
+
+### point
+
+A free point: `{ "do": "point", "id": "A", "position": [-3, -1], "label": true }`.
+
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `id` | text | Required: its name. |
+| `position` | a position | Required. |
+| `label` | `true`, or maths | Its name written beside it (`true`: its id), on the side away from the rest of the figure. |
+| `color`, `radius` | | Default the accent; 0.08. |
+
+### segment, line, ray
 
 ```json
-{ "at_line": 1, "do": "point", "id": "A", "position": [-3, -1], "label": "A" }
-{ "at_line": 1, "do": "point", "id": "B", "position": [3, -1], "label": "B" }
-{ "at_line": 1, "do": "point", "id": "C", "position": [1, 2.5], "label": "C" }
-{ "at_line": 2, "do": "polygon", "id": "tri", "points": ["A", "B", "C"] }
-{ "at_line": 3, "do": "circle", "id": "c", "center": "A", "through": "B" }
 { "at_line": 3, "do": "segment", "id": "AC", "from": "A", "to": "C" }
+{ "at_line": 4, "do": "line", "id": "l", "through": ["A", "B"] }
+{ "at_line": 5, "do": "ray", "from": "A", "through": "B" }
 ```
 
-| Thing | Keys |
-| --- | --- |
-| `point` | `position`, `label`. A free point if `position` is given; a dependent one if it uses `construct`. |
-| `segment` | `from`, `to`. |
-| `line` | `through`: two points. Runs to the edge of the frame. |
-| `ray` | `from`, `through`. |
-| `circle` | `center` and `radius` (a number, or a segment id), or `center` and `through`, or `through` three points. |
-| `polygon` | `points`: a list of point ids. Its corners keep their names; sides are `tri.AB`. |
-| `triangle` | A shortcut: `"kind"`: `any`, `right`, `equilateral`, `isosceles`, with `size` and `position`; corners named `A`, `B`, `C` unless `names` says otherwise. |
+A `line` runs on past the edges of the frame; a `ray` runs on from its
+start. All take `color`, `line_width` and `dash`.
+
+### circle
+
+By `center` and `radius` (a number, or a segment whose length it takes), by
+`center` and `through` (a point on it), or `through` three points. Also
+`color`, `line_width`, `dash`, `fill`, `fill_opacity`.
+
+### polygon
+
+`{ "do": "polygon", "id": "q", "points": ["A", "B", "C", "D"] }`: through
+points (ids or positions). Its corners take the points' names (so its sides
+are `q.AB`, `q.BC` ...), or the names in `names`; corners named by `names`
+are labelled. Also `color`, `line_width`, `fill`, `fill_opacity`, `labels`
+(`true` or `false`).
+
+### triangle
+
+A triangle in one go: `{ "do": "triangle", "id": "tri", "kind": "right", "size": 5 }`.
+`kind`: `any` (default), `right`, `equilateral`, `isosceles`. `size` (its
+width, default 4) and `position` (its middle). Its corners are free points
+named `A`, `B`, `C` (or the three `names` given), labelled, and can be
+dragged.
 
 ### construct (build)
 
-Makes a new thing from others, by a rule:
+Makes a new point, line or circle from others, by a rule:
 
 ```json
-{ "at_line": 4, "do": "construct", "id": "M", "make": "midpoint", "of": "AB", "label": "M" }
-{ "at_line": 5, "do": "construct", "id": "h", "make": "perpendicular", "from": "C", "to": "AB", "show_steps": true }
-{ "at_line": 6, "do": "construct", "id": "X", "make": "intersection", "of": ["h", "AB"], "label": "H" }
+{ "at_line": 4, "do": "construct", "id": "M", "make": "midpoint", "of": "tri.AB", "label": true }
+{ "at_line": 5, "do": "construct", "id": "h", "make": "perpendicular", "from": "C", "to": "tri.AB", "show_steps": true }
+{ "at_line": 6, "do": "construct", "id": "X", "make": "intersection", "of": ["h", "l"], "label": "H" }
 ```
 
 | `make` | Needs | Gives |
 | --- | --- | --- |
 | `midpoint` | `of`: a segment, or two points | A point. |
-| `perpendicular` | `from`: a point; `to`: a line or segment | A line, meeting at a right angle. |
+| `perpendicular` | `from`: a point; `to`: a line or segment | A segment from the point to the line, with its right angle marked. `"extend": true` draws the whole line instead. |
 | `parallel` | `through`: a point; `to`: a line | A line. |
-| `bisector` | `of`: a segment (perpendicular bisector) or an angle (`"angle": ["B", "A", "C"]`) | A line. |
-| `intersection` | `of`: two lines or circles. `which`: 1 or 2 when there are two | A point. |
+| `bisector` | `of`: a segment (its perpendicular bisector, a line), or `angle`: three points (the angle's bisector, a ray) | A line or ray. |
+| `intersection` | `of`: two lines or circles. `which`: 1 or 2 when they meet twice | A point. |
 | `foot` | `from`: a point; `to`: a line | The point where the perpendicular meets the line. |
-| `reflect_point` | `of`: a point; `in`: a line or point | A point. |
-| `tangent` | `to`: a circle; `touch`: a point on it, or `from` a point outside | A line, or two. |
-| `circumcircle`, `incircle` | `of`: a triangle | A circle (and its centre, as `id.center`). |
+| `reflect_point` | `of`: a point; `in`: a line or a point | A point. |
+| `tangent` | `to`: a circle; `touch`: a point on it, or `from`: a point outside (`which`: 1 or 2) | A line. |
+| `circumcircle`, `incircle` | `of`: a triangle | A circle. |
 | `centroid`, `orthocenter`, `circumcenter`, `incenter` | `of`: a triangle | A point. |
-| `on` | `on`: a line, circle or polygon; `t`: 0 to 1 along it | A point that can slide along that thing. |
+| `on` | `on`: a line, circle or polygon; `t`: 0 to 1, how far along (or round) | A point that can be dragged along it. |
 
-`show_steps: true` draws the construction the way it is done with a compass
-and straightedge: the compass swings its arcs, the ruler lays its line, and
-the marks stay faintly behind. `tools: true` shows the compass and ruler
-themselves.
+Points made this way take `label`, `color` and `radius`; lines and circles
+take `color`, `line_width` and `dash`. If the parts do not meet (parallel
+lines), the engine says so.
+
+`show_steps: true` draws the construction first the way it is done with a
+compass and straightedge: the compass arcs swing on, faintly, one after
+another, then the result is drawn. It works for `midpoint`, `bisector`
+(of a segment or an angle) and `perpendicular`.
 
 ### angle (angle_mark)
 
 ```json
-{ "at_line": 7, "do": "angle", "id": "a1", "points": ["B", "A", "C"], "show": "value" }
+{ "at_line": 7, "do": "angle", "id": "alpha", "points": ["B", "A", "C"], "show": "value" }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `points` | three points: one arm, the corner, the other arm | Required. |
-| `show` | `none`, `value`, `name`, or text | What is written in it: its size (`37°`), a letter (`"α"`), or any text. |
+| `points` | three points: one arm, the corner, the other arm | Required. The smaller of the two angles is marked. |
+| `show` | `none`, `value`, `name`, or maths | What is written in it: its size (`37°`), its id, or any text such as `"\\alpha"`. The size updates as the figure changes. |
 | `arcs` | 1, 2, 3 | Several arcs, to show equal angles. |
-| `right` | `true` | Draw a small square instead (for a right angle). Done by itself when the angle is 90°. |
-| `units` | `degrees`, `radians` | Default `degrees`. |
+| `right` | `true`, `false` | Draw a small square (a right angle). Done by itself when the angle is 90°. |
+| `units` | `degrees`, `radians` | Default: the scene's `units`. |
 | `fill` | a colour | Fill the angle's slice. |
+| `color`, `radius` | | Default the accent; 0.5. |
 
 ### equal (tick_marks)
 
@@ -1590,51 +1627,81 @@ Small ticks on sides to show they are equal: `{ "do": "equal", "who":
 
 ### measure (length, dimension)
 
-`{ "do": "measure", "who": "tri.AB", "show": "value" }`: a measuring line
-beside a segment, with its length, updating as the figure changes. `text`
-instead shows a name (`"c"`).
+`{ "do": "measure", "who": "tri.AB" }`: a measuring line beside a segment,
+with its length, updating as the figure changes. `text` shows a name
+instead (`"c"`). It sits on the side away from the figure; `side`:
+`"left"` or `"right"` to choose.
 
 ### drag (wiggle_point)
 
-Moves a free point, and the whole figure follows:
+Moves a free point (or a corner of a `triangle`), and the whole figure
+follows:
 
 ```json
 { "at_line": 9, "do": "drag", "who": "C", "to": [-1, 3], "duration": 3 }
 { "at_line": 10, "do": "drag", "who": "C", "path": [[-1, 3], [2, 1], [1, 2.5]], "duration": 6 }
+{ "at_line": 11, "do": "drag", "who": "P", "to": 0.75 }
 ```
 
-Angles, lengths and values shown with `show: "value"` change as it moves,
-so a viewer sees what stays the same.
+A point made `on` something is dragged along it: `to` is how far along, 0
+to 1. Angles, lengths and constructions change as it moves, so a viewer
+sees what stays the same.
 
 ### translate, rotate, reflect, enlarge
 
-Geometric transformations, with a ghost of the original left behind:
+Geometric transformations. The image grows out of the original as it moves
+into place:
 
 ```json
-{ "at_line": 11, "do": "rotate", "who": "tri", "by": 90, "around": "A", "id": "tri2", "ghost": true }
-{ "at_line": 12, "do": "reflect", "who": "tri", "in": "l", "id": "tri3", "lines": true }
-{ "at_line": 13, "do": "enlarge", "who": "tri", "by": 2, "center": "O", "id": "tri4", "rays": true }
-{ "at_line": 14, "do": "translate", "who": "tri", "by": [3, 1], "id": "tri5", "arrow": true }
+{ "at_line": 11, "do": "rotate", "who": "tri", "by": 90, "around": "O", "ghost": true }
+{ "at_line": 12, "do": "reflect", "who": "tri", "in": "l", "lines": true }
+{ "at_line": 13, "do": "enlarge", "who": "tri", "by": 2, "center": "O", "rays": true }
+{ "at_line": 14, "do": "translate", "who": "tri", "by": [3, 1], "arrow": true }
 ```
 
-`id` names the image (corners keep their names with a dash: `A'`, `B'`).
-`lines` (reflect): dashed lines joining each point to its image. `rays`
-(enlarge): lines from the centre through each corner. `arrow` (translate):
-the vector of the move.
+| Key | Meaning |
+| --- | --- |
+| `who` | A point, segment, circle or polygon. Required. |
+| `by` | `rotate`: degrees, anticlockwise. `enlarge`: the scale factor. `translate`: `[right, up]`. |
+| `around` (rotate), `center` (enlarge) | Default the middle of the figure. |
+| `in` (reflect) | A line, or a point. |
+| `id` | The image's name. Default the original's with `_2` added. Its corners keep their names with a dash: `A'`, `B'`. |
+| `ghost` | `true`: the original fades back. |
+| `lines` (reflect) | Dashed lines joining each point to its image. |
+| `rays` (enlarge) | Lines from the centre through each corner. |
+| `arrow` (translate) | The vector of the move. |
+| `color`, `line_width`, `ease` | Default colour pink. |
 
-### cut, rearrange_pieces (dissect)
+The image depends on the original, so it moves when the original is dragged.
 
-Cuts a shape into pieces and moves them, for proofs by rearranging:
+### cut
+
+Cuts a shape into pieces, for proofs by rearranging:
 
 ```json
-{ "at_line": 15, "do": "cut", "who": "big", "into": "sectors", "count": 16, "id": "slices" }
+{ "at_line": 15, "do": "cut", "who": "c", "into": "sectors", "count": 16, "id": "slices" }
 { "at_line": 16, "do": "rearrange_pieces", "who": "slices", "into": "strip", "duration": 4 }
 ```
 
-`into` for `cut`: `sectors` (a circle into slices), `strips`, `grid`, or
-`lines`: a list of segment ids to cut along. For `rearrange_pieces`:
-`strip` (alternating, as for the area of a circle), `row`, `stack`, or
-`places`: a list of positions and turns, one per piece.
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `who` | a circle, a polygon, or a shape made with `draw` | Required. It is replaced by its pieces. |
+| `into` | `sectors`, `strips`, `grid`, `lines` | `sectors`: a circle into equal slices. `strips`: upright strips. `grid`: `rows` × `columns` cells. `lines`: cut along the lines or segments listed in `lines`. Required. |
+| `count` | 2 to 64 | How many slices or strips. Default 8. |
+| `id` | text | The pieces are `id.1`, `id.2` ..., and `id` names them all together. |
+| `color`, `colors` | | Pieces alternate between two colours, or take `colors` in turn. |
+
+### rearrange_pieces (dissect)
+
+Moves the pieces of a cut shape into a new arrangement, each setting off a
+moment after the one before:
+
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `who` | the `id` of a cut | Required. |
+| `into` | `strip`, `row`, `stack` | `strip`: slices of a circle laid tip down, tip up, side by side, making nearly a parallelogram (as in the proof of the area of a circle). `row`, `stack`: side by side, or one above another. Default `strip`. |
+| `places` | a list of `{ "position", "turn" }` | Instead: where each piece goes, and how far it turns (degrees). One per piece. |
+| `gap` | sheet units | Space between pieces in a row or stack. Default 0.05. |
 
 ---
 

@@ -4,3 +4,4 @@ import './shapes';
 import './motion';
 import './graphics';
 import './graph';
+import './geometry';

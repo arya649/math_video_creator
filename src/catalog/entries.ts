@@ -254,9 +254,53 @@ G('plane:transform-complex', 'transform_plane: a complex function', [{ at: 0.2, 
 G('plane:transform-xy', 'transform_plane: any map', [{ at: 0.2, do: 'transform_plane', x_part: 'x + 0.5*sin(y)', y_part: 'y + 0.5*sin(x)' }], { plane: true }, 2.8);
 G('plane:undo', 'transform_plane: undo', [{ at: 0, do: 'transform_plane', matrix: [[2, 0], [0, 0.5]], duration: 1 }, { at: 1.5, do: 'transform_plane', undo: true, duration: 1 }], { plane: true }, 2);
 
+// ---- Geometry ----
+const Geo = (id: string, title: string, beats: Beat[], still = 3, scene: Record<string, unknown> = {}) =>
+  add({ id, title, beats, scene: { world: 'geometry', ...scene }, still });
+const tri: Beat = { at: 0, do: 'triangle', id: 'tri', size: 5, appear: 'none' };
+Geo('scene:geometry', 'Geometry world', [tri], 1, {});
+Geo('scene:geometry-grid', 'Geometry on squared paper with numbers', [{ at: 0, do: 'point', id: 'P', position: [2, 1], label: true }], 1, { grid: true, numbers: true });
+Geo('geo:point', 'point', [{ at: 0, do: 'point', id: 'A', position: [-2, 0], label: true }, { at: 0.3, do: 'point', id: 'B', position: [2, 1], label: true, color: 'blue' }], 1.5);
+Geo('geo:segment', 'segment', [{ at: 0, do: 'point', id: 'A', position: [-3, -1], label: true }, { at: 0, do: 'point', id: 'B', position: [3, 1], label: true }, { at: 0.4, do: 'segment', from: 'A', to: 'B' }], 1.8);
+Geo('geo:line', 'line', [{ at: 0, do: 'point', id: 'A', position: [-1, -1], label: true }, { at: 0, do: 'point', id: 'B', position: [1, 0.5], label: true }, { at: 0.4, do: 'line', through: ['A', 'B'] }], 1.8);
+Geo('geo:ray', 'ray', [{ at: 0, do: 'point', id: 'A', position: [-3, -1], label: true }, { at: 0, do: 'point', id: 'B', position: [-1, 0], label: true }, { at: 0.4, do: 'ray', from: 'A', through: 'B' }], 1.8);
+Geo('geo:circle', 'circle by centre and point', [{ at: 0, do: 'point', id: 'O', position: [0, 0], label: true }, { at: 0, do: 'point', id: 'P', position: [2, 1], label: true }, { at: 0.3, do: 'circle', center: 'O', through: 'P' }], 2);
+Geo('geo:circle-three', 'circle through three points', [{ at: 0, do: 'point', id: 'A', position: [-2, -1], label: true }, { at: 0, do: 'point', id: 'B', position: [2, -1.5], label: true }, { at: 0, do: 'point', id: 'C', position: [0.5, 2], label: true }, { at: 0.3, do: 'circle', through: ['A', 'B', 'C'] }], 2);
+Geo('geo:polygon', 'polygon', [{ at: 0, do: 'polygon', id: 'q', points: [[-3, -1.5], [2, -2], [3, 1], [-1, 2]], names: ['P', 'Q', 'R', 'S'], fill: 'teal' }], 2);
+for (const kind of ['any', 'right', 'equilateral', 'isosceles']) Geo(`geo:triangle-${kind}`, `triangle: ${kind}`, [{ at: 0, do: 'triangle', kind, size: 5 }], 1.8);
+Geo('geo:midpoint', 'construct: midpoint', [tri, { at: 0, do: 'construct', id: 'M', make: 'midpoint', of: 'tri.AB', label: true }], 1);
+Geo('geo:midpoint-steps', 'construct with compass steps', [tri, { at: 0, do: 'construct', id: 'M', make: 'midpoint', of: ['A', 'B'], label: true, show_steps: true }], 3.4);
+Geo('geo:perpendicular', 'construct: perpendicular', [tri, { at: 0, do: 'construct', make: 'perpendicular', from: 'C', to: 'tri.AB', show_steps: true }], 3);
+Geo('geo:parallel', 'construct: parallel', [tri, { at: 0, do: 'construct', make: 'parallel', through: 'C', to: 'tri.AB' }], 1.2);
+Geo('geo:bisector', 'construct: perpendicular bisector', [tri, { at: 0, do: 'construct', make: 'bisector', of: 'tri.BC' }], 1.2);
+Geo('geo:angle-bisector', 'construct: angle bisector', [tri, { at: 0, do: 'construct', make: 'bisector', angle: ['B', 'A', 'C'], show_steps: true }], 2.6);
+Geo('geo:intersection', 'construct: intersection', [tri, { at: 0, do: 'construct', id: 'h1', make: 'perpendicular', from: 'C', to: 'tri.AB', extend: true, dash: true, color: 'grey' }, { at: 0, do: 'construct', id: 'h2', make: 'perpendicular', from: 'A', to: 'tri.BC', extend: true, dash: true, color: 'grey' }, { at: 0.5, do: 'construct', id: 'H', make: 'intersection', of: ['h1', 'h2'], label: true }], 1.6);
+Geo('geo:foot', 'construct: foot', [tri, { at: 0, do: 'construct', id: 'F', make: 'foot', from: 'C', to: 'tri.AB', label: true }], 1);
+Geo('geo:reflect-point', 'construct: reflect a point', [tri, { at: 0, do: 'construct', id: "C'", make: 'reflect_point', of: 'A', in: 'tri.BC', label: true }], 1);
+Geo('geo:tangent', 'construct: tangents from a point', [{ at: 0, do: 'point', id: 'O', position: [-1, 0], appear: 'none', radius: 0.05 }, { at: 0, do: 'circle', id: 'c', center: 'O', radius: 1.6, appear: 'none' }, { at: 0, do: 'point', id: 'P', position: [3.5, 1], label: true, appear: 'none' }, { at: 0.2, do: 'construct', make: 'tangent', to: 'c', from: 'P' }, { at: 0.4, do: 'construct', make: 'tangent', to: 'c', from: 'P', which: 2 }], 1.6);
+Geo('geo:circumcircle', 'construct: circumcircle', [tri, { at: 0, do: 'construct', id: 'cc', make: 'circumcircle', of: 'tri' }, { at: 0.3, do: 'construct', id: 'O', make: 'circumcenter', of: 'tri', label: true }], 1.6);
+Geo('geo:incircle', 'construct: incircle', [tri, { at: 0, do: 'construct', make: 'incircle', of: 'tri' }, { at: 0.3, do: 'construct', id: 'I', make: 'incenter', of: 'tri', label: true }], 1.6);
+Geo('geo:centroid', 'construct: centroid', [tri, { at: 0, do: 'construct', id: 'G', make: 'centroid', of: 'tri', label: true }], 1);
+Geo('geo:on', 'construct: a point on a circle, dragged round', [{ at: 0, do: 'point', id: 'O', position: [0, 0], radius: 0.05 }, { at: 0, do: 'circle', id: 'c', center: 'O', radius: 2, appear: 'none' }, { at: 0, do: 'construct', id: 'P', make: 'on', on: 'c', t: 0.1, label: true }, { at: 0.5, do: 'segment', from: 'O', to: 'P' }, { at: 1, do: 'drag', who: 'P', to: 0.6, duration: 2.5 }], 2.5);
+Geo('geo:angle', 'angle with its size', [tri, { at: 0, do: 'angle', points: ['B', 'A', 'C'], show: 'value' }], 1.2);
+Geo('geo:angle-name', 'angle with a name, two arcs', [tri, { at: 0, do: 'angle', points: ['C', 'B', 'A'], show: '\\beta', arcs: 2, fill: 'green', color: 'green' }], 1.2);
+Geo('geo:angle-right', 'right angle', [{ at: 0, do: 'triangle', kind: 'right', size: 5, appear: 'none' }, { at: 0, do: 'angle', points: ['B', 'A', 'C'] }], 1);
+Geo('geo:equal', 'equal sides', [{ at: 0, do: 'triangle', id: 'tri', kind: 'isosceles', size: 5, appear: 'none' }, { at: 0, do: 'equal', who: ['tri.AC', 'tri.BC'], ticks: 2 }], 1);
+Geo('geo:parallel-marks', 'parallel marks', [{ at: 0, do: 'polygon', id: 'p', points: [[-3, -1], [2, -1], [3, 1], [-2, 1]], names: ['A', 'B', 'C', 'D'], appear: 'none' }, { at: 0, do: 'equal', who: ['p.AB', 'p.DC'], as: 'arrows' }], 1);
+Geo('geo:measure', 'measure', [tri, { at: 0, do: 'measure', who: 'tri.AB' }, { at: 0.2, do: 'measure', who: 'tri.BC', text: 'a' }], 1.2);
+Geo('geo:drag', 'drag: the figure follows', [tri, { at: 0, do: 'angle', points: ['B', 'A', 'C'], show: 'value' }, { at: 0, do: 'construct', make: 'circumcircle', of: 'tri', dash: true }, { at: 0.5, do: 'drag', who: 'C', path: [[2, 2], [-1.5, 2.5]], duration: 3 }], 2.2);
+Geo('geo:translate', 'translate', [{ ...tri, size: 3, position: [-3, -0.5] }, { at: 0.2, do: 'translate', who: 'tri', by: [5, 1], arrow: true }], 1.8);
+Geo('geo:rotate', 'rotate about a point', [{ ...tri, size: 3, position: [-2, 0.5] }, { at: 0, do: 'point', id: 'O', position: [0, -1], label: true }, { at: 0.3, do: 'rotate', who: 'tri', by: 120, around: 'O', ghost: true }], 2);
+Geo('geo:reflect', 'reflect in a line', [{ ...tri, size: 3, position: [-3, 0] }, { at: 0, do: 'line', id: 'm', through: [[0, -3], [0.5, 3]], dash: true }, { at: 0.3, do: 'reflect', who: 'tri', in: 'm', lines: true }], 2);
+Geo('geo:enlarge', 'enlarge from a centre', [{ ...tri, size: 1.6, position: [-2, -0.8] }, { at: 0, do: 'point', id: 'O', position: [-4.5, -2.5], label: true }, { at: 0.3, do: 'enlarge', who: 'tri', by: 2.2, center: 'O', rays: true }], 2);
+Geo('geo:cut-sectors', 'cut a circle into slices', [{ at: 0, do: 'point', id: 'O', position: [0, 0.3], radius: 0.001 }, { at: 0, do: 'circle', id: 'c', center: 'O', radius: 2.2, appear: 'none' }, { at: 0.3, do: 'cut', who: 'c', into: 'sectors', count: 12, id: 's' }], 1.2);
+Geo('geo:rearrange-strip', 'rearrange slices into a strip', [{ at: 0, do: 'point', id: 'O', position: [0, 0.3], radius: 0.001 }, { at: 0, do: 'circle', id: 'c', center: 'O', radius: 2, appear: 'none' }, { at: 0, do: 'cut', who: 'c', into: 'sectors', count: 16, id: 's' }, { at: 0.6, do: 'rearrange_pieces', who: 's', into: 'strip', duration: 2.5 }], 3.4);
+Geo('geo:cut-strips', 'cut into strips, laid in a row', [{ at: 0, do: 'polygon', id: 'p', points: [[-2, -1.5], [2, -1.5], [2, 1.5], [-2, 1.5]], appear: 'none', labels: false }, { at: 0.2, do: 'cut', who: 'p', into: 'strips', count: 4, id: 'st' }, { at: 0.9, do: 'rearrange_pieces', who: 'st', into: 'row', gap: 0.3, duration: 1.5 }], 2.6);
+Geo('geo:cut-lines', 'cut along lines', [{ at: 0, do: 'polygon', id: 'p', points: [[-3, -2], [3, -2], [3, 2], [-3, 2]], appear: 'none', labels: false }, { at: 0, do: 'line', id: 'd', through: [[-3, -2], [3, 2]], hidden: true }, { at: 0.2, do: 'cut', who: 'p', into: 'lines', lines: ['d'], id: 'h' }, { at: 0.8, do: 'rearrange_pieces', who: 'h', places: [{ position: [-1.5, 0], turn: 0 }, { position: [2.5, 0], turn: 180 }], duration: 1.5 }], 2.6);
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
   scene: 'Worlds and backgrounds', look: 'Look: themes and colours', voice: 'Narration and captions', eq: 'Equations',
-  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound',
+  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry',
 };

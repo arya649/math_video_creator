@@ -13,13 +13,14 @@ import { type Glyph, Thing } from '../thing';
 import { withAlpha, mixColor } from '../color';
 import { EASES, ScriptError, choice, clamp, ease, isObject, rng } from '../util';
 import type { SceneWorld } from '../world';
+import { geoPoint } from './geometry';
 
 const GRAPH: ['graph'] = ['graph'];
 
 // ---- Helpers ----
 
 /** Add a thing whose outlines are worked out every frame. */
-function liveThing(ctx: Ctx, id: string, draw: (t: number) => Glyph[], where: string, kind: Thing['kind'] = 'shape'): Thing {
+export function liveThing(ctx: Ctx, id: string, draw: (t: number) => Glyph[], where: string, kind: Thing['kind'] = 'shape'): Thing {
   const th = new Thing(id, kind, [], [0, 0]);
   const glyphs = draw(Infinity);
   th.base.glyphs = glyphs;
@@ -503,12 +504,13 @@ interface Tracked { param: Param; where: (x: number) => Pt; graph?: Graph }
 const TRACKED = new WeakMap<Thing, Tracked>();
 
 registerAction('point', {
-  summary: 'A dot on a graph or axes, which can slide.',
-  worlds: GRAPH,
-  params: ['position', 'label', 'drops', 'coords', 'trace', 'color', 'radius'],
+  summary: 'A dot on a graph or axes, which can slide; in geometry, a free point.',
+  worlds: ['graph', 'geometry'],
+  params: ['position', 'label', 'drops', 'coords', 'trace', 'color', 'radius', 'appear'],
   required: ['position'],
   build(ctx) {
     const { world } = ctx;
+    if (world.kind === 'geometry') return geoPoint(ctx);
     const pos = ctx.spec.position;
     const col = color(ctx, 'color', world.theme.accent)!;
     const r = num(ctx, 'radius', 0.09);

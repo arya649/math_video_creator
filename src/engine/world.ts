@@ -72,6 +72,12 @@ export class SceneWorld {
   axes = new Map<string, Axes>();
   /** Sounds asked for in this scene: the engine's own, and sound files. */
   sounds: SoundEvent[] = [];
+  /** Geometry objects by id (geometry world). */
+  geo = new Map<string, import('./geometry/geo').GObj>();
+  /** Finds a geometry point by a name such as "A" or "tri.B" (set by the geometry world). */
+  geoPoint?: (ref: string) => Pt | undefined;
+  /** How the geometry world shows angles and lengths. */
+  geoSettings = { units: 'degrees' as 'degrees' | 'radians', decimals: 1, angleDecimals: 0 };
   /** The time of the frame being drawn; Infinity while compiling (everything as last built). */
   now = Infinity;
   graphs = new Map<string, Graph>();
@@ -265,6 +271,8 @@ export class SceneWorld {
     }
     if (typeof spec === 'string') {
       if ((SCREEN_PLACES as readonly string[]).includes(spec)) return this.screenPlace(spec);
+      const g = this.geoPoint?.(spec);
+      if (g) return g;
       return centerOf(this.boxOf(spec, where));
     }
     if (isObject(spec)) {

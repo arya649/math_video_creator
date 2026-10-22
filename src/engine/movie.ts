@@ -2,6 +2,7 @@
 
 import './actions/index';
 import { makeWorldAxes } from './actions/graph';
+import { setupGeometryWorld } from './actions/geometry';
 import { ACTIONS, BEAT_KEYS, type Ctx, type Done, SOUND_KINDS, type SoundKind, type Spec, findAction } from './actions';
 import { CameraPlan, SHOT_KEYS, readCamera } from './camera';
 import {
@@ -35,7 +36,7 @@ export const FORMATS: Record<string, { width: number; height: number }> = {
 };
 
 /** Worlds that can be used in a script now. */
-export const WORLDS_BUILT: readonly WorldKind[] = ['board', 'graph'];
+export const WORLDS_BUILT: readonly WorldKind[] = ['board', 'graph', 'geometry'];
 
 export interface Background {
   style: 'plain' | 'gradient' | 'grid' | 'dots' | 'lined';
@@ -442,6 +443,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
 
     // A graph scene has its axes from the start.
     if (kind === 'graph') makeWorldAxes(makeCtx({}, `${where}.axes`, start, undefined, undefined), s.axes, `${where}.axes`);
+    if (kind === 'geometry') setupGeometryWorld(makeCtx({}, where, start, undefined, undefined), s, where);
 
     // Things there from the start.
     if (s.place !== undefined) {

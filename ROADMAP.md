@@ -57,12 +57,25 @@ yet are marked "(coming)" there. This file tracks the stages.
   engine's own sounds (pen, chalk, pop, click, chime, low, whoosh, swell).
 - The preview plays the full mix; Export all languages.
 
-## Stage 4: geometry world (next)
+## Stage 4: geometry world (built)
 
-Points, constructions with compass arcs, angles, marks, `drag`,
-transformations, cut and rearrange.
+- The `geometry` world: a figure that depends on itself, worked out afresh
+  at every moment, so dragging a point keeps every construction true.
+- Points, segments, lines, rays, circles (three ways), polygons, triangles
+  (any, right, equilateral, isosceles); corners and sides by name.
+- `construct`: midpoint, perpendicular, parallel, bisector (segment or
+  angle), intersection, foot, reflect_point, tangent, circumcircle,
+  incircle, centroid, orthocenter, circumcenter, incenter, a point on a
+  shape; compass steps for midpoint, bisector and perpendicular.
+- `angle` (live sizes, names, arcs, right angles), `equal`, `measure`.
+- `drag` (to a place, along a path, along a shape).
+- `translate`, `rotate`, `reflect`, `enlarge`, with ghosts and guide lines.
+- `cut` (sectors, strips, grid, along lines) and `rearrange_pieces` (strip,
+  row, stack, places).
+- Scene settings: squared paper, numbers, degrees or radians, decimals.
+- A `geometry` sample project.
 
-## Stage 5: teaching tools and graphics
+## Stage 5: teaching tools and graphics (next)
 
 `question`, `answer`, `mistake`, `tick`/`cross`, definition cards,
 `step_counter`, `recap`, `compare`; `card`, `image`, `counter`, `chips`,

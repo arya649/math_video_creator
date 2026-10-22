@@ -1,0 +1,313 @@
+{
+  "title": "Geometry",
+  "lines": [
+    "Take any triangle.",
+    "Bisect each side with compass and ruler.",
+    "The three bisectors meet at one point: the {cc}circumcenter.",
+    "Drag a corner, and they still meet.",
+    "Angles in a triangle add up to one eighty, {drag}wherever the corners go.",
+    {
+      "en": "Now cut a circle into slices, and {strip}lay them out.",
+      "pause": 4
+    },
+    "Rotate a shape about a point, and {refl}reflect another in a line."
+  ],
+  "scenes": [
+    {
+      "name": "Bisectors",
+      "world": "geometry",
+      "grid": "faint",
+      "beats": [
+        {
+          "at_line": 1,
+          "do": "triangle",
+          "id": "tri",
+          "size": 5
+        },
+        {
+          "at_line": 2,
+          "do": "construct",
+          "id": "m1",
+          "make": "bisector",
+          "of": [
+            "A",
+            "B"
+          ],
+          "show_steps": true,
+          "color": "blue"
+        },
+        {
+          "then": true,
+          "do": "construct",
+          "id": "x",
+          "make": "bisector",
+          "of": [
+            "B",
+            "C"
+          ],
+          "color": "blue"
+        },
+        {
+          "with": "x",
+          "do": "construct",
+          "id": "m3",
+          "make": "bisector",
+          "of": [
+            "C",
+            "A"
+          ],
+          "color": "blue"
+        },
+        {
+          "at_cue": "cc",
+          "do": "construct",
+          "id": "O",
+          "make": "circumcenter",
+          "of": "tri",
+          "label": true
+        },
+        {
+          "then": true,
+          "do": "construct",
+          "id": "cc",
+          "make": "circumcircle",
+          "of": "tri",
+          "dash": true
+        },
+        {
+          "at_line": 4,
+          "do": "drag",
+          "who": "C",
+          "path": [
+            [
+              2.5,
+              2.2
+            ],
+            [
+              -1.5,
+              2.8
+            ],
+            [
+              0.5,
+              2
+            ]
+          ],
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Angles",
+      "world": "geometry",
+      "start_line": 5,
+      "transition": "fade",
+      "beats": [
+        {
+          "at_line": 5,
+          "do": "triangle",
+          "id": "t",
+          "names": [
+            "P",
+            "Q",
+            "R"
+          ],
+          "size": 5,
+          "appear": "none"
+        },
+        {
+          "at_line": 5,
+          "do": "angle",
+          "points": [
+            "R",
+            "P",
+            "Q"
+          ],
+          "show": "value",
+          "color": "yellow"
+        },
+        {
+          "at_line": 5,
+          "do": "angle",
+          "points": [
+            "P",
+            "Q",
+            "R"
+          ],
+          "show": "value",
+          "color": "green"
+        },
+        {
+          "at_line": 5,
+          "do": "angle",
+          "points": [
+            "Q",
+            "R",
+            "P"
+          ],
+          "show": "value",
+          "color": "red"
+        },
+        {
+          "at_line": 5,
+          "do": "measure",
+          "who": "t.PQ"
+        },
+        {
+          "at_cue": "drag",
+          "do": "drag",
+          "who": "R",
+          "path": [
+            [
+              2,
+              2.5
+            ],
+            [
+              -2,
+              1.5
+            ]
+          ],
+          "duration": 4
+        }
+      ]
+    },
+    {
+      "name": "Slices",
+      "world": "geometry",
+      "start_line": 6,
+      "transition": "fade",
+      "beats": [
+        {
+          "at_line": 6,
+          "do": "point",
+          "id": "O",
+          "position": [
+            0,
+            0.5
+          ],
+          "appear": "none",
+          "radius": 0.001
+        },
+        {
+          "at_line": 6,
+          "do": "circle",
+          "id": "c",
+          "center": "O",
+          "radius": 2.2,
+          "fill": "blue"
+        },
+        {
+          "then": true,
+          "do": "cut",
+          "who": "c",
+          "into": "sectors",
+          "count": 16,
+          "id": "s"
+        },
+        {
+          "at_cue": "strip",
+          "do": "rearrange_pieces",
+          "who": "s",
+          "into": "strip",
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Transformations",
+      "world": "geometry",
+      "start_line": 7,
+      "transition": "fade",
+      "beats": [
+        {
+          "at_line": 7,
+          "do": "polygon",
+          "id": "k",
+          "points": [
+            [
+              -6,
+              0
+            ],
+            [
+              -4,
+              0
+            ],
+            [
+              -4.5,
+              2
+            ]
+          ],
+          "names": [
+            "A",
+            "B",
+            "C"
+          ]
+        },
+        {
+          "then": true,
+          "do": "point",
+          "id": "O",
+          "position": [
+            -3,
+            -0.5
+          ],
+          "label": true
+        },
+        {
+          "then": true,
+          "do": "rotate",
+          "who": "k",
+          "by": 90,
+          "around": "O",
+          "ghost": true
+        },
+        {
+          "at_cue": "refl",
+          "do": "line",
+          "id": "m",
+          "through": [
+            [
+              1,
+              -3
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "dash": true
+        },
+        {
+          "then": true,
+          "do": "polygon",
+          "id": "q",
+          "points": [
+            [
+              3,
+              0
+            ],
+            [
+              4.5,
+              0.5
+            ],
+            [
+              4,
+              2
+            ]
+          ],
+          "names": [
+            "X",
+            "Y",
+            "Z"
+          ]
+        },
+        {
+          "then": true,
+          "do": "reflect",
+          "who": "q",
+          "in": "m",
+          "lines": true
+        }
+      ]
+    }
+  ]
+}
