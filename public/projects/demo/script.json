@@ -1,0 +1,52 @@
+{
+  "title": "The square of a sum",
+  "languages": ["en", "hi"],
+  "theme": "night",
+  "symbols": { "a": "blue", "b": "yellow" },
+  "lines": [
+    { "en": "Take any two numbers, {ab}a and b.", "hi": "कोई भी दो संख्याएँ लीजिए, {ab}a और b." },
+    { "en": "What is their sum, {sq}squared?", "hi": "उनके योग का {sq}वर्ग क्या है?" },
+    { "en": "Many people say {wrong}a squared plus b squared.", "hi": "बहुत लोग कहते हैं {wrong}a का वर्ग जमा b का वर्ग।" },
+    { "en": "But {expand}multiply it out, and {mid}a middle piece appears.", "hi": "पर {expand}गुणा करके देखिए, और {mid}बीच में एक हिस्सा आ जाता है।" },
+    { "en": "Two a b. {box}That is the piece people forget.", "hi": "दो a b. {box}यही हिस्सा लोग भूल जाते हैं।" },
+    { "en": "Now solve three x plus five equals twenty.", "hi": "अब हल कीजिए तीन x जमा पाँच बराबर बीस।" },
+    { "en": "Move the five {move}across, and it changes sign.", "hi": "पाँच को {move}दूसरी ओर ले जाइए, उसका चिह्न बदल जाता है।" },
+    { "en": "Then {div}divide by three. So x is five.", "hi": "फिर {div}तीन से भाग दीजिए। तो x पाँच है।" }
+  ],
+  "scenes": [
+    {
+      "name": "Opening",
+      "chapter": { "en": "The question", "hi": "प्रश्न" },
+      "world": "board",
+      "beats": [
+        { "at": 0, "duration": 2.4, "do": "title", "kicker": { "en": "Algebra", "hi": "बीजगणित" }, "text": { "en": "The square of a sum", "hi": "योग का वर्ग" } },
+        { "at_cue": "ab", "do": "write", "id": "ab", "tex": "a,\\; b", "size": "large" },
+        { "at_cue": "sq", "do": "steps", "who": "ab", "to": "(a+b)^2" },
+        { "at_cue": "wrong", "do": "write", "id": "guess", "tex": "\\ne a^2 + b^2", "position": { "right_of": "ab", "gap": "small" }, "color": "grey" },
+        { "at_cue": "wrong", "offset": 1.2, "do": "cancel", "who": "guess", "how": "cross" },
+        { "at_cue": "expand", "do": "remove", "who": "guess" },
+        { "at_cue": "expand", "offset": 0.4, "do": "steps", "who": "ab", "to": "(a+b)^2 = a^2 + 2ab + b^2" },
+        { "at_cue": "mid", "do": "highlight", "who": "ab", "part": "2ab", "how": "back" },
+        { "at_cue": "mid", "offset": 0.5, "do": "brace", "who": "ab", "part": "2ab", "text": { "en": "the middle piece", "hi": "बीच का हिस्सा" } },
+        { "at_cue": "box", "do": "box", "who": "ab", "key": true },
+        { "at_cue": "box", "camera": { "shot": "frame", "target": "ab", "padding": "large" } }
+      ]
+    },
+    {
+      "name": "Solving",
+      "chapter": { "en": "Solving an equation", "hi": "समीकरण हल करना" },
+      "world": "board",
+      "paper": "grid",
+      "start_line": 6,
+      "transition": "fade",
+      "symbols": { "x": "blue" },
+      "beats": [
+        { "at_line": 6, "do": "write", "id": "eq", "tex": "3x + 5 = 20", "size": "large" },
+        { "at_cue": "move", "do": "steps", "who": "eq", "to": "3x = 20 - 5", "note": { "en": "subtract 5", "hi": "5 घटाइए" } },
+        { "then": true, "do": "steps", "who": "eq", "to": "3x = 15" },
+        { "at_cue": "div", "do": "steps", "who": "eq", "to": "x = 5", "new_line": true, "id": "ans" },
+        { "then": true, "do": "box", "who": "ans" }
+      ]
+    }
+  ]
+}

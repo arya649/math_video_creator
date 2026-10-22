@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Math Video Engine</title>
+  <style>
+    :root { color-scheme: dark; --bg: #0b0c10; --panel: #15171d; --line: #2a2d36; --ink: #e8e8ea; --dim: #9a9ca5; --accent: #ffd84d; --bad: #ff7a6b; --warn: #f0c060; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 Poppins, system-ui, sans-serif; }
+    header { display: flex; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+    header h1 { font-size: 15px; margin: 0 12px 0 0; font-weight: 600; }
+    header a { color: var(--dim); }
+    button, select, label.btn { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+    button:hover, label.btn:hover { border-color: #444a58; }
+    button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+    main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 53px); }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; height: auto; } }
+    #stage { display: flex; flex-direction: column; padding: 16px; gap: 10px; min-width: 0; }
+    #frame { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 240px; background: #000; border-radius: 8px; overflow: hidden; position: relative; }
+    #frame canvas { max-width: 100%; max-height: 100%; display: block; }
+    #drop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--dim); text-align: center; padding: 24px; pointer-events: none; }
+    .bar { display: flex; gap: 10px; align-items: center; }
+    #scrub { flex: 1; accent-color: var(--accent); }
+    #time { font-variant-numeric: tabular-nums; color: var(--dim); min-width: 110px; text-align: right; }
+    aside { border-left: 1px solid var(--line); padding: 16px; overflow: auto; }
+    aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin: 18px 0 8px; }
+    aside h2:first-child { margin-top: 0; }
+    .problem { border-left: 3px solid var(--bad); padding: 6px 10px; margin: 6px 0; background: #1d1416; border-radius: 4px; white-space: pre-wrap; }
+    .warning { border-left: 3px solid var(--warn); padding: 6px 10px; margin: 6px 0; background: #1d1a12; border-radius: 4px; }
+    .ok { color: #8fd18f; }
+    .scene { padding: 6px 8px; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+    .scene:hover { background: var(--panel); }
+    .scene .t { color: var(--dim); font-variant-numeric: tabular-nums; }
+    .muted { color: var(--dim); }
+    input[type=checkbox] { accent-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Math Video Engine</h1>
+    <label class="btn">Open script files<input id="files" type="file" multiple hidden /></label>
+    <select id="lang" title="Language"></select>
+    <label><input id="captions" type="checkbox" checked /> Captions</label>
+    <label><input id="muted" type="checkbox" /> Muted preview</label>
+    <button id="export" class="primary" disabled>Export MP4</button>
+    <span id="status" class="muted"></span>
+    <a href="catalog.html" style="margin-left:auto">Catalogue</a>
+  </header>
+  <main>
+    <section id="stage">
+      <div id="frame"><canvas id="view"></canvas><div id="drop">Open a script and the files it names, or drop them here.<br />Or open a project: <code>?project=demo</code></div></div>
+      <div class="bar">
+        <button id="play" disabled>Play</button>
+        <input id="scrub" type="range" min="0" max="1000" value="0" step="1" disabled />
+        <span id="time">0:00.0 / 0:00.0</span>
+      </div>
+    </section>
+    <aside>
+      <h2>Problems</h2>
+      <div id="problems" class="muted">No script yet.</div>
+      <h2>Scenes</h2>
+      <div id="scenes"></div>
+      <h2>Narration</h2>
+      <div id="narration" class="muted"></div>
+    </aside>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

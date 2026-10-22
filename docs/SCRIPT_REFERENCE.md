@@ -49,6 +49,27 @@ the section named below.
 | `sound:` | Music, sound effects, sonification | 4, 27 |
 | `format:` | The shape and size of the video, chapters, thumbnail | 4, 28 |
 
+
+## What works today
+
+The engine is being built in stages. This reference describes all of it;
+the parts not built yet are marked **(coming)** in the contents and in
+their headings, and the engine says so plainly if a script uses them.
+
+| Built | Coming |
+| --- | --- |
+| The `board` world; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `graph`, `geometry`, `counting` and `space` worlds; drawing styles other than `vector`; pictures as backgrounds |
+| Narration `lines` in every language, cue marks, `@strings`, word-by-word timing estimated from the words, your own recording with its subtitle file, voice times files | Making the voice from inside the engine (text-to-speech) |
+| Captions (karaoke and plain, with the on/off switch), muted preview | |
+| Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed` | `wait` |
+| Equations: `write`, `steps`, `rearrange`, `work`, `highlight`, `box`, `cancel`, `brace`, `label_part`, `substitute`, `pull_out`, `color`, `swap` | `solve`, `evaluate`; checking that steps are equal |
+| Shapes: every shape of `draw` except drawing an svg file | `path` from an svg file |
+| Moving: `move`, `turn`, `scale`, `flip`, `wobble`, `morph`, `copy`, `group`, `show`, `hide`, `remove`, `focus` | `pointer`, `trace_path` |
+| On-screen graphics: `title`, `text`, `clear` | `card`, `image`, `counter`, `chips`, `table`, `chart`, `label`, `credits` |
+| Camera: `rest`, `frame`, `zoom`, `pan`, `follow` | `tilt`, `fly`, `orbit`, `look`; `lift` |
+| Transitions: `cut`, `fade`, `black`, `slide` (all four ways), `wipe` | `morph`, `fly`, `zoom`, `rub`, `page`; `keep` |
+| Export to MP4 with the narration's sound, with its `.srt` subtitle file and YouTube chapter list; script problems and warnings | Music and sound effects; thumbnail and end screen; maths and teaching checks |
+
 Contents:
 
 1. How a script is built
@@ -68,17 +89,17 @@ Contents:
 15. Actions: equations
 16. Actions: shapes
 17. Actions: moving and drawing attention
-18. Actions: graphs and planes
-19. Actions: geometry
-20. Actions: number lines, counting, fractions and chance
-21. Actions: 3D
-22. Actions: wonders (fractals, flows, simulations)
-23. Actions: teaching
-24. The mascot
+18. Actions: graphs and planes (coming)
+19. Actions: geometry (coming)
+20. Actions: number lines, counting, fractions and chance (coming)
+21. Actions: 3D (coming)
+22. Actions: wonders (fractals, flows, simulations) (coming)
+23. Actions: teaching (coming)
+24. The mascot (coming)
 25. On-screen graphics
 26. Camera
-27. Sound
-28. Long videos: chapters, thumbnail, end screen
+27. Sound (coming, except the narration)
+28. Long videos: chapters, thumbnail, end screen (thumbnail and end screen coming)
 29. Checks: maths, teaching, muted viewing
 30. Names you can use
 31. Rules
@@ -228,13 +249,13 @@ can be made in any style; nothing else needs to change.
 | Style | Look |
 | --- | --- |
 | `vector` | Clean, smooth lines and solid letters, drawn on as if by an invisible pen. The classic look of a maths explainer. Default. |
-| `chalk` | Chalk on a blackboard: grainy strokes, a little dust as they are drawn, smudged when rubbed out. |
-| `sketch` | Pencil and pen on paper: lines a little rough, as if drawn by hand, each slightly different. |
-| `whiteboard` | Marker on a whiteboard, with a hand that draws each line as it appears. |
-| `neon` | Glowing tubes of light on black. |
-| `blueprint` | White lines on blue paper, with faint grid and construction marks. |
-| `paper` | Shapes cut from coloured paper, with soft shadows and paper grain. |
-| `solid` | Letters and shapes as solid raised objects, lit, casting shadows, seen with depth. |
+| `chalk` (coming) | Chalk on a blackboard: grainy strokes, a little dust as they are drawn, smudged when rubbed out. |
+| `sketch` (coming) | Pencil and pen on paper: lines a little rough, as if drawn by hand, each slightly different. |
+| `whiteboard` (coming) | Marker on a whiteboard, with a hand that draws each line as it appears. |
+| `neon` (coming) | Glowing tubes of light on black. |
+| `blueprint` (coming) | White lines on blue paper, with faint grid and construction marks. |
+| `paper` (coming) | Shapes cut from coloured paper, with soft shadows and paper grain. |
+| `solid` (coming) | Letters and shapes as solid raised objects, lit, casting shadows, seen with depth. |
 
 A scene can have its own `style`, and one object can too:
 
@@ -283,7 +304,7 @@ Colours are names (section 30), hex (`"#58c4dd"`) or CSS colours.
 
 ### Looks: grade and lens
 
-These change the finished picture, as in a film:
+These change the finished picture, as in a film. (They are coming.)
 
 | Key | Values | Meaning |
 | --- | --- | --- |
@@ -356,7 +377,7 @@ the word order is different. Put the same cues in every language.
 
 Cue names must be unique in the whole video.
 
-### Voices
+### Voices (coming)
 
 The engine makes the narration with a text-to-speech voice. Each word's exact
 time comes back with the voice, so pictures land precisely on the words.
@@ -416,7 +437,7 @@ maths, `\text{area}`, can be given per language with `@` names:
 ### Making the videos
 
 The engine makes one video per language. Pick the language in the engine's
-page, or **Export all** to make every one. Each language's video follows its
+page and export. (**Export all**, to make every one at once, is coming.) Each language's video follows its
 own voice: scenes, beats and cues move to fit how long each line takes in
 that language.
 
@@ -470,12 +491,13 @@ captions can be left off the picture and still offered to viewers.
 | `world` | `"board"`, `"graph"`, `"geometry"`, `"counting"`, `"space"` | Which of the five worlds (section 10). Default `board`. |
 | `name` | text | Used in messages and the preview's list of scenes. |
 | `chapter` | text, or text per language | Starts a new YouTube chapter here (section 28). |
+| `chapter_card` (coming) | `true` | Show the chapter's name on screen as the scene starts. |
 | `start_line` | a line number or id | The scene begins when this line begins. |
 | `start_cue` | a cue name | The scene begins at this cue. |
 | `start` | seconds | The scene begins at this time. Only for videos with no narration. |
 | `transition` | see below | How this scene arrives. Default `cut`. Ignored on the first scene. |
 | `transition_duration` | seconds | Default 1. |
-| `keep` | list of ids, or `"all"` | Things from the scene before that carry over into this one, in the same place. Equations, words and shapes carry into any world; graphs, figures and counted things only into a scene of the same world. |
+| `keep` (coming) | list of ids, or `"all"` | Things from the scene before that carry over into this one, in the same place. Equations, words and shapes carry into any world; graphs, figures and counted things only into a scene of the same world. |
 | `style`, `theme`, `symbols`, `captions` | as at the top | For this scene only. |
 | `grade`, `glow`, `depth`, `camera_style` | section 5 | For this scene only. |
 | `background` | see below | What is behind everything. |
@@ -487,13 +509,13 @@ captions can be left off the picture and still offered to viewers.
 | `cut` | Instant change. |
 | `fade` | The new scene fades in over the old. |
 | `black` | Down to the background colour, and up again. |
-| `morph` | Things in both scenes with the same `id` glide and change into their new form; the rest fade. The smoothest way to move on, from one world to another too. |
+| `morph` (coming) | Things in both scenes with the same `id` glide and change into their new form; the rest fade. The smoothest way to move on, from one world to another too. |
 | `slide` | The old scene slides away and the new one slides in from the right (`slide_left`, `slide_up`, `slide_down` for other directions). |
-| `fly` | The camera flies across the endless sheet to where the new scene is, as if the lesson were laid out on one huge board. |
+| `fly` (coming) | The camera flies across the endless sheet to where the new scene is, as if the lesson were laid out on one huge board. |
 | `wipe` | A soft edge sweeps across. |
-| `zoom` | The camera dives into the thing named by `into` (an id from the scene before), and the new scene opens out of it. |
-| `rub` | The old scene is rubbed off as if from a board. Best with `chalk` and `whiteboard`. |
-| `page` | The old scene turns away like a page. Best with `sketch` and `paper`. |
+| `zoom` (coming) | The camera dives into the thing named by `into` (an id from the scene before), and the new scene opens out of it. |
+| `rub` (coming) | The old scene is rubbed off as if from a board. Best with `chalk` and `whiteboard`. |
+| `page` (coming) | The old scene turns away like a page. Best with `sketch` and `paper`. |
 
 The first scene always starts at 0. Scenes must be in time order.
 
@@ -513,7 +535,7 @@ Each scene is a fresh sheet unless `keep` says otherwise.
 | `style` | `plain`, `gradient`, `grid`, `dots`, `image` | `plain`: the theme's background. `grid`: faint squares. `dots`: a faint dot grid. Default `plain`. |
 | `colors` | list | For `gradient`: middle and edge. |
 | `spacing` | a number | Size of grid squares, in sheet units (section 12). |
-| `image` | file | A picture or clip behind everything. |
+| `image` (coming) | file | A picture or clip behind everything. |
 | `dim`, `blur` | 0 to 1 | Darken or blur the picture so the maths reads over it. |
 
 ---
@@ -693,7 +715,7 @@ dollar signs: `"text": "so $x^2 \\geq 0$ always"`.
 
 ## 12. Where things go
 
-Wherever a setting takes a position (`at`, `to`, `from`, `toward`, `target`),
+Wherever a setting takes a position (`position`, `to`, `from`, `toward`, `target`),
 it can be any of:
 
 | Form | Example | Meaning |
@@ -706,6 +728,9 @@ it can be any of:
 | A point on a graph | `{ "on": "f", "x": 2 }` | On that graph, above that number. |
 | A point on a number line | `{ "on": "line", "x": 0.75 }` | At that number. |
 | Sheet numbers | `[3, -1.5]` | That far right and up from the middle of the sheet. In space: `[x, y, z]`. |
+
+`at` is always a time (section 13). The place something goes is its
+`position`.
 
 The nine screen places:
 
@@ -767,7 +792,7 @@ An action that makes several things (`write` of a list, `chips`, `draw` of a
 list, `construct` with several steps) can lay them out one after another
 with `lag`: the seconds between one starting and the next.
 
-### Waiting for the viewer
+### Waiting for the viewer (coming)
 
 A beat can hold the whole video still, with no narration, for a moment:
 
@@ -806,7 +831,7 @@ drawn on:
 ```json
 "place": [
   { "do": "plot", "id": "f", "math": "x^2" },
-  { "do": "write", "id": "eq1", "tex": "f(x) = x^2", "at": "top_left" }
+  { "do": "write", "id": "eq1", "tex": "f(x) = x^2", "position": "top_left" }
 ]
 ```
 
@@ -825,7 +850,7 @@ Every item in `place` is written like a beat, without a time.
 | A line or arrow | `.start`, `.end`, `.middle` |
 | A group | its members: `.1`, `.2`, or their ids |
 
-### Groups
+### group (groups)
 
 ```json
 { "do": "group", "id": "both", "who": ["eq1", "eq2"] }
@@ -840,12 +865,12 @@ Every object can take:
 | Key | Values | Meaning |
 | --- | --- | --- |
 | `id` | text | Its name. |
-| `at` | a position (section 12) | Where it goes. |
+| `position` | a position (section 12) | Where it goes. |
 | `color` | a colour | Its colour (for an equation, everything not coloured by `symbols`). |
 | `size` | as each object says | How big. |
 | `opacity` | 0 to 1 | Default 1. |
 | `style` | a style name (section 5) | Draw this one thing differently. |
-| `lift` | 0 to 5 | How far it rises off a flat sheet, seen when the sheet is tilted. |
+| `lift` (coming) | 0 to 5 | How far it rises off a flat sheet, seen when the sheet is tilted. |
 | `key` | `true` | A result worth remembering; it goes into the recap (section 23). |
 | `hidden` | `true` | Made, but not shown, until `show`. |
 | `appear` | see below | How it arrives. |
@@ -874,7 +899,7 @@ Writes an equation or any expression on the sheet.
 
 ```json
 { "at_line": 2, "do": "write", "id": "eq1", "tex": "(a+b)^2" }
-{ "at_line": 3, "do": "write", "id": "eq2", "tex": "= a^2 + 2ab + b^2", "at": { "right_of": "eq1", "gap": "small" } }
+{ "at_line": 3, "do": "write", "id": "eq2", "tex": "= a^2 + 2ab + b^2", "position": { "right_of": "eq1", "gap": "small" } }
 { "at_line": 4, "do": "write", "tex": ["x = 1", "x = 2", "x = 3"], "lag": 0.4 }
 ```
 
@@ -882,7 +907,7 @@ Writes an equation or any expression on the sheet.
 | --- | --- | --- |
 | `tex` or `math` | text, or a list | Required. A list writes several lines, one under another. |
 | `id` | text | With a list, the lines are `id.1`, `id.2` ... |
-| `at`, `size`, `color`, `appear` | section 14 | |
+| `position`, `size`, `color`, `appear` | section 14 | |
 | `align` | `"="`, `left`, `center` | With a list: how the lines line up. Default `"="`. |
 
 ### steps (transform, then)
@@ -903,10 +928,10 @@ become.
 | `to` | text, or a list of steps | Required. In LaTeX, or plain with `"as": "math"`. A list goes through each step in turn. |
 | `match` | `"auto"`, `"parts"`, `"none"` | `auto`: the engine finds what is the same between the two. `parts`: only named parts (`\part`) are matched, by name. `none`: the old fades, the new writes. Default `auto`. |
 | `pairs` | `{ old: new }` | Say yourself which piece becomes which, when `auto` guesses wrong: `{ "+5": "-5" }`, or by part name. |
-| `new_line` | `true` | Keep the old line and write the new one below it, lined up on `=`, as in a column of working. |
+| `new_line` | `true` | Keep the old line and write the new one below it, lined up on `=`, as in a column of working. The new line is a new thing: its `id` is the beat's `id`, or the old one with `_2`, `_3` ... added (`eq1_2`). Later steps name it by that id. |
 | `note` | text | A short reason, written beside the step in a smaller size, such as `"subtract 5 from both sides"`. |
 | `note_at` | `right`, `left` | Default `right`. |
-| `check` | `true`, `false` | Check that the new step is really equal to the old (section 29). Default `true`. |
+| `check` (coming) | `true`, `false` | Check that the new step is really equal to the old (section 29). Default `true`. |
 | `lag` | seconds | With a list: time between steps. |
 
 ### work (derivation, column)
@@ -915,7 +940,7 @@ A whole column of working at once: each line arrives in turn, lined up on
 `=`, each with its reason.
 
 ```json
-{ "at_line": 4, "do": "work", "id": "w", "at": "left", "lines": [
+{ "at_line": 4, "do": "work", "id": "w", "position": "left", "lines": [
   { "tex": "3x + 5 = 20" },
   { "tex": "3x = 15", "note": "subtract 5", "at_cue": "sub" },
   { "tex": "x = 5", "note": "divide by 3", "at_cue": "div", "key": true }
@@ -932,7 +957,7 @@ A whole column of working at once: each line arrives in turn, lined up on
 
 Each line is `w.1`, `w.2` ... afterwards.
 
-### solve (auto_steps)
+### solve (auto_steps) (coming)
 
 Like `work`, but the engine works out the steps itself and writes each
 reason.
@@ -953,7 +978,7 @@ reason.
 When the script is opened the engine shows the steps it found. Copy them
 into a `work` beat to change any of them.
 
-### highlight (indicate, emphasise)
+### highlight (indicate, emphasise, emphasize)
 
 Draws the eye to an equation or part of one.
 
@@ -1007,7 +1032,7 @@ The letters lift out and fade, the values drop into their places, and the
 expression spaces itself again. `"keep": true` makes a new line below
 instead of changing the old one.
 
-### evaluate (calculate, simplify)
+### evaluate (calculate, simplify) (coming)
 
 Works the expression out to its value, step by step or at once:
 `"steps": true` shows each sum on the way, otherwise the expression melts
@@ -1045,7 +1070,7 @@ over the beat. Without `part`, the whole thing.
 Draws a shape on the sheet.
 
 ```json
-{ "at_line": 3, "do": "draw", "shape": "square", "id": "big", "size": 4, "at": "left" }
+{ "at_line": 3, "do": "draw", "shape": "square", "id": "big", "size": 4, "position": "left" }
 { "at_line": 4, "do": "draw", "shape": "arrow", "from": "eq1.right", "to": "eq2.left" }
 { "at_line": 5, "do": "draw", "shape": "circle", "id": "c", "radius": 2, "fill": "blue", "fill_opacity": 0.3 }
 ```
@@ -1055,32 +1080,32 @@ Draws a shape on the sheet.
 | `line` | `from`, `to`. `extend`: `true` to run on past both ends. |
 | `arrow` | `from`, `to`. `tip`: `end` (default), `start`, `both`. `curve`: a number; bows the arrow, as for `arc`. |
 | `dashed` | A dashed line: `from`, `to`. |
-| `dot` | `at`, `radius`. |
-| `circle` | `at`, `radius`. |
-| `ellipse` | `at`, `width`, `height`. |
-| `arc` | `at`, `radius`, `from_angle`, `to_angle` (degrees); or `from`, `to` and `bend`. |
-| `square` | `at`, `size`. |
-| `rectangle` | `at`, `width`, `height`, `corner` (rounding). |
+| `dot` | `position`, `radius`. |
+| `circle` | `position`, `radius`. |
+| `ellipse` | `position`, `width`, `height`. |
+| `arc` | `position`, `radius`, `from_angle`, `to_angle` (degrees); or `from`, `to` and `bend`. |
+| `square` | `position`, `size`. |
+| `rectangle` | `position`, `width`, `height`, `corner` (rounding). |
 | `polygon` | `points` (a list of positions) and optional `names` for its corners (`["A", "B", "C"]`). |
-| `regular` | `sides`, `at`, `radius`. A regular polygon. |
-| `star` | `points`, `at`, `radius`. |
+| `regular` | `sides`, `position`, `radius`. A regular polygon. |
+| `star` | `points`, `position`, `radius`. |
 | `brace` | `from`, `to`, `text`. A curly bracket between two points. |
-| `path` | `file`: an svg drawing, drawn on stroke by stroke. Or `points` for a smooth curve through them. |
-| `grid` | `at`, `rows`, `columns`, `size`. |
-| `cross`, `tick` | `at`, `size`. |
+| `path` | `points`: a smooth curve through them. (`file`: an svg drawing, drawn on stroke by stroke, is coming.) |
+| `grid` | `position`, `rows`, `columns`, `size`. |
+| `cross`, `tick` | `position`, `size`. |
 
 Every shape also takes:
 
 | Key | Values | Meaning |
 | --- | --- | --- |
 | `color` | a colour | Line colour. |
-| `width` | a number | Line width. Default 4 (in design pixels at 1080 high). |
+| `line_width` | a number | Line width. Default 4 (in design pixels at 1080 high). |
 | `fill` | a colour, or `false` | Inside colour. |
 | `fill_opacity` | 0 to 1 | Default 0.6 when a `fill` is given. |
 | `dash` | `true` | Dashed line. |
 | `glow` | `true` | The line glows. |
 | `label` | text | A name beside it. `label_at`: a named spot. |
-| `size`, `at`, `appear`, `id`, `key`, `lift` | section 14 | |
+| `size`, `position`, `appear`, `id`, `key`, `lift` | section 14 | |
 
 A list of shapes in `shapes` draws several, with `lag` between them.
 
@@ -1103,7 +1128,7 @@ A list of shapes in `shapes` draws several, with `lag` between them.
 | `path` | `straight`, `arc`, `arc_left`, `arc_right`, or a list of positions | The way it travels. Default `straight`. |
 | `ease` | `smooth`, `linear`, `in`, `out`, `spring`, `there_and_back` | How it moves through its time. `spring`: overshoots a little and settles. `there_and_back`: goes and comes back. Default `smooth`. |
 
-### turn, scale, flip
+### turn (rotate_by), scale (resize), flip
 
 `{ "do": "turn", "who": "tri", "by": 90, "around": "tri.A" }`: turns by
 degrees (anticlockwise; negative for clockwise) round a point (default its
@@ -1134,7 +1159,7 @@ thing) or a description of a new thing, written as a beat without a time.
 `{ "do": "copy", "who": "tri", "id": "tri2", "to": "right" }`: a copy slides
 out of the original to the new place.
 
-### show, hide, remove
+### show (reveal), hide, remove (disappear, erase)
 
 `show`: reveals something made `hidden`. `hide`: fades it out but keeps it
 (it can be shown again). `remove`: takes it away. `how`: `fade` (default),
@@ -1151,12 +1176,12 @@ Everything except the things named fades back, so the eye goes to them.
 
 `dim`: how far the rest fades, 0 to 1. Default 0.75.
 
-### pointer (tap)
+### pointer (tap) (coming)
 
 A pointer moves to a thing and taps it: `"on"`, and `"as"` `arrow` (default),
 `hand`, `chalk`, `dot`. A list of `on` points at each in turn.
 
-### trace_path (trail)
+### trace_path (trail) (coming)
 
 Something moving leaves a fading trail behind it: `"who"`, `"length"`
 (seconds of trail), `"color"`.
@@ -1168,7 +1193,7 @@ surprise.
 
 ---
 
-## 18. Actions: graphs and planes
+## 18. Actions: graphs and planes (coming)
 
 These work in the `graph` world. The world's own axes are called `axes`;
 `on` can be left out wherever it would name them.
@@ -1179,7 +1204,7 @@ Makes another set of axes, beside the world's own (or the first, in a scene
 with `"axes": false`). The same keys set up the world's own axes.
 
 ```json
-{ "at_line": 1, "do": "axes", "id": "ax2", "x": [-5, 5], "y": [-3, 8], "width": 6, "at": "right" }
+{ "at_line": 1, "do": "axes", "id": "ax2", "x": [-5, 5], "y": [-3, 8], "width": 6, "position": "right" }
 ```
 
 | Key | Values | Meaning |
@@ -1235,7 +1260,7 @@ A named number that can change over time. Every graph, label, counter or
 equation that uses it changes with it.
 
 ```json
-{ "at_line": 4, "do": "value", "name": "a", "start": 1, "slider": { "at": "top_right", "range": [0, 3] } }
+{ "at_line": 4, "do": "value", "name": "a", "start": 1, "slider": { "position": "top_right", "range": [0, 3] } }
 { "at_line": 5, "do": "set", "name": "a", "to": 2.5, "duration": 3 }
 { "at_line": 6, "do": "set", "name": "a", "to": [0.5, 2, 1], "duration": 6 }
 ```
@@ -1259,7 +1284,7 @@ current number in place of `\value{a}`.
 A dot on a graph or axes, which can be moved.
 
 ```json
-{ "at_line": 3, "do": "point", "id": "P", "at": { "on": "f", "x": 1 }, "label": "P", "drops": true, "coords": true }
+{ "at_line": 3, "do": "point", "id": "P", "position": { "on": "f", "x": 1 }, "label": "P", "drops": true, "coords": true }
 { "at_line": 4, "do": "slide", "who": "P", "to": { "on": "f", "x": 3 }, "duration": 4 }
 ```
 
@@ -1393,7 +1418,7 @@ function does to every point at once.
 
 ---
 
-## 19. Actions: geometry
+## 19. Actions: geometry (coming)
 
 These work in the `geometry` world.
 
@@ -1404,9 +1429,9 @@ shown to stay true however it is changed.
 ### point, segment, line, ray, circle, polygon
 
 ```json
-{ "at_line": 1, "do": "point", "id": "A", "at": [-3, -1], "label": "A" }
-{ "at_line": 1, "do": "point", "id": "B", "at": [3, -1], "label": "B" }
-{ "at_line": 1, "do": "point", "id": "C", "at": [1, 2.5], "label": "C" }
+{ "at_line": 1, "do": "point", "id": "A", "position": [-3, -1], "label": "A" }
+{ "at_line": 1, "do": "point", "id": "B", "position": [3, -1], "label": "B" }
+{ "at_line": 1, "do": "point", "id": "C", "position": [1, 2.5], "label": "C" }
 { "at_line": 2, "do": "polygon", "id": "tri", "points": ["A", "B", "C"] }
 { "at_line": 3, "do": "circle", "id": "c", "center": "A", "through": "B" }
 { "at_line": 3, "do": "segment", "id": "AC", "from": "A", "to": "C" }
@@ -1414,13 +1439,13 @@ shown to stay true however it is changed.
 
 | Thing | Keys |
 | --- | --- |
-| `point` | `at`, `label`. A free point if `at` is a position; a dependent one if it uses `construct`. |
+| `point` | `position`, `label`. A free point if `position` is given; a dependent one if it uses `construct`. |
 | `segment` | `from`, `to`. |
 | `line` | `through`: two points. Runs to the edge of the frame. |
 | `ray` | `from`, `through`. |
 | `circle` | `center` and `radius` (a number, or a segment id), or `center` and `through`, or `through` three points. |
 | `polygon` | `points`: a list of point ids. Its corners keep their names; sides are `tri.AB`. |
-| `triangle` | A shortcut: `"kind"`: `any`, `right`, `equilateral`, `isosceles`, with `size` and `at`; corners named `A`, `B`, `C` unless `names` says otherwise. |
+| `triangle` | A shortcut: `"kind"`: `any`, `right`, `equilateral`, `isosceles`, with `size` and `position`; corners named `A`, `B`, `C` unless `names` says otherwise. |
 
 ### construct (build)
 
@@ -1441,7 +1466,7 @@ Makes a new thing from others, by a rule:
 | `intersection` | `of`: two lines or circles. `which`: 1 or 2 when there are two | A point. |
 | `foot` | `from`: a point; `to`: a line | The point where the perpendicular meets the line. |
 | `reflect_point` | `of`: a point; `in`: a line or point | A point. |
-| `tangent` | `to`: a circle; `at` a point on it, or `from` a point outside | A line, or two. |
+| `tangent` | `to`: a circle; `touch`: a point on it, or `from` a point outside | A line, or two. |
 | `circumcircle`, `incircle` | `of`: a triangle | A circle (and its centre, as `id.center`). |
 | `centroid`, `orthocenter`, `circumcenter`, `incenter` | `of`: a triangle | A point. |
 | `on` | `on`: a line, circle or polygon; `t`: 0 to 1 along it | A point that can slide along that thing. |
@@ -1454,12 +1479,12 @@ themselves.
 ### angle (angle_mark)
 
 ```json
-{ "at_line": 7, "do": "angle", "id": "a1", "at": ["B", "A", "C"], "show": "value" }
+{ "at_line": 7, "do": "angle", "id": "a1", "points": ["B", "A", "C"], "show": "value" }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `at` | three points: one arm, the corner, the other arm | Required. |
+| `points` | three points: one arm, the corner, the other arm | Required. |
 | `show` | `none`, `value`, `name`, or text | What is written in it: its size (`37°`), a letter (`"α"`), or any text. |
 | `arcs` | 1, 2, 3 | Several arcs, to show equal angles. |
 | `right` | `true` | Draw a small square instead (for a right angle). Done by itself when the angle is 90°. |
@@ -1521,7 +1546,7 @@ Cuts a shape into pieces and moves them, for proofs by rearranging:
 
 ---
 
-## 20. Actions: number lines, counting, fractions and chance
+## 20. Actions: number lines, counting, fractions and chance (coming)
 
 These work in the `counting` world. Actions on a number line use the
 world's `line` unless they name another with `on`.
@@ -1529,7 +1554,7 @@ world's `line` unless they name another with `on`.
 ### number_line
 
 ```json
-{ "at_line": 1, "do": "number_line", "x": [-5, 5], "at": "center" }
+{ "at_line": 1, "do": "number_line", "x": [-5, 5], "position": "center" }
 { "at_line": 2, "do": "jump", "from": -2, "by": 5, "label": "+5" }
 { "at_line": 3, "do": "interval", "from": 1, "to": "inf", "open_start": true }
 { "at_line": 4, "do": "zoom_line", "who": "line", "x": [0, 1], "duration": 3 }
@@ -1566,7 +1591,7 @@ A point on the number line is `{ "on": "line", "x": 0.75 }`.
 ```json
 { "at_line": 4, "do": "fraction", "id": "fr", "as": "bar", "parts": 4, "shade": 3 }
 { "at_line": 5, "do": "split", "who": "fr", "into": 8 }
-{ "at_line": 6, "do": "fraction", "id": "p", "as": "pie", "parts": 6, "shade": 2, "at": "right" }
+{ "at_line": 6, "do": "fraction", "id": "p", "as": "pie", "parts": 6, "shade": 2, "position": "right" }
 ```
 
 | Key | Values | Meaning |
@@ -1613,13 +1638,13 @@ A grid of every outcome of two things (such as two dice), with cells lit for
 an event: `"rows"`, `"columns"`, `"light"`: a rule in `r` and `c` (`"r + c
 == 7"`).
 
-### chart
+### chart (coming)
 
 See section 25.
 
 ---
 
-## 21. Actions: 3D
+## 21. Actions: 3D (coming)
 
 These work in the `space` world. The world's own axes (if it has them) are
 called `axes`, and `on` can be left out wherever it would name them.
@@ -1697,7 +1722,7 @@ net. `"fold": true` folds a net up into its solid.
 
 ---
 
-## 22. Actions: wonders
+## 22. Actions: wonders (coming)
 
 Things that are hard to draw by hand and beautiful to watch. They are drawn
 by the graphics card, smoothly, and are the same on every render. Which
@@ -1768,7 +1793,7 @@ away). For moments of celebration and change.
 
 ---
 
-## 23. Actions: teaching
+## 23. Actions: teaching (coming)
 
 ### question (pause_and_try, try_this)
 
@@ -1784,7 +1809,7 @@ away). For moments of celebration and change.
 | `countdown` | `true` | A ring that empties over the wait. |
 | `choices` | list of texts | Possible answers, labelled A, B, C. `answer` then names the right one, which lights up as the others fade. |
 | `hint` | text | A smaller line that appears half way through the wait. |
-| `at` | a position | Default `center`. |
+| `position` | a position | Default `center`. |
 
 `answer` reveals the answer to a `question`, with a tick. `"choice": "B"`
 for a question with choices.
@@ -1813,11 +1838,11 @@ a thing, in the theme's `good` or `bad` colour.
 
 A framed panel with a heading in the accent colour, for things to remember.
 `definition`, `theorem`, `rule`, `formula` and `tip` look slightly different,
-so viewers learn to tell them apart. `at`: a screen position. Default `right`.
+so viewers learn to tell them apart. `position`: a screen position. Default `right`.
 
 ### step_counter (progress_steps)
 
-`{ "at_line": 3, "do": "step_counter", "steps": 4, "now": 1, "at": "top_left" }`:
+`{ "at_line": 3, "do": "step_counter", "steps": 4, "now": 1, "position": "top_left" }`:
 "Step 1 of 4", with dots. A later beat with a new `now` moves it on.
 Or `"names": ["Expand", "Collect", "Factor", "Solve"]` shows a short row of
 named steps with the present one lit.
@@ -1841,7 +1866,7 @@ between.
 
 ---
 
-## 24. The mascot
+## 24. The mascot (coming)
 
 An optional small character who watches the maths and reacts: looking at
 what is happening, blinking, and showing how a viewer might feel about it.
@@ -1862,8 +1887,8 @@ Its actions:
 
 | Action | Keys | What it does |
 | --- | --- | --- |
-| `enter` | `who`, `at` (default `bottom_right`), `from` (`left`, `right`, `below`) | It arrives. |
-| `look` | `who`, `at` | Its eyes follow a thing, even as the thing moves. By default it looks at whatever was last drawn. |
+| `enter` | `who`, `position` (default `bottom_right`), `from` (`left`, `right`, `below`) | It arrives. |
+| `look` | `who`, `on` | Its eyes follow a thing, even as the thing moves. By default it looks at whatever was last drawn. |
 | `react` | `who`, `feel`: `happy`, `surprised`, `confused`, `thinking`, `excited`, `worried`, `proud`, `bored` | A face and a small movement. |
 | `say` | `who`, `text` | A speech bubble. |
 | `talk` | `who` | Its mouth moves with the narration, in time with each sound. With a made voice, this is exact. |
@@ -1920,13 +1945,13 @@ Every one takes `stay`, `id`, `appear` (`fade`, `rise`, `pop`, `slide`,
 | `style` | `plain`, `box`, `banner`, `quote`, `note` | `note`: a slightly tilted handwritten note, as written in the margin. |
 | `size`, `color`, `glow`, `by` (for quotes) | | |
 
-### card
+### card (coming)
 
 `title`, `text`, `kicker`, `number`, `unit`, `caption`, `tex` (a formula on
 the card), `side` (`left`, `right`), `position` (`top`, `middle`, `bottom`),
 `on` (a dotted line from the card to a thing on the sheet).
 
-### image (picture, clip)
+### image (picture, clip) (coming)
 
 | Key | Values | Meaning |
 | --- | --- | --- |
@@ -1940,7 +1965,7 @@ the card), `side` (`left`, `right`), `position` (`top`, `middle`, `bottom`),
 
 A later `image` with the same `id` and no `file` glides it to a new place.
 
-### counter
+### counter (coming)
 
 `to`, `from`, `label`, `kicker`, `decimals`, `prefix` (`"₹"`), `suffix`
 (`"%"`), `plain` (no thousands separators), or `items` for several side by
@@ -1950,11 +1975,11 @@ Number grouping follows each language (`1,00,000` in Hindi and other Indian
 languages where that is the custom, `100,000` in English, unless `grouping`
 says `"international"` or `"indian"`).
 
-### chips
+### chips (coming)
 
 `items`, `kicker`, `position`, `lag`.
 
-### table
+### table (coming)
 
 ```json
 { "at_line": 5, "do": "table", "head": ["$x$", "$x^2$"], "rows": [["1", "1"], ["2", "4"], ["3", "9"]], "lag": 0.5 }
@@ -1968,16 +1993,16 @@ Fills in row by row. `light`: a row or column number to highlight. A later
 `kind`: `bar`, `line`, `pie`, `dot`. `items`: `{ "label", "value", "color" }`.
 `title`, `unit`. Bars grow, lines draw on, pie slices open in turn.
 
-### label
+### label (coming)
 
 `on`, `text`, `side` (`above`, `below`, `left`, `right`, `auto`), `arrow`
 (`true`: a thin line from the label to the thing).
 
-### credits
+### credits (coming)
 
 `lines`, with `#` before a heading.
 
-### clear
+### clear (dismiss)
 
 `{ "do": "clear", "who": "heading" }` or `"who": "all"`.
 
@@ -2005,10 +2030,10 @@ shots that follow one another.
 | `zoom` | Zooms by `to` times on the `target` (default the middle). Below 1 zooms out. |
 | `pan` | Slides to centre on the `target` without zooming. |
 | `follow` | Keeps a moving thing in the middle. |
-| `tilt` | Tilts the sheet away, so it is seen at an angle, with depth: `elevation` (degrees; 90 is flat on, 30 nearly edge-on) and `angle` (turning round). Things lifted off the sheet stand out. |
-| `fly` | Flies the camera across the sheet to the `target`, rising up and coming down, rather than sliding. |
-| `orbit` | Space scenes: circles the `target`. `turns`: how far round. |
-| `look` | Space scenes: stands still and looks at the `target`, from `elevation`, `angle`, `distance`. |
+| `tilt` (coming) | Tilts the sheet away, so it is seen at an angle, with depth: `elevation` (degrees; 90 is flat on, 30 nearly edge-on) and `angle` (turning round). Things lifted off the sheet stand out. |
+| `fly` (coming) | Flies the camera across the sheet to the `target`, rising up and coming down, rather than sliding. |
+| `orbit` (coming) | Space scenes: circles the `target`. `turns`: how far round. |
+| `look` (coming) | Space scenes: stands still and looks at the `target`, from `elevation`, `angle`, `distance`. |
 
 | Key | Values | Meaning |
 | --- | --- | --- |
@@ -2024,7 +2049,7 @@ reaches the bottom of the frame, the camera moves down with it by itself.
 
 ---
 
-## 27. Sound
+## 27. Sound (coming, except the narration)
 
 ### Music
 
@@ -2086,14 +2111,14 @@ YouTube needs the first chapter to start at 0:00, at least three chapters,
 and each at least 10 seconds long. The checker warns when these are not met.
 
 A scene can also show its chapter title on screen as it starts with
-`"chapter_card": true`.
+`"chapter_card": true` (coming).
 
 ### Subtitle files for YouTube
 
 Each language's video is exported with an `.srt` subtitle file of its
 narration, to upload to YouTube, whatever `captions` says.
 
-### Thumbnail
+### Thumbnail (coming)
 
 ```json
 "thumbnail": { "at_line": 6, "text": { "en": "The missing piece", "hi": "छूटा हुआ हिस्सा" }, "position": "left", "size": "huge" }
@@ -2103,13 +2128,13 @@ The frame at that moment, with big words over it, saved as a 1280×720
 picture for each language. Or `"file"` to use your own picture with the
 words over it.
 
-### End screen
+### End screen (coming)
 
 `"end_screen": 20` keeps the last 20 seconds clear in the places where
 YouTube puts its end-screen buttons, and the checker warns if anything is
 drawn there.
 
-### Making a long video
+### Making a long video (coming)
 
 The engine page shows the scenes in a list, with chapters. Scenes are made
 separately and joined, so a change to one scene only makes that scene again.
@@ -2124,7 +2149,7 @@ When the script is opened the engine lists every problem it finds in plain
 English, with the place in the script and a suggested fix. Problems stop the
 build. Warnings do not, but are worth reading.
 
-### Maths checks
+### Maths checks (coming)
 
 | Check | What it looks at |
 | --- | --- |
@@ -2135,7 +2160,7 @@ build. Warnings do not, but are worth reading.
 A step that is meant to be wrong (in `mistake`) is not checked. One step can
 be excused with `"check": false`.
 
-### Teaching checks
+### Teaching checks (coming)
 
 Warnings about how the lesson will feel to a viewer:
 
