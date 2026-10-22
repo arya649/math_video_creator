@@ -28,7 +28,7 @@ the section named below.
 
 | ID starts with | What it is | Section |
 | --- | --- | --- |
-| `scene:` | A kind of scene, a background | 9, 10 |
+| `scene:` | One of the five worlds, a background | 9, 10 |
 | `look:` | A drawing style, theme, grade, glow, camera manner | 5, 6 |
 | `voice:` | Narration, voices, languages, cues | 4, 7 |
 | `eq:` | Writing and changing equations | 11, 15 |
@@ -60,7 +60,7 @@ Contents:
 7. Narration, voices and languages
 8. Captions
 9. Scenes and transitions
-10. Flat scenes and space scenes
+10. The five worlds
 11. Writing maths
 12. Where things go
 13. Timing: when things happen
@@ -92,7 +92,7 @@ script
 ├── title, theme, style, format, languages, voice, symbols   (the whole video)
 ├── lines                                                    (what is said, numbered)
 └── scenes  (one after another)
-    ├── stage: "flat" or "space"                             (which kind of world)
+    ├── world: board / graph / geometry / counting / space   (which kind of world)
     ├── style / background / camera_style                    (how that world looks)
     ├── place                                                (things there from the start)
     └── beats                                                (what happens, and when)
@@ -101,17 +101,21 @@ script
         └── camera:   one shot, or a list of shots
 ```
 
-Two kinds of world:
+Five kinds of world:
 
-| Stage | What it is | Use it for |
+| World | What it is | Use it for |
 | --- | --- | --- |
-| `flat` | An endless flat sheet, seen from the front. Equations, graphs, shapes and geometry all live on it. The camera can pan, zoom, and tilt it into depth. | Almost everything. |
+| `board` | A clean board for writing: equations, working, words and simple shapes. | Algebra, worked solutions, proofs in symbols, explaining ideas. |
+| `graph` | A board with a set of axes, or a full number plane, ready to draw on. | Functions, equations as curves, calculus, vectors, matrices, complex numbers. |
+| `geometry` | A board for figures that are built step by step and stay true when moved. | Constructions, angles, theorems, transformations, proofs with pictures. |
+| `counting` | A board for things that are counted, split and shared, with an optional number line. | Number sense, place value, fractions, chance and probability. |
 | `space` | A 3D world with axes, light and a camera that can circle round. | Surfaces, solids, 3D vectors, volumes. |
 
-On a flat scene you add what you need: an equation, a set of axes, a number
-line, a triangle. One scene can hold all of them at once.
+There are these five and no others. Equations, words, shapes, teaching
+tools and on-screen graphics can be used in every world; each world adds the
+actions of its own subject (section 10).
 
-On top of either stage sit the **on-screen graphics**: titles, text, cards,
+On top of every world sit the **on-screen graphics**: titles, text, cards,
 counters, tables and captions (section 25). They stay still while the camera
 moves.
 
@@ -198,7 +202,7 @@ with their timings, and made again only when a line's words change.
 | `symbols` | no | `{ symbol: colour }` (section 6) | Colours that mean something, used everywhere. |
 | `format` | no | `"landscape"`, `"landscape_4k"`, `"square"`, `"reel"` | Frame shape. `landscape` = 1920×1080, `landscape_4k` = 3840×2160, `square` = 1080×1080, `reel` = 1080×1920. Default `landscape`. |
 | `fps` | no | 24, 30, 60 | Frames a second. Default 60. |
-| `captions` | no | object (section 8) | How subtitles are shown. |
+| `captions` | no | `true`, `false`, or an object (section 8) | Captions of the narration on the picture. Default `true`. |
 | `music` | no | a file, or a list of tracks (section 27) | Music under the voice. |
 | `sounds` | no | `"none"`, `"soft"`, `"lively"` | Small sounds the engine adds by itself: chalk while writing, a soft pop as things appear, a whoosh on fast camera moves (section 27). Default `"soft"`. |
 | `strings` | no | `{ name: text per language }` (section 7) | Words used on screen, kept in one place for translating. |
@@ -235,7 +239,7 @@ can be made in any style; nothing else needs to change.
 A scene can have its own `style`, and one object can too:
 
 ```json
-{ "stage": "flat", "style": "chalk", "beats": [] }
+{ "world": "board", "style": "chalk", "beats": [] }
 { "at_line": 3, "do": "write", "id": "big", "tex": "e^{i\\pi} + 1 = 0", "style": "neon" }
 ```
 
@@ -420,18 +424,31 @@ that language.
 
 ## 8. Captions
 
-The words being said are drawn on the video:
+The words of the narration are drawn on the video as captions. They come
+from the `lines` (or your subtitle file), so there is nothing extra to write:
+captions are on unless turned off.
 
 ```json
+"captions": true
+"captions": false
 "captions": { "style": "karaoke", "position": "bottom", "size": "medium" }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `style` | `"karaoke"`, `"plain"`, `"none"` | `karaoke`: a few words at a time, the word being spoken lit in the accent colour. `plain`: the whole line in a dark box. `none`: no captions drawn (YouTube subtitle files are still written, section 28). Default `"none"`. |
+| `captions` | `true`, `false`, or an object | `true`: captions on, as the settings below say. `false`: no captions drawn. Default `true`. |
+| `style` | `"karaoke"`, `"plain"` | `karaoke`: a few words at a time, the word being spoken lit in the accent colour. `plain`: the whole line in a dark box. Default `"karaoke"`. |
 | `position` | `"bottom"`, `"top"` | Default `bottom`. |
 | `size` | `"small"`, `"medium"`, `"large"` | Default `medium`. |
 | `maths` | `true`, `false` | Show maths in captions as maths (`x²`), not as words. Default `true`. |
+
+A scene can turn them off or on for itself with `"captions": false` or
+`true`, such as for a title scene with no narration.
+
+The engine's page also has a **Captions** switch, for the preview and for
+export, which overrides the script. Either way, each language's video is
+also exported with an `.srt` subtitle file for YouTube (section 28), so
+captions can be left off the picture and still offered to viewers.
 
 ---
 
@@ -441,7 +458,7 @@ The words being said are drawn on the video:
 {
   "name": "The picture proof",
   "chapter": "Seeing it with squares",
-  "stage": "flat",
+  "world": "geometry",
   "start_line": 6,
   "transition": "fade",
   "beats": []
@@ -450,7 +467,7 @@ The words being said are drawn on the video:
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `stage` | `"flat"`, `"space"` | Kind of world. Default `flat`. |
+| `world` | `"board"`, `"graph"`, `"geometry"`, `"counting"`, `"space"` | Which of the five worlds (section 10). Default `board`. |
 | `name` | text | Used in messages and the preview's list of scenes. |
 | `chapter` | text, or text per language | Starts a new YouTube chapter here (section 28). |
 | `start_line` | a line number or id | The scene begins when this line begins. |
@@ -458,8 +475,8 @@ The words being said are drawn on the video:
 | `start` | seconds | The scene begins at this time. Only for videos with no narration. |
 | `transition` | see below | How this scene arrives. Default `cut`. Ignored on the first scene. |
 | `transition_duration` | seconds | Default 1. |
-| `keep` | list of ids, or `"all"` | Things from the scene before that carry over into this one, in the same place. |
-| `style`, `theme`, `symbols` | as at the top | For this scene only. |
+| `keep` | list of ids, or `"all"` | Things from the scene before that carry over into this one, in the same place. Equations, words and shapes carry into any world; graphs, figures and counted things only into a scene of the same world. |
+| `style`, `theme`, `symbols`, `captions` | as at the top | For this scene only. |
 | `grade`, `glow`, `depth`, `camera_style` | section 5 | For this scene only. |
 | `background` | see below | What is behind everything. |
 | `place` | list (section 14) | Things there from the start. |
@@ -470,7 +487,7 @@ The words being said are drawn on the video:
 | `cut` | Instant change. |
 | `fade` | The new scene fades in over the old. |
 | `black` | Down to the background colour, and up again. |
-| `morph` | Things in both scenes with the same `id` glide and change into their new form; the rest fade. The smoothest way to move on. |
+| `morph` | Things in both scenes with the same `id` glide and change into their new form; the rest fade. The smoothest way to move on, from one world to another too. |
 | `slide` | The old scene slides away and the new one slides in from the right (`slide_left`, `slide_up`, `slide_down` for other directions). |
 | `fly` | The camera flies across the endless sheet to where the new scene is, as if the lesson were laid out on one huge board. |
 | `wipe` | A soft edge sweeps across. |
@@ -501,27 +518,109 @@ Each scene is a fresh sheet unless `keep` says otherwise.
 
 ---
 
-## 10. Flat scenes and space scenes
+## 10. The five worlds
 
-### Flat
+### What every world has
 
-The sheet is endless. With the camera at rest, the frame shows a part of it
-**16 units wide and 9 high** (on `reel`, 9 wide and 16 high), with `0, 0` in
-the middle. Most of the time no numbers are needed: things are placed by
-words (section 12).
+**board**, **graph**, **geometry** and **counting** are flat. Each is an
+endless sheet. With the camera at rest, the frame shows a part of it **16
+units wide and 9 high** (on `reel`, 9 wide and 16 high), with `0, 0` in the
+middle. Most of the time no numbers are needed: things are placed by words
+(section 12).
 
 The camera can move round the sheet, zoom in on any part of it, and tilt it
 so it is seen at an angle, with depth (section 26). Things on the sheet can
 lift off it a little with `"lift"`, so a tilted sheet shows layers.
 
-### Space
+**space** is 3D (below).
 
-A 3D world, seen through a camera that can circle round. `x` runs to the
-right, `y` away from the viewer, `z` up, as in maths books. A space scene has
-`light`:
+### Which actions go where
+
+| Actions | board | graph | geometry | counting | space |
+| --- | --- | --- | --- | --- | --- |
+| Equations (section 15) | yes | yes | yes | yes | yes |
+| Shapes (16) | yes | yes | yes | yes | |
+| Moving and attention (17) | yes | yes | yes | yes | yes |
+| Graphs and planes (18) | | yes | | | |
+| Geometry (19) | | | yes | | |
+| Counting, fractions, chance (20) | | | | yes | |
+| 3D (21) | | | | | yes |
+| Wonders (22): `fourier`, `simulation` | yes | yes | | | |
+| Wonders (22): `fractal`, `domain_color` | | yes | | | |
+| Wonders (22): `particles` | yes | yes | yes | yes | yes |
+| Teaching (23), mascot (24), on-screen graphics (25) | yes | yes | yes | yes | yes |
+
+An action used in the wrong world stops the build, with a message naming
+the world it belongs to.
+
+### board
+
+A clean sheet for writing on.
 
 | Key | Values | Meaning |
 | --- | --- | --- |
+| `paper` | `plain`, `grid`, `dots`, `lined` | The look of the sheet. `lined`: faint ruled lines, like an exercise book. Default `plain`. |
+
+Things written with no position stack down the sheet, one under another,
+as working does (section 12).
+
+### graph
+
+A sheet with a set of axes already on it, called `axes`. Graphs, points and
+everything in section 18 go on these axes unless they name others with `on`.
+
+```json
+{ "world": "graph", "axes": { "x": [-5, 5], "y": [-3, 8], "grid": "faint" }, "beats": [] }
+{ "world": "graph", "axes": { "plane": true }, "beats": [] }
+{ "world": "graph", "axes": { "complex": true, "plane": true, "x": [-3, 3], "y": [-2, 2] }, "beats": [] }
+```
+
+`axes` takes every key of the `axes` action (section 18). Left out, the axes
+run from −8 to 8 across and −4.5 to 4.5 up, filling the frame, so one unit
+on the axes is one unit of the sheet.
+
+`"axes": { "appear": "draw" }` draws them on at the start of the scene;
+otherwise they are there from the start. `"axes": false` starts with none,
+for a scene that makes its own with the `axes` action (two sets side by
+side, for example).
+
+### geometry
+
+A sheet for figures. Points are placed by sheet numbers, or by words, and
+everything built from them follows when they move (section 19).
+
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `grid` | `false`, `true`, `"faint"` | Squared paper behind the figure. Default `false`. |
+| `numbers` | `true` | Numbers along the grid's middle lines, so points can be read off. |
+| `units` | `degrees`, `radians` | How angles are shown. Default `degrees`. |
+| `decimals` | number | Decimals for lengths and angles shown. Default 1. |
+
+### counting
+
+A sheet for things that are counted, split and shared (section 20). It can
+have a number line from the start, called `line`:
+
+```json
+{ "world": "counting", "number_line": { "x": [-5, 5] }, "beats": [] }
+```
+
+`number_line` takes every key of the `number_line` action. Left out, there is
+no line until a `number_line` beat makes one. Actions that work on a number
+line use `line` unless they name another with `on`.
+
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `table` | `true` | A soft table-top for things to sit on, with gentle shadows under coins, dice and blocks. Default `false`. |
+
+### space
+
+A 3D world, seen through a camera that can circle round. `x` runs to the
+right, `y` away from the viewer, `z` up, as in maths books.
+
+| Key | Values | Meaning |
+| --- | --- | --- |
+| `axes` | `false`, or the keys of `axes3d` (section 21) | 3D axes from the start, called `axes`. Default `false`. |
 | `light` | `"soft"`, `"studio"`, `"dramatic"`, `"flat"` | `soft`: even light from above. `studio`: a key light and a fill, gentle shadows. `dramatic`: one strong light, deep shadows. `flat`: no shading at all, colours as they are. Default `soft`. |
 | `floor` | `true`, `false` | A faint floor grid under everything. Default `false`. |
 | `camera` | `{ "elevation", "angle", "distance" }` | Where the camera starts. |
@@ -603,9 +702,9 @@ it can be any of:
 | An object | `"eq1"`, `"tri"` | Its middle. |
 | A named spot | `"eq1.right"`, `"tri.A"`, `"c.center"`, `"eq1.mid"` | A spot on an object or a part (section 14). |
 | A relation | `{ "below": "eq1" }`, `{ "right_of": "tri", "gap": "large" }` | Next to something. |
-| A point on axes | `{ "on": "ax", "x": 2, "y": 3 }` | At those numbers on a set of axes. |
+| A point on axes | `{ "x": 2, "y": 3 }`, or `{ "on": "ax2", "x": 2, "y": 3 }` | At those numbers on the world's axes (graph and space worlds), or on the axes named. |
 | A point on a graph | `{ "on": "f", "x": 2 }` | On that graph, above that number. |
-| A point on a number line | `{ "on": "nl", "x": 0.75 }` | At that number. |
+| A point on a number line | `{ "on": "line", "x": 0.75 }` | At that number. |
 | Sheet numbers | `[3, -1.5]` | That far right and up from the middle of the sheet. In space: `[x, y, z]`. |
 
 The nine screen places:
@@ -659,7 +758,7 @@ Beats can also be given an `id` for `after` and `with` to refer to.
 { "at_line": 4, "do": "write", "tex": "a^2" }
 { "at_cue": "result", "do": "box", "who": "eq1" }
 { "then": true, "do": "highlight", "who": "eq1", "part": "2ab" }
-{ "at_line": 5, "offset": 0.5, "duration": 2, "do": "plot", "on": "ax", "math": "x^2" }
+{ "at_line": 5, "offset": 0.5, "duration": 2, "do": "plot", "math": "x^2" }
 ```
 
 ### Several things in turn
@@ -706,8 +805,8 @@ drawn on:
 
 ```json
 "place": [
-  { "do": "axes", "id": "ax", "x": [-4, 4], "y": [-2, 6] },
-  { "do": "plot", "id": "f", "on": "ax", "math": "x^2" }
+  { "do": "plot", "id": "f", "math": "x^2" },
+  { "do": "write", "id": "eq1", "tex": "f(x) = x^2", "at": "top_left" }
 ]
 ```
 
@@ -1071,10 +1170,16 @@ surprise.
 
 ## 18. Actions: graphs and planes
 
+These work in the `graph` world. The world's own axes are called `axes`;
+`on` can be left out wherever it would name them.
+
 ### axes (coordinate_system)
 
+Makes another set of axes, beside the world's own (or the first, in a scene
+with `"axes": false`). The same keys set up the world's own axes.
+
 ```json
-{ "at_line": 1, "do": "axes", "id": "ax", "x": [-5, 5], "y": [-3, 8], "at": "center" }
+{ "at_line": 1, "do": "axes", "id": "ax2", "x": [-5, 5], "y": [-3, 8], "width": 6, "at": "right" }
 ```
 
 | Key | Values | Meaning |
@@ -1091,26 +1196,27 @@ surprise.
 | `plane` | `true` | A full number plane: grid lines across the whole frame, with the main axes brighter. Needed for `transform_plane`. |
 | `complex` | `true` | Label it as the complex plane (`Re`, `Im`, and `i` on the upright axis). |
 
-Things can be placed on axes with positions like `{ "on": "ax", "x": 2, "y": 3 }`.
+Things can be placed on axes with positions like `{ "x": 2, "y": 3 }` (the
+world's axes) or `{ "on": "ax2", "x": 2, "y": 3 }`.
 
 The axes can grow or change range later, smoothly, with `rescale`:
-`{ "do": "rescale", "who": "ax", "x": [-10, 10] }`. Everything drawn on them
+`{ "do": "rescale", "who": "axes", "x": [-10, 10] }`. Everything drawn on them
 follows.
 
 ### plot (graph, curve, function)
 
 ```json
-{ "at_line": 2, "do": "plot", "id": "f", "on": "ax", "math": "x^2 - 2" }
-{ "at_line": 3, "do": "plot", "id": "g", "on": "ax", "math": "a * sin(k * x)", "label": "$g(x)$" }
-{ "do": "plot", "on": "ax", "x_of_t": "cos(t)", "y_of_t": "sin(2*t)", "t": [0, 6.283] }
-{ "do": "plot", "on": "ax", "r_of_theta": "1 + cos(theta)" }
-{ "do": "plot", "on": "ax", "implicit": "x^2 + y^2 = 9" }
-{ "do": "plot", "on": "ax", "math": "y > x^2 - 2", "fill": "blue" }
+{ "at_line": 2, "do": "plot", "id": "f", "math": "x^2 - 2" }
+{ "at_line": 3, "do": "plot", "id": "g", "math": "a * sin(k * x)", "label": "$g(x)$" }
+{ "do": "plot", "x_of_t": "cos(t)", "y_of_t": "sin(2*t)", "t": [0, 6.283] }
+{ "do": "plot", "r_of_theta": "1 + cos(theta)" }
+{ "do": "plot", "implicit": "x^2 + y^2 = 9" }
+{ "do": "plot", "math": "y > x^2 - 2", "fill": "blue" }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `on` | an axes id | Required. |
+| `on` | an axes id | Default the world's `axes`. |
 | `math` or `tex` | an expression in `x`, or `y = ...`, or an inequality | The function. An inequality shades the region where it is true. |
 | `x_of_t`, `y_of_t`, `t` | expressions and a range | A curve traced by `t`. |
 | `r_of_theta`, `theta` | an expression and a range | A polar curve. Default range 0 to 2π. |
@@ -1223,7 +1329,7 @@ tangent: the meaning of a derivative.
 
 ### asymptote, limit
 
-`{ "do": "asymptote", "on": "ax", "x": 2 }` or `"y": 0`: a dashed line the
+`{ "do": "asymptote", "x": 2 }` or `"y": 0`: a dashed line the
 graph approaches. `{ "do": "limit", "on": "f", "x": 2, "from": "both" }`:
 dots run along the graph towards `x` from one side or both, with their
 values shown, closing in.
@@ -1246,7 +1352,7 @@ the graph for each row: `"on": "f"`, `"x": [-2, -1, 0, 1, 2]`, `"at"`.
 
 ### vector (arrow_on)
 
-`{ "do": "vector", "id": "v", "on": "ax", "to": [2, 1], "label": "$\\vec{v}$" }`.
+`{ "do": "vector", "id": "v", "to": [2, 1], "label": "$\\vec{v}$" }`.
 `from` defaults to the origin. `"coords": true` writes its column beside it.
 
 `{ "do": "add_vectors", "who": ["v", "w"] }`: the second slides to the tip of
@@ -1255,8 +1361,8 @@ the first, and the sum is drawn.
 ### field (vector_field, flow)
 
 ```json
-{ "at_line": 4, "do": "field", "on": "ax", "x_part": "-y", "y_part": "x", "as": "arrows" }
-{ "at_line": 6, "do": "field", "on": "ax", "x_part": "y", "y_part": "-sin(x)", "as": "flow" }
+{ "at_line": 4, "do": "field", "x_part": "-y", "y_part": "x", "as": "arrows" }
+{ "at_line": 6, "do": "field", "x_part": "y", "y_part": "-sin(x)", "as": "flow" }
 ```
 
 `as`: `arrows` (a grid of arrows sized by strength), `flow` (thousands of
@@ -1288,6 +1394,8 @@ function does to every point at once.
 ---
 
 ## 19. Actions: geometry
+
+These work in the `geometry` world.
 
 Geometry is built in steps, each depending on what was made before. When a
 free point moves, everything built from it follows, so a figure can be
@@ -1415,23 +1523,26 @@ Cuts a shape into pieces and moves them, for proofs by rearranging:
 
 ## 20. Actions: number lines, counting, fractions and chance
 
+These work in the `counting` world. Actions on a number line use the
+world's `line` unless they name another with `on`.
+
 ### number_line
 
 ```json
-{ "at_line": 1, "do": "number_line", "id": "nl", "x": [-5, 5], "at": "center" }
-{ "at_line": 2, "do": "jump", "on": "nl", "from": -2, "by": 5, "label": "+5" }
-{ "at_line": 3, "do": "interval", "on": "nl", "from": 1, "to": "inf", "open_start": true }
-{ "at_line": 4, "do": "zoom_line", "who": "nl", "x": [0, 1], "duration": 3 }
+{ "at_line": 1, "do": "number_line", "x": [-5, 5], "at": "center" }
+{ "at_line": 2, "do": "jump", "from": -2, "by": 5, "label": "+5" }
+{ "at_line": 3, "do": "interval", "from": 1, "to": "inf", "open_start": true }
+{ "at_line": 4, "do": "zoom_line", "who": "line", "x": [0, 1], "duration": 3 }
 ```
 
 | Action | Keys |
 | --- | --- |
-| `number_line` | `x` (range, and step), `numbers`, `fractions` (`true` to label in fractions), `width`. |
+| `number_line` | `x` (range, and step), `numbers`, `fractions` (`true` to label in fractions), `width`. The first one in a scene is called `line` unless given an `id`. |
 | `jump` | `on`, `from`, `by` (or `to`), `label`, `count` (several equal jumps, as in multiplication). An arc hop with an arrow tip. |
 | `interval` | `on`, `from`, `to` (a number or `"inf"`, `"-inf"`), `open_start`, `open_end`. A bold stretch with filled or hollow ends. |
 | `zoom_line` | `who`, `x`. The line smoothly zooms to a new range, new marks appearing between the old as it goes. |
 
-A point on a number line is `{ "on": "nl", "x": 0.75 }`.
+A point on the number line is `{ "on": "line", "x": 0.75 }`.
 
 ### dots, blocks, objects (array)
 
@@ -1510,17 +1621,18 @@ See section 25.
 
 ## 21. Actions: 3D
 
-These need a `space` scene.
+These work in the `space` world. The world's own axes (if it has them) are
+called `axes`, and `on` can be left out wherever it would name them.
 
 ### axes3d
 
-`{ "do": "axes3d", "id": "ax", "x": [-3, 3], "y": [-3, 3], "z": [0, 5] }`.
+`{ "do": "axes3d", "x": [-3, 3], "y": [-3, 3], "z": [0, 5] }`.
 Keys as for `axes`, with `z`.
 
 ### surface
 
 ```json
-{ "at_line": 2, "do": "surface", "id": "s", "on": "ax", "math": "x^2 + y^2", "color": "by_height" }
+{ "at_line": 2, "do": "surface", "id": "s", "math": "x^2 + y^2", "color": "by_height" }
 ```
 
 | Key | Values | Meaning |
@@ -1544,8 +1656,9 @@ Keys as for `axes`, with `z`.
 ### revolve (solid_of_revolution)
 
 `{ "do": "revolve", "who": "f", "around": "x", "x": [0, 2], "duration": 4 }`:
-the area under a graph sweeps round an axis and becomes a solid. Works with a
-graph from a flat axes carried into a space scene with `keep`.
+the area under a graph sweeps round an axis and becomes a solid. Give the
+graph with `math` (`"math": "sqrt(x)"`), or name one drawn on the world's
+axes with `who`.
 
 ### slice (cross_section)
 
@@ -1566,9 +1679,9 @@ net. `"fold": true` folds a net up into its solid.
 
 ### vector3d, plane3d, line3d
 
-`{ "do": "vector3d", "on": "ax", "to": [1, 2, 2] }`.
-`{ "do": "plane3d", "on": "ax", "math": "x + y + z = 3" }`.
-`{ "do": "line3d", "on": "ax", "through": [[0, 0, 0], [1, 1, 2]] }`.
+`{ "do": "vector3d", "to": [1, 2, 2] }`.
+`{ "do": "plane3d", "math": "x + y + z = 3" }`.
+`{ "do": "line3d", "through": [[0, 0, 0], [1, 1, 2]] }`.
 
 ### Models
 
@@ -1587,7 +1700,8 @@ net. `"fold": true` folds a net up into its solid.
 ## 22. Actions: wonders
 
 Things that are hard to draw by hand and beautiful to watch. They are drawn
-by the graphics card, smoothly, and are the same on every render.
+by the graphics card, smoothly, and are the same on every render. Which
+world each works in is in section 10.
 
 ### fractal
 
@@ -2100,9 +2214,11 @@ constants `pi` and `e`, and `i` on a complex plane. Functions: `sin`, `cos`,
 5. Every line has words in every language of the video.
 6. A thing can only be referred to after it exists in that scene (or is
    carried in with `keep`). Ids are unique in a scene.
-7. Things placed on axes, graphs or number lines name them with `on`.
-8. `space`-only actions (section 21) need a `space` scene. `transform_plane`
-   needs axes made with `plane: true`.
+7. There are five worlds: `board`, `graph`, `geometry`, `counting`, `space`.
+   Each action works only in the worlds section 10 lists for it.
+8. Things on the world's own axes or number line need no `on`; things on any
+   other set name it with `on`. `transform_plane` needs axes made with
+   `plane: true`.
 9. Scenes are in time order, and every scene after the first needs
    `start_line`, `start_cue` or `start`.
 10. `number` in a card, and `to` and `from` in a counter, are numbers, not
