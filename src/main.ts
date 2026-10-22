@@ -441,8 +441,8 @@ async function loadProject(name: string, quiet = false) {
 
 if (project) {
   void loadProject(project);
-  // Pick up edits to the project's script while the page is open.
-  setInterval(() => void loadProject(project, true), 1500);
+  // Pick up edits to the project's script while the page is open (on your own computer).
+  if (import.meta.env.DEV) setInterval(() => void loadProject(project, true), 1500);
 }
 
 // ---- Export ----

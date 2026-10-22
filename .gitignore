@@ -2,3 +2,4 @@ node_modules/
 dist/
 renders/
 *.mp4
+.vercel/
