@@ -100,7 +100,7 @@ Contents:
 21. Actions: 3D
 22. Actions: wonders (fractals, flows, simulations)
 23. Actions: teaching
-24. The mascot (coming)
+24. The mascot
 25. On-screen graphics
 26. Camera
 27. Sound
@@ -2228,34 +2228,67 @@ and the other with a cross.
 
 ---
 
-## 24. The mascot (coming)
+## 24. The mascot
 
 An optional small character who watches the maths and reacts: looking at
-what is happening, blinking, and showing how a viewer might feel about it.
+what is happening, blinking, breathing, and showing how a viewer might feel
+about it. Leave `characters` out and there is none.
 
 ```json
-"characters": [ { "name": "pip", "kind": "blob", "color": "blue" } ]
+"characters": [ { "name": "pip", "kind": "blob", "color": "teal" } ]
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `name` | text | Its id. |
-| `kind` | `blob`, `pebble`, `owl`, `robot`, or `"parts"` | A built-in simple character, or your own cut-out drawing. |
-| `parts` | file-name beginning | With `kind: "parts"`: pictures `pip_body.png`, `pip_eyes_open.png`, `pip_mouth_open.png` and so on. |
+| `name` | text | Its id, used as `who`. |
+| `kind` | `blob`, `pebble`, `owl`, `robot`, or `"parts"` | A built-in character drawn by the engine, or your own cut-out drawing. |
+| `parts` | file-name beginning | With `kind: "parts"`: pictures `pip_body.png` and `pip_eyes_open.png` (needed), and `pip_eyes_closed.png`, `pip_mouth_open.png`, `pip_mouth_closed.png` (if you have them: then it blinks and talks), all the same size, stacked. |
 | `color` | a colour | Built-in characters only. |
 | `size` | `small`, `medium`, `large` | Default `medium`. |
 
-Its actions:
+Each scene starts without it; it comes in with `enter`. `who` can be left
+out when there is only one character.
 
-| Action | Keys | What it does |
-| --- | --- | --- |
-| `enter` | `who`, `position` (default `bottom_right`), `from` (`left`, `right`, `below`) | It arrives. |
-| `look` | `who`, `on` | Its eyes follow a thing, even as the thing moves. By default it looks at whatever was last drawn. |
-| `react` | `who`, `feel`: `happy`, `surprised`, `confused`, `thinking`, `excited`, `worried`, `proud`, `bored` | A face and a small movement. |
-| `say` | `who`, `text` | A speech bubble. |
-| `talk` | `who` | Its mouth moves with the narration, in time with each sound. With a made voice, this is exact. |
-| `gesture` | `who`, `gesture`: `point`, `wave`, `shrug`, `jump`, `clap` | |
-| `leave` | `who` | It goes. |
+### enter (arrive, come_in)
+
+`{ "at_line": 1, "do": "enter", "who": "pip", "position": "bottom_right", "from": "right" }`:
+it arrives (`from`: `right`, `left`, `below`). `position`: a screen place
+(default `bottom_right`). It stays inside the frame, and above the captions
+when it stands at the bottom middle. By itself it breathes, blinks, and its
+eyes follow whatever was last drawn.
+
+### look (watch)
+
+`{ "do": "look", "on": "eq1" }`: its eyes follow a thing (or a point), even
+as it moves.
+
+### react (feel, emote)
+
+`{ "do": "react", "feel": "surprised" }`: a face and a small movement, for
+the beat's `duration` (or to the end of its line). Feels: `happy`,
+`surprised` (eyes wide, a jump), `confused` (head tilted, one brow up),
+`thinking` (eyes up), `excited` (bouncing), `worried`, `proud` (a little
+taller), `bored`.
+
+### say (speak, bubble)
+
+`{ "do": "say", "text": "Wait, why?" }`: a speech bubble beside its head,
+for the beat's `duration` (or to the end of its line), its mouth moving.
+
+### talk (speak_along, mouth)
+
+`{ "at_line": 3, "do": "talk" }`: its mouth moves with the narration's words,
+to the end of the line (or the beat's `duration`). With a made voice the
+word times are exact.
+
+### gesture (move_arms)
+
+`{ "do": "gesture", "gesture": "point", "on": "eq1" }`: `point` (at `on`, or
+at what was last drawn), `wave`, `shrug`, `jump`, `clap`.
+
+### leave (go, exit)
+
+`{ "do": "leave" }`: it goes the way it came.
 
 ---
 

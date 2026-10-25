@@ -12,3 +12,4 @@ import './space';
 import './extras';
 import './fractals';
 import './wonders';
+import './mascot';

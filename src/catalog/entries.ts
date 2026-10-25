@@ -483,9 +483,24 @@ add({ id: 'wonder:stars', title: 'particles: stars behind', beats: [{ at: 0, do:
 add({ id: 'wonder:gather', title: 'particles: gather into a thing', beats: [eq('a^2 + b^2 = c^2', { appear: 'none' }), { at: 0.2, do: 'particles', kind: 'gather', on: 'eq', duration: 2 }], still: 1.4 });
 add({ id: 'wonder:scatter', title: 'particles: scatter', beats: [eq('a^2 + b^2 = c^2', { appear: 'none' }), { at: 0.5, do: 'particles', kind: 'scatter', on: 'eq', duration: 2 }], still: 1.3 });
 
+// ---- The mascot ----
+for (const kind of ['blob', 'pebble', 'owl', 'robot'] as const) {
+  add({ id: `char:${kind}`, title: `character: ${kind}`, showTop: true, top: { characters: [{ name: 'pip', kind, color: kind === 'owl' ? 'brown' : kind === 'robot' ? 'grey' : 'blue', size: 'large' }] }, beats: [eq('a^2 + b^2 = c^2'), { at: 0, do: 'enter', who: 'pip', position: 'bottom_right' }], still: 1.5 });
+}
+const pip = { characters: [{ name: 'pip', kind: 'blob', color: 'teal', size: 'large' }] };
+for (const feel of ['happy', 'surprised', 'confused', 'thinking', 'excited', 'worried', 'proud', 'bored'] as const) {
+  add({ id: `char:feel-${feel}`, title: `react: ${feel}`, top: pip, beats: [{ at: 0, do: 'enter', position: 'bottom' }, { at: 0.9, do: 'react', feel, duration: 3 }], still: 1.6 });
+}
+add({ id: 'char:say', title: 'say: a speech bubble', top: pip, beats: [{ at: 0, do: 'enter', position: 'bottom_left' }, { at: 0.8, do: 'say', text: 'Wait, why does that work?', duration: 3 }], still: 1.6 });
+add({ id: 'char:look', title: 'look at a thing', top: pip, beats: [eq('x = 2', { position: 'top_left' }), { at: 0, do: 'enter', position: 'bottom_right' }, { at: 0.5, do: 'look', on: 'eq' }], still: 1.4 });
+for (const g of ['point', 'wave', 'shrug', 'jump', 'clap'] as const) {
+  add({ id: `char:gesture-${g}`, title: `gesture: ${g}`, top: pip, beats: [eq('E = mc^2', { position: 'left' }), { at: 0, do: 'enter', position: 'bottom_right' }, { at: 0.9, do: 'gesture', gesture: g, on: g === 'point' ? 'eq' : undefined }], still: 1.3 });
+}
+add({ id: 'char:talk', title: 'talk with the narration', top: pip, lines: ['Hello! Let us look at squares together.'], beats: [{ at: 0, do: 'enter', position: 'bottom' }, { at_line: 1, do: 'talk' }], still: 1.5 });
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
   scene: 'Worlds and backgrounds', look: 'Look: themes and colours', voice: 'Narration and captions', eq: 'Equations',
-  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching', count: 'Counting, fractions and chance', space: 'Space (3D)', wonder: 'Wonders',
+  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching', count: 'Counting, fractions and chance', space: 'Space (3D)', wonder: 'Wonders', char: 'The mascot',
 };

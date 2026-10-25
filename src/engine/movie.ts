@@ -6,6 +6,7 @@ import { makeWorldAxes } from './actions/graph';
 import { setupGeometryWorld } from './actions/geometry';
 import { setupCountingWorld } from './actions/counting';
 import { readCamera3d, setupSpaceWorld } from './actions/space';
+import { readCharacters } from './actions/mascot';
 import { ACTIONS, BEAT_KEYS, type Ctx, type Done, SOUND_KINDS, type SoundKind, type Spec, findAction } from './actions';
 import { CameraPlan, SHOT_KEYS, type View, readCamera } from './camera';
 import {
@@ -414,6 +415,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
 
   const scenes: CompiledScene[] = [];
   const allWorlds: SceneWorld[] = [];
+  const characters = readCharacters(script.characters, 'characters');
   let chapterNow: string | undefined;
   let chapterCount = 0;
   let lastEnd = 0;
@@ -437,6 +439,8 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     world.checkMaths = checkMaths;
     world.lang = lang;
     world.texts = opts.texts ?? {};
+    world.characters = characters;
+    world.words = narration.lines.flatMap((l) => l.words);
     world.look = look;
     const fin = (k: string) => (s[k] !== undefined ? { v: s[k], w: `${where}.${k}` } : { v: script[k], w: k });
     const unitNum = (k: string) => { const { v, w } = fin(k); if (v === undefined) return 0; if (typeof v !== 'number' || v < 0 || v > 1) throw new ScriptError('must be a number from 0 to 1.', w); return v; };

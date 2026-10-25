@@ -89,6 +89,10 @@ export class SceneWorld {
   finish: { grade: 'none' | 'warm' | 'cold' | 'faded' | 'mono' | 'vivid'; glow: number; depth: number; cameraStyle: 'steady' | 'drift' | 'breathe' } = { grade: 'none', glow: 0, depth: 0, cameraStyle: 'steady' };
   /** The drawing style of the scene. */
   look: import('./styles').Look = 'vector';
+  /** The video's characters (the mascot), from the top of the script. */
+  characters: import('./actions/mascot').CharacterDef[] = [];
+  /** Every spoken word with its time, for mouths that move with the voice. */
+  words: { text: string; start: number; end: number }[] = [];
   /** Text files opened with the script (subtitles, SVG outlines), by name. */
   texts: Record<string, string> = {};
   /** The language being made. */
