@@ -79,6 +79,15 @@ export interface ImageSpec {
   caption?: string;
 }
 
+/** A picture worked out pixel by pixel (fractals, domain colouring), over a box on the sheet. */
+export interface Raster {
+  x0: number; y0: number; x1: number; y1: number;
+  /** Pixels across. */
+  res: number;
+  /** Fill the pixels (rows from the top, RGBA) for time t. */
+  paint(t: number, w: number, h: number, data: Uint8ClampedArray): void;
+}
+
 export class Thing {
   base: ThingState;
   state: ThingState;
@@ -109,6 +118,7 @@ export class Thing {
   image?: ImageSpec;
   /** What the recap shows for it, when it is marked "key". */
   keyText?: { tex?: string; text?: string; title?: string };
+  raster?: Raster;
   /** How far it rises off the sheet (seen when the camera tilts). */
   lift?: number;
   /** Its own drawing style, if the beat chose one. */

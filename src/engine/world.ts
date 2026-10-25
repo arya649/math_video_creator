@@ -89,6 +89,8 @@ export class SceneWorld {
   finish: { grade: 'none' | 'warm' | 'cold' | 'faded' | 'mono' | 'vivid'; glow: number; depth: number; cameraStyle: 'steady' | 'drift' | 'breathe' } = { grade: 'none', glow: 0, depth: 0, cameraStyle: 'steady' };
   /** The drawing style of the scene. */
   look: import('./styles').Look = 'vector';
+  /** Text files opened with the script (subtitles, SVG outlines), by name. */
+  texts: Record<string, string> = {};
   /** The language being made. */
   lang = 'en';
   /** The chapter this scene is in (the last one named). */

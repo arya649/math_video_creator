@@ -10,3 +10,5 @@ import './teaching';
 import './counting';
 import './space';
 import './extras';
+import './fractals';
+import './wonders';

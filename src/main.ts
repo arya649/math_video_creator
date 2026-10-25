@@ -373,7 +373,7 @@ alignBtn.onclick = async () => {
 // ---- Opening files ----
 
 function takeText(name: string, buf: ArrayBuffer) {
-  if (/\.(srt|txt)$/i.test(name)) texts[name] = new TextDecoder().decode(buf);
+  if (/\.(srt|txt|svg)$/i.test(name)) texts[name] = new TextDecoder().decode(buf);
   const v = name.match(/^voice_([\w-]+)\.json$/i);
   if (v) voices[v[1]] = JSON.parse(new TextDecoder().decode(buf));
 }

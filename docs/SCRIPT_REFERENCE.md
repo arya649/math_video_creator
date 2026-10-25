@@ -98,7 +98,7 @@ Contents:
 19. Actions: geometry
 20. Actions: number lines, counting, fractions and chance
 21. Actions: 3D
-22. Actions: wonders (fractals, flows, simulations) (coming)
+22. Actions: wonders (fractals, flows, simulations)
 23. Actions: teaching
 24. The mascot (coming)
 25. On-screen graphics
@@ -2048,13 +2048,13 @@ a curve traced as `t` runs (default 0 to 2π). `color`, `width`.
 
 ---
 
-## 22. Actions: wonders (coming)
+## 22. Actions: wonders
 
-Things that are hard to draw by hand and beautiful to watch. They are drawn
-by the graphics card, smoothly, and are the same on every render. Which
-world each works in is in section 10.
+Things that are hard to draw by hand and beautiful to watch. They are worked
+out exactly the same way on every render. Which world each works in is in
+section 10.
 
-### fractal
+### fractal (fractals)
 
 ```json
 { "at_line": 3, "do": "fractal", "kind": "mandelbrot", "zoom_to": [-0.7436, 0.1318], "zoom": 10000, "duration": 20 }
@@ -2062,17 +2062,21 @@ world each works in is in section 10.
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `kind` | `mandelbrot`, `julia`, `burning_ship`, `newton`, `sierpinski`, `koch`, `tree`, `dragon` | The first four fill the frame with colour. The last four are drawn as lines, level by level. |
-| `c` | `[re, im]` | `julia`: its number. Can use named values, so the fractal shifts as one changes. |
-| `zoom_to`, `zoom` | a point, a number | Dive into that point until that many times larger. |
-| `levels` | number | Line fractals: how many levels, added one after another. |
-| `palette` | a list of colours, or `"theme"` | Colouring. |
+| `kind` | `mandelbrot`, `julia`, `burning_ship`, `newton`, `sierpinski`, `koch`, `tree`, `dragon` | The first four fill the axes' box (or the frame) with colour, worked out pixel by pixel; the numbers on the axes are the plane's. The last four are drawn as lines, level by level, in any flat world. |
+| `c` | `[re, im]` | `julia`: its number. Each part can be the name of a value, so the fractal shifts as the value changes. Default `[-0.8, 0.156]`. |
+| `zoom_to`, `zoom` | a point, a number | Dive into that point until that many times larger (up to 10¹²), over the beat. The axes fade out as it dives. |
+| `levels` | number | Line fractals: how many levels, added one after another (up to 7 for Sierpinski, 6 Koch, 11 tree, 14 dragon). |
+| `palette` | a list of colours, or `"theme"` | Colouring: the first colour is the inside of the set, the rest are the bands outside. |
+| `iterations` | number | How hard to look; more shows finer detail. Chosen by the zoom if left out. |
+| `size`, `position`, `color` | | Line fractals. |
 
 ### domain_color (complex_colors)
 
-`{ "do": "domain_color", "map": "(z^2 - 1) / (z^2 + 1)" }`: the complex plane
-coloured by where each point is sent: hue for direction, brightness for size.
-Roots and poles show as points where all colours meet.
+`{ "do": "domain_color", "map": "(z^2 - 1) / (z^2 + 1)" }`: in a graph scene,
+the axes' box coloured by where each point is sent: hue for direction,
+brightness for size, with soft rings at each doubling (`"rings": false` for
+none). Roots and poles show as points where all colours meet. Named values
+work in the map.
 
 ### fourier (epicycles)
 
@@ -2080,42 +2084,48 @@ Roots and poles show as points where all colours meet.
 { "at_line": 5, "do": "fourier", "file": "outline.svg", "circles": 80, "duration": 15 }
 ```
 
-Circles turning on circles, each riding the last, draw a picture. `circles`:
-how many. `"add_circles": [1, 80]` starts with one and adds more over the
-beat, so the drawing becomes more and more like the picture. A `math` square
-or saw wave can be given instead of a picture: `"wave": "square"`.
+Circles turning on circles, each riding the last, draw a picture: the
+outline in an SVG file (its paths and polygons, joined into one loop), or
+`"wave"`: `"square"`, `"saw"` or `"triangle"`. `circles`: how many (default
+60). `"add_circles": [1, 80]` starts with one and adds more over the beat,
+so the drawing becomes more and more like the picture. `size` (default 5),
+`position`, `color`, `cycles` (times round in the beat).
 
 ### simulation (simulate)
 
 ```json
 { "at_line": 2, "do": "simulation", "kind": "pendulum", "length": 2, "angle": 40 }
-{ "at_line": 4, "do": "simulation", "kind": "monte_carlo_pi", "points": 20000, "count": true }
+{ "at_line": 4, "do": "simulation", "kind": "monte_carlo_pi", "points": 3000 }
 { "at_line": 6, "do": "simulation", "kind": "galton", "balls": 400, "rows": 12 }
 ```
 
 | Kind | What it shows | Its keys |
 | --- | --- | --- |
-| `pendulum` | A swinging pendulum, with its path | `length`, `angle`, `double` (`true` for a chaotic double pendulum) |
+| `pendulum` | A swinging pendulum, with its arc | `length`, `angle`, `double` (`true` for a chaotic double pendulum, with its path) |
 | `projectile` | A thrown thing, with its curve | `speed`, `angle`, `on` (axes, so the path is a graph) |
 | `spring` | A weight bouncing on a spring | `stiffness`, `damping` |
-| `random_walk` | Walkers wandering at random | `walkers`, `steps`, `dimensions` (1 or 2) |
-| `monte_carlo_pi` | Dots thrown into a square, those inside the circle counted, π estimated | `points`, `count` |
+| `random_walk` | Walkers wandering at random | `walkers`, `steps`, `dimensions` (1: drawn along time; 2: on the sheet) |
+| `monte_carlo_pi` | Dots thrown into a square, those inside the circle counted, π estimated | `points`, `count` (`false` hides the sum) |
 | `galton` | Balls falling through pegs into a bell shape | `balls`, `rows` |
-| `orbits` | Planets round a sun | `bodies` |
-| `heat`, `wave` | A bar or sheet where heat spreads, or a wave ripples | `start`: an expression, or `"spike"`, `"step"` |
-| `game_of_life` | Cells living and dying | `pattern`, `size` |
-| `sort` | Bars being sorted step by step | `method`: `bubble`, `insertion`, `merge`, `quick`; `count` |
+| `orbits` | Planets round a sun, inner ones faster | `bodies` |
+| `heat`, `wave` | A bar where heat spreads, or a string where a wave runs and reflects | `start`: an expression in `x` (0 to 1), or `"spike"`, `"step"` |
+| `game_of_life` | Cells living and dying | `pattern` (`random`, `glider`, `blinker`, `gun`), `size` |
+| `sort` | Bars being sorted step by step, the two being compared lit | `method`: `bubble`, `insertion`, `merge`, `quick`; `count` |
 
 Simulations are worked out once when the script is opened, so they can be
 jumped through and always play the same. `seed` gives a different random
-run.
+run. They run for the beat's `duration` (default 6 seconds). `position`,
+`size`, `color`.
 
-### particles
+### particles (sparkles, confetti)
 
-`{ "do": "particles", "kind": "sparkle", "on": "eq1" }`. Kinds: `sparkle`,
-`confetti`, `dust`, `stars`, `gather` (particles flying in to form the
-thing named by `on`), `scatter` (the thing breaks into particles that drift
-away). For moments of celebration and change.
+`{ "do": "particles", "kind": "sparkle", "on": "eq1" }`. Kinds: `sparkle`
+(glints round the thing named by `on`), `confetti` (falling over the whole
+screen), `dust` and `stars` (drifting specks or a twinkling sky behind
+everything, staying to the end of the scene unless `"stay": false`),
+`gather` (specks flying in to form the thing named by `on`, which then
+appears), `scatter` (the thing breaks into specks that drift away). `count`,
+`color`. For moments of celebration and change.
 
 ---
 

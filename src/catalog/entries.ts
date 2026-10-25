@@ -460,9 +460,32 @@ add({ id: 'move:pointer-hand', title: 'a hand pointer', beats: [eq('E = mc^2'), 
 add({ id: 'move:trace-path', title: 'a trail behind a moving thing', beats: [{ at: 0, do: 'draw', id: 'b', shape: 'dot', position: [-5, -1], color: 'yellow' }, { at: 0.3, do: 'trace_path', who: 'b', length: 1.2 }, { at: 0.3, do: 'move', who: 'b', to: [-2, 2], duration: 0.8 }, { at: 1.1, do: 'move', who: 'b', to: [1, -1], duration: 0.8 }, { at: 1.9, do: 'move', who: 'b', to: [4, 2], duration: 0.8 }], still: 2.3 });
 add({ id: 'graph:sonify', title: 'sonify: hear the graph', scene: { world: 'graph' }, beats: [{ at: 0, do: 'plot', id: 'f', math: 'sin(x) * 2', appear: 'none' }, { at: 0.2, do: 'sonify', who: 'f', duration: 3 }], still: 1.8 });
 
+// ---- Wonders ----
+const GW = { world: 'graph' };
+add({ id: 'wonder:mandelbrot', title: 'fractal: Mandelbrot', scene: { world: 'graph', axes: { x: [-2.6, 1.4], y: [-1.15, 1.15], appear: 'none' } }, beats: [{ at: 0, do: 'fractal', kind: 'mandelbrot' }], still: 1.2 });
+add({ id: 'wonder:mandelbrot-zoom', title: 'fractal: diving in', scene: { world: 'graph', axes: { x: [-2.6, 1.4], y: [-1.15, 1.15] } }, beats: [{ at: 0, do: 'fractal', kind: 'mandelbrot', zoom_to: [-0.7436, 0.1318], zoom: 200, duration: 4 }], still: 3.5 });
+add({ id: 'wonder:julia', title: 'fractal: Julia', scene: { world: 'graph', axes: { x: [-2, 2], y: [-1.15, 1.15] } }, beats: [{ at: 0, do: 'fractal', kind: 'julia', c: [-0.8, 0.156] }], still: 1.2 });
+add({ id: 'wonder:burning-ship', title: 'fractal: burning ship', scene: { world: 'graph', axes: { x: [-2.2, 1.4], y: [-2, 0.8] } }, beats: [{ at: 0, do: 'fractal', kind: 'burning_ship' }], still: 1.2 });
+add({ id: 'wonder:newton', title: 'fractal: Newton', scene: GW, beats: [{ at: 0, do: 'fractal', kind: 'newton' }], still: 1.2 });
+for (const kind of ['sierpinski', 'koch', 'tree', 'dragon'] as const) add({ id: `wonder:${kind}`, title: `fractal: ${kind}`, beats: [{ at: 0, do: 'fractal', kind, duration: 2 }], still: 2.2 });
+add({ id: 'wonder:domain-color', title: 'domain colouring', scene: { world: 'graph', axes: { x: [-2.5, 2.5], y: [-1.5, 1.5] } }, beats: [{ at: 0, do: 'domain_color', map: '(z^2 - 1) / (z^2 + 1)' }], still: 1.2 });
+add({ id: 'wonder:fourier-square', title: 'fourier: a square wave', beats: [{ at: 0, do: 'fourier', wave: 'square', circles: 30, duration: 6 }], still: 3.5 });
+add({ id: 'wonder:fourier-add', title: 'fourier: adding circles', beats: [{ at: 0, do: 'fourier', wave: 'saw', add_circles: [1, 40], duration: 6 }], still: 4 });
+const sims: [string, Record<string, unknown>, number][] = [
+  ['pendulum', {}, 1.8], ['double-pendulum', { kind: 'pendulum', double: true }, 4], ['projectile', {}, 2.5], ['spring', {}, 1.3], ['random-walk', { kind: 'random_walk' }, 4],
+  ['monte-carlo-pi', { kind: 'monte_carlo_pi' }, 5], ['galton', {}, 5.5], ['orbits', {}, 2], ['heat', {}, 2], ['wave', {}, 1.5], ['game-of-life', { kind: 'game_of_life', pattern: 'gun', size: 40 }, 5], ['sort', { method: 'quick', count: 20 }, 3],
+];
+for (const [name, extra, still] of sims) add({ id: `wonder:sim-${name}`, title: `simulation: ${name.replace(/-/g, ' ')}`, beats: [{ at: 0, do: 'simulation', kind: name, ...extra }], still });
+add({ id: 'wonder:projectile-axes', title: 'a throw on axes', scene: { world: 'graph', axes: { x: [0, 8], y: [0, 3.5] } }, beats: [{ at: 0, do: 'simulation', kind: 'projectile', speed: 8, angle: 45 }], still: 3 });
+add({ id: 'wonder:sparkle', title: 'particles: sparkle', beats: [eq('e^{i\\pi} + 1 = 0'), { at: 0.5, do: 'particles', kind: 'sparkle', on: 'eq' }], still: 1.3 });
+add({ id: 'wonder:confetti', title: 'particles: confetti', beats: [eq('x = 5'), { at: 0.3, do: 'particles', kind: 'confetti' }], still: 1.4 });
+add({ id: 'wonder:stars', title: 'particles: stars behind', beats: [{ at: 0, do: 'particles', kind: 'stars' }, eq('\\infty')], still: 1.5 });
+add({ id: 'wonder:gather', title: 'particles: gather into a thing', beats: [eq('a^2 + b^2 = c^2', { appear: 'none' }), { at: 0.2, do: 'particles', kind: 'gather', on: 'eq', duration: 2 }], still: 1.4 });
+add({ id: 'wonder:scatter', title: 'particles: scatter', beats: [eq('a^2 + b^2 = c^2', { appear: 'none' }), { at: 0.5, do: 'particles', kind: 'scatter', on: 'eq', duration: 2 }], still: 1.3 });
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
   scene: 'Worlds and backgrounds', look: 'Look: themes and colours', voice: 'Narration and captions', eq: 'Equations',
-  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching', count: 'Counting, fractions and chance', space: 'Space (3D)',
+  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching', count: 'Counting, fractions and chance', space: 'Space (3D)', wonder: 'Wonders',
 };

@@ -444,6 +444,12 @@ export class Renderer {
       ctx.shadowColor = s.glowColor ?? resolve(own, theme.ink);
     }
 
+    if (th.raster) {
+      this.drawRaster(ctx, th, m, scene);
+      ctx.restore();
+      return;
+    }
+
     if (th.image) {
       this.drawImage(ctx, th, m, pxPerUnit, scene);
       ctx.restore();
@@ -542,6 +548,30 @@ export class Renderer {
     }
     if (tip && look === 'whiteboard' && s.drawn < 1) drawMarker(ctx, tip, resolve(own, theme.ink), unit);
     ctx.restore();
+  }
+
+  private rasters = new Map<Thing, { canvas: AnyCanvas; t: number }>();
+
+  private drawRaster(ctx: Ctx2D, th: Thing, m: Mat, scene: CompiledScene) {
+    const r = th.raster!;
+    const w = r.res, h = Math.max(1, Math.round((r.res * (r.y1 - r.y0)) / (r.x1 - r.x0)));
+    let c = this.rasters.get(th);
+    const t = scene.world.now;
+    if (!c || c.t !== t) {
+      const canvas = c?.canvas ?? makeCanvas(w, h);
+      const g = canvas.getContext('2d') as Ctx2D;
+      const img = g.createImageData(w, h);
+      r.paint(t, w, h, img.data);
+      g.putImageData(img, 0, 0);
+      c = { canvas, t };
+      this.rasters.set(th, c);
+    }
+    const p0 = apply(m, [r.x0, r.y1]), px = apply(m, [r.x1, r.y1]), py = apply(m, [r.x0, r.y0]);
+    ctx.setTransform(ctx.getTransform().multiply(new DOMMatrix([(px[0] - p0[0]) / w, (px[1] - p0[1]) / w, (py[0] - p0[0]) / h, (py[1] - p0[1]) / h, p0[0], p0[1]])));
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.globalAlpha *= th.state.drawn < 1 ? th.state.drawn : 1;
+    ctx.drawImage(c.canvas as CanvasImageSource, 0, 0);
   }
 
   private drawImage(ctx: Ctx2D, th: Thing, m: Mat, pxPerUnit: number, scene: CompiledScene) {

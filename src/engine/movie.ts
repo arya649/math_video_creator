@@ -436,6 +436,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     world.allWorlds = allWorlds;
     world.checkMaths = checkMaths;
     world.lang = lang;
+    world.texts = opts.texts ?? {};
     world.look = look;
     const fin = (k: string) => (s[k] !== undefined ? { v: s[k], w: `${where}.${k}` } : { v: script[k], w: k });
     const unitNum = (k: string) => { const { v, w } = fin(k); if (v === undefined) return 0; if (typeof v !== 'number' || v < 0 || v > 1) throw new ScriptError('must be a number from 0 to 1.', w); return v; };
