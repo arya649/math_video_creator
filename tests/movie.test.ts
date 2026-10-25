@@ -24,7 +24,7 @@ describe('compiling a script', () => {
   it('explains mistakes in plain English', () => {
     const bad = (s: unknown) => { try { compileMovie(s); return ''; } catch (e) { expect(e).toBeInstanceOf(ScriptError); return (e as Error).message; } };
     expect(bad({ scenes: [{ beats: [{ at: 0, do: 'wrtie', tex: 'x' }] }] })).toContain('Did you mean "write"');
-    expect(bad({ scenes: [{ beats: [{ at: 0, camera: 'tilt' }] }] })).toContain('not built yet');
+    expect(bad({ scenes: [{ world: 'space', beats: [{ at: 0, do: 'solid', shape: 'cube', model: 'bridge' }] }] })).toContain('not built yet');
     expect(bad({ scenes: [{ beats: [{ at: 0, do: 'write', tex: 'x' }, { at: 1, do: 'highlight', who: 'eq9' }] }] })).toContain('nothing called "eq9"');
     expect(bad({ lines: ['hello'], scenes: [{ beats: [{ at_line: 3, do: 'write', tex: 'x' }] }] })).toContain('there is no line 3');
   });

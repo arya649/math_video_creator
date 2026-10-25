@@ -109,6 +109,8 @@ export class Thing {
   image?: ImageSpec;
   /** What the recap shows for it, when it is marked "key". */
   keyText?: { tex?: string; text?: string; title?: string };
+  /** How far it rises off the sheet (seen when the camera tilts). */
+  lift?: number;
   /** Its own drawing style, if the beat chose one. */
   look?: import('./styles').Look;
   /** The reason written beside its latest step; it fades at the next step. */

@@ -559,7 +559,8 @@ captions can be left off the picture and still offered to viewers.
 | `start_cue` | a cue name | The scene begins at this cue. |
 | `start` | seconds | The scene begins at this time. Only for videos with no narration. |
 | `transition` | see below | How this scene arrives. Default `cut`. Ignored on the first scene. |
-| `transition_duration` | seconds | Default 1. |
+| `transition_duration` | seconds | Default 1 (`fly` 1.8, `morph` 1.5, `zoom` and `rub` 1.4, `page` 1.2). |
+| `into` | an id | For the `zoom` transition: the thing in the scene before to dive into. |
 | `keep` | list of ids, or `"all"` | Things from the scene before that carry over into this one, exactly as they were left (place, size, colour), so the next scene can go on working with them. Graphs, figures and counted things come as pictures of how they were left. 3D objects are not carried. |
 | `style`, `theme`, `symbols`, `captions` | as at the top | For this scene only. |
 | `grade`, `glow`, `depth`, `camera_style` | section 5 | For this scene only. |
@@ -572,13 +573,13 @@ captions can be left off the picture and still offered to viewers.
 | `cut` | Instant change. |
 | `fade` | The new scene fades in over the old. |
 | `black` | Down to the background colour, and up again. |
-| `morph` (coming) | Things in both scenes with the same `id` glide and change into their new form; the rest fade. The smoothest way to move on, from one world to another too. |
+| `morph` | Things in both scenes with the same `id` glide and change into their new form (equations symbol by symbol, as in a step); the rest fade. The smoothest way to move on, from one world to another too. Words and pictures fade rather than morph. |
 | `slide` | The old scene slides away and the new one slides in from the right (`slide_left`, `slide_up`, `slide_down` for other directions). |
-| `fly` (coming) | The camera flies across the endless sheet to where the new scene is, as if the lesson were laid out on one huge board. |
+| `fly` | The camera pulls back and flies across the endless sheet to where the new scene is, as if the lesson were laid out on one huge board. |
 | `wipe` | A soft edge sweeps across. |
-| `zoom` (coming) | The camera dives into the thing named by `into` (an id from the scene before), and the new scene opens out of it. |
-| `rub` (coming) | The old scene is rubbed off as if from a board. Best with `chalk` and `whiteboard`. |
-| `page` (coming) | The old scene turns away like a page. Best with `sketch` and `paper`. |
+| `zoom` | The camera dives into the thing named by `into` (an id from the scene before), and the new scene opens out of it. |
+| `rub` | The old scene is rubbed off in sweeps, as if from a board. Best with `chalk` and `whiteboard`. |
+| `page` | The old scene turns away like a page. Best with `sketch` and `paper`. |
 
 The first scene always starts at 0. Scenes must be in time order.
 
@@ -950,7 +951,7 @@ Every object can take:
 | `size` | as each object says | How big. |
 | `opacity` | 0 to 1 | Default 1. |
 | `style` | a style name (section 5) | Draw this one thing differently. |
-| `lift` (coming) | 0 to 5 | How far it rises off a flat sheet, seen when the sheet is tilted. |
+| `lift` | 0 to 5 | How far it rises off a flat sheet, seen when the sheet is tilted. |
 | `key` | `true` | A result worth remembering; it goes into the recap (section 23). |
 | `hidden` | `true` | Made, but not shown, until `show`. |
 | `appear` | see below | How it arrives. |
@@ -2409,8 +2410,8 @@ shots that follow one another.
 | `zoom` | Zooms by `to` times on the `target` (default the middle). Below 1 zooms out. |
 | `pan` | Slides to centre on the `target` without zooming. |
 | `follow` | Keeps a moving thing in the middle. |
-| `tilt` (coming) | Tilts the sheet away, so it is seen at an angle, with depth: `elevation` (degrees; 90 is flat on, 30 nearly edge-on) and `angle` (turning round). Things lifted off the sheet stand out. |
-| `fly` (coming) | Flies the camera across the sheet to the `target`, rising up and coming down, rather than sliding. |
+| `tilt` | Tilts the sheet away, so it is seen at an angle, in perspective: `elevation` (degrees; 90 is flat on, 15 nearly edge-on; default 55) and `angle` (turning round, default 0). Things with `lift` stand off the sheet and cast a shadow on it. `rest` lays it flat again; other shots keep the tilt. |
+| `fly` | Flies the camera across the sheet to the `target`, rising up (higher the further it goes) and coming down, rather than sliding. Default `blend` 2.4 seconds. |
 | `orbit` | Space scenes: circles round, `turns` times (default 1), over the beat (or `duration`). `elevation`, `distance`, `target` can change as it goes. |
 | `look` | Space scenes: moves to look at the `target` (a 3D object or `[x, y, z]`) from `elevation`, `angle` (degrees) and `distance`; anything left out stays as it was. In space, `frame` fits a 3D object in view, `zoom` comes closer by `to` times, `rest` goes back to the scene's starting view. |
 

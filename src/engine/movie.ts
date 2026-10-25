@@ -7,12 +7,13 @@ import { setupGeometryWorld } from './actions/geometry';
 import { setupCountingWorld } from './actions/counting';
 import { readCamera3d, setupSpaceWorld } from './actions/space';
 import { ACTIONS, BEAT_KEYS, type Ctx, type Done, SOUND_KINDS, type SoundKind, type Spec, findAction } from './actions';
-import { CameraPlan, SHOT_KEYS, readCamera } from './camera';
+import { CameraPlan, SHOT_KEYS, type View, readCamera } from './camera';
 import {
   type Narration, type VoiceTimes, estimateNarration, narrationFromSrt, narrationFromVoice, parseSrt, readLines, scaledNarration,
 } from './narration';
 import { type Theme, readTheme, colorOf } from './themes';
 import { Thing } from './thing';
+import type { Box } from './geom';
 import { LOOKS, LOOK_THEMES, type Look } from './styles';
 import { ScriptError, choice, clamp, didYouMean, isObject } from './util';
 import { type Action, SceneWorld, type SoundEvent, WORLDS, type WorldKind } from './world';
@@ -24,13 +25,12 @@ export const TOP_KEYS = [
 ] as const;
 
 export const SCENE_KEYS = [
-  'name', 'chapter', 'chapter_card', 'world', 'start_line', 'start_cue', 'start', 'transition', 'transition_duration', 'keep',
+  'name', 'chapter', 'chapter_card', 'world', 'start_line', 'start_cue', 'start', 'transition', 'transition_duration', 'keep', 'into',
   'style', 'theme', 'symbols', 'captions', 'grade', 'glow', 'depth', 'camera_style', 'background', 'place', 'beats',
   'paper', 'axes', 'grid', 'numbers', 'units', 'decimals', 'number_line', 'table', 'light', 'floor', 'camera',
 ] as const;
 
-export const TRANSITIONS = ['cut', 'fade', 'black', 'slide', 'slide_left', 'slide_up', 'slide_down', 'wipe'] as const;
-export const TRANSITIONS_LATER = ['morph', 'fly', 'zoom', 'rub', 'page'] as const;
+export const TRANSITIONS = ['cut', 'fade', 'black', 'slide', 'slide_left', 'slide_up', 'slide_down', 'wipe', 'morph', 'fly', 'zoom', 'rub', 'page'] as const;
 export type Transition = (typeof TRANSITIONS)[number];
 
 export const FORMATS: Record<string, { width: number; height: number }> = {
@@ -88,6 +88,11 @@ export class CompiledScene {
     public chapter?: string,
   ) {}
 
+  /** For the "zoom" transition: the box (on the scene before's sheet) it dives into. */
+  zoomInto?: Box;
+  /** For the "morph" transition: things that morph from the scene before, and how they look when it ends. */
+  morph?: { ids: Set<string>; settle: number; snap: Map<string, { state: Thing['state']; view: View }> };
+
   /** Put the scene in its state at time t. Nothing is kept from the frame before. */
   applyState(t: number, hold?: { at: number; u: number }) {
     for (const thing of this.world.order) thing.reset();
@@ -107,6 +112,16 @@ export class CompiledScene {
 export interface Layer {
   scene: CompiledScene;
   alpha: number;
+  /** Moving the whole picture: scale by z about (0, 0), then shift (pixels). */
+  xf?: { z: number; tx: number; ty: number };
+  /** Turning away like a page, 0 to 1. */
+  page?: number;
+  /** Rubbed off like a board, 0 to 1. */
+  rub?: number;
+  /** Things left out (they are morphing, drawn by themselves). */
+  skip?: Set<string>;
+  /** Draw the morphing things over everything, from scene `from` to this one. */
+  morph?: { from: CompiledScene; u: number };
   /** Through the background colour, for "black". */
   black?: number;
   /** Sliding: how far across, in frame widths, and which way. */
@@ -182,15 +197,43 @@ export class Movie {
     // A transition happens just before the scene it brings in.
     if (next && next.transition !== 'cut' && t >= next.start - next.transitionDuration) {
       const u = clamp((t - (next.start - next.transitionDuration)) / next.transitionDuration);
-      return transitionLayers(s, next, u);
+      return transitionLayers(s, next, u, this.width, this.height, this.frameH);
     }
     return [{ scene: s, alpha: 1 }];
   }
 }
 
-function transitionLayers(a: CompiledScene, b: CompiledScene, u: number): Layer[] {
+function transitionLayers(a: CompiledScene, b: CompiledScene, u: number, W: number, H: number, frameH: number): Layer[] {
   const e = u * u * (3 - 2 * u);
   switch (b.transition) {
+    case 'fly': {
+      // Pulling back over one huge sheet, across to the next part of it, and down again.
+      const z = 1 - 0.42 * Math.sin(Math.PI * u);
+      const D = W * 1.25, c = D * e;
+      return [
+        { scene: a, alpha: 1, xf: { z, tx: (W / 2) * (1 - z) - c * z, ty: (H / 2) * (1 - z) } },
+        { scene: b, alpha: 1, xf: { z, tx: (W / 2) * (1 - z) + (D - c) * z, ty: (H / 2) * (1 - z) } },
+      ];
+    }
+    case 'zoom': {
+      const box = b.zoomInto!;
+      const v = a.camera.viewAt(b.start - b.transitionDuration);
+      const k = (H / frameH) * v.zoom;
+      const c: [number, number] = [W / 2 + ((box.x0 + box.x1) / 2 - v.cx) * k, H / 2 - ((box.y0 + box.y1) / 2 - v.cy) * k];
+      const K = Math.max(2, Math.min(14, H / Math.max(1, (box.y1 - box.y0) * k, ((box.x1 - box.x0) * k * H) / W)));
+      const m: [number, number] = [c[0] + (W / 2 - c[0]) * e, c[1] + (H / 2 - c[1]) * e];
+      const za = Math.exp(Math.log(K) * e), zb = Math.exp(Math.log(1 / K) * (1 - e));
+      return [
+        { scene: a, alpha: 1, xf: { z: za, tx: m[0] - c[0] * za, ty: m[1] - c[1] * za } },
+        { scene: b, alpha: Math.min(1, u * 2.2), xf: { z: zb, tx: m[0] - (W / 2) * zb, ty: m[1] - (H / 2) * zb } },
+      ];
+    }
+    case 'page': return [{ scene: b, alpha: 1 }, { scene: a, alpha: 1, page: e }];
+    case 'rub': return [{ scene: b, alpha: 1 }, { scene: a, alpha: 1, rub: u }];
+    case 'morph': {
+      const ids = b.morph?.ids ?? new Set<string>();
+      return [{ scene: a, alpha: 1, skip: ids }, { scene: b, alpha: e, skip: ids, morph: { from: a, u: e } }];
+    }
     case 'fade': return [{ scene: a, alpha: 1 }, { scene: b, alpha: e }];
     case 'black':
       return u < 0.5 ? [{ scene: a, alpha: 1, black: u * 2 }] : [{ scene: b, alpha: 1, black: (1 - u) * 2 }];
@@ -408,12 +451,16 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     const camera = new CameraPlan(sheet.w, sheet.h);
     let transition: Transition = 'cut';
     if (i > 0 && s.transition !== undefined) {
-      if ((TRANSITIONS_LATER as readonly string[]).includes(String(s.transition))) {
-        throw new ScriptError(`the "${String(s.transition)}" transition is not built yet. Use one of ${TRANSITIONS.join(', ')}.`, `${where}.transition`);
-      }
       transition = choice(s.transition, TRANSITIONS, `${where}.transition`);
     }
-    const tdur = typeof s.transition_duration === 'number' ? s.transition_duration : 1;
+    const tdur = typeof s.transition_duration === 'number' ? s.transition_duration : ({ fly: 1.8, zoom: 1.4, page: 1.2, rub: 1.4, morph: 1.5 } as Record<string, number>)[transition] ?? 1;
+    let zoomInto: Box | undefined;
+    if (transition === 'zoom') {
+      const prev = scenes[scenes.length - 1];
+      if (typeof s.into !== 'string') throw new ScriptError('the "zoom" transition needs "into": the id of a thing in the scene before to dive into.', `${where}.into`);
+      if (!prev.world.things.has(s.into.split('.')[0])) throw new ScriptError(`there is nothing called "${s.into}" in the scene before.${didYouMean(s.into, [...prev.world.things.keys()].filter((k) => !k.startsWith('_')))}`, `${where}.into`);
+      zoomInto = prev.world.boxOf(s.into, `${where}.into`);
+    } else if (s.into !== undefined) warnings.push(`${where}.into: only the "zoom" transition uses "into".`);
     const background = readBackground(s, sceneTheme, where);
     if (look === 'blueprint' && s.background === undefined && s.paper === undefined) background.style = 'grid';
 
@@ -508,6 +555,10 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       try {
         const done = def.build(ctx);
         if (beatLook) for (const th of world.order.slice(before)) th.look = beatLook;
+        if (b.lift !== undefined) {
+          if (typeof b.lift !== 'number' || b.lift < 0 || b.lift > 5) throw new ScriptError('must be a number from 0 to 5.', `${w}.lift`);
+          for (const th of world.order.slice(before)) th.lift = b.lift;
+        }
         return done;
       } catch (err) {
         if (err instanceof ScriptError && !err.where) throw new ScriptError(err.message, w);
@@ -599,6 +650,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       typeof s.name === 'string' ? s.name : `Scene ${i + 1}`, world, camera, start, end, transition, tdur, background,
       typeof s.chapter === 'string' ? s.chapter : undefined,
     ));
+    scenes[scenes.length - 1].zoomInto = zoomInto;
   });
 
   const duration = typeof script.duration === 'number'
@@ -641,9 +693,33 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
   const sounds: SoundEvent[] = scenes.flatMap((sc) => sc.world.sounds);
   if (soundLevel !== 'none') {
     for (const sc of scenes) {
-      if (sc.transition.startsWith('slide') || sc.transition === 'wipe') sounds.push({ at: sc.start - sc.transitionDuration, kind: 'whoosh', volume: soundVolume });
+      if (sc.transition.startsWith('slide') || ['wipe', 'fly', 'zoom', 'page', 'morph'].includes(sc.transition)) sounds.push({ at: sc.start - sc.transitionDuration, kind: sc.transition === 'morph' ? 'swell' : 'whoosh', volume: soundVolume });
+      if (sc.transition === 'rub') sounds.push({ at: sc.start - sc.transitionDuration, kind: 'chalk', duration: sc.transitionDuration, volume: soundVolume });
     }
   }
+
+  // Morphing scenes: what morphs, and how it looks once the new scene has settled.
+  scenes.forEach((b, i) => {
+    if (b.transition !== 'morph' || i === 0) return;
+    const a = scenes[i - 1];
+    const settle = 1.5;
+    const ok = (th: Thing | undefined) => !!th && th.kind !== 'group' && !th.id.startsWith('_') && !th.text && !th.image && !th.parent;
+    b.applyState(b.start + settle);
+    const snap = new Map<string, { state: Thing['state']; view: View }>();
+    const view = b.camera.viewAt(b.start + settle);
+    for (const th of b.world.order) {
+      if (!ok(th) || !ok(a.world.things.get(th.id)) || !th.shown()) continue;
+      if (b.world.space?.objects.some((o) => o.thing === th) || a.world.space?.objects.some((o) => o.thing.id === th.id)) continue;
+      snap.set(th.id, { state: { ...th.state, glyphs: th.state.glyphs, glyphStates: undefined }, view });
+    }
+    b.morph = { ids: new Set(snap.keys()), settle, snap };
+    // Until it settles, the new scene shows them as the morph left them.
+    b.world.livers.push((t) => {
+      if (t < b.start || t >= b.start + settle) return;
+      for (const [id, sn] of snap) Object.assign(b.world.things.get(id)!.state, { ...sn.state, glyphs: sn.state.glyphs });
+    });
+    if (!snap.size) warnings.push(`${b.name}: the morph has nothing to morph; give things in both scenes the same id.`);
+  });
 
   const waits = scenes.flatMap((sc) => sc.world.waits).sort((a, b) => a.at - b.at);
   if (checks.teaching !== false) warnings.push(...teachingChecks(scenes.map((sc) => sc.world), narration, duration));

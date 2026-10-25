@@ -73,7 +73,7 @@ export function findAction(name: unknown, where: string): [string, ActionDef] {
 /** Keys every beat may have, whatever it does. */
 export const BEAT_KEYS = [
   'do', 'camera', 'id', 'at', 'at_line', 'at_cue', 'at_word', 'then', 'after', 'with', 'offset', 'duration',
-  'until_line', 'until_cue', 'speed', 'sound', 'key', 'stay', 'note', 'hidden', 'style',
+  'until_line', 'until_cue', 'speed', 'sound', 'key', 'stay', 'note', 'hidden', 'style', 'lift',
 ] as const;
 
 // ---- Small readers ----

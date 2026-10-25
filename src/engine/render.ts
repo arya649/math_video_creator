@@ -3,7 +3,9 @@
 import { mixColor, withAlpha } from './color';
 import { type Mat, type Pt, apply, contourLength, mul, openPoints, partial } from './geom';
 import type { CompiledScene, Layer, Movie } from './movie';
+import type { View } from './camera';
 import { captionText } from './narration';
+import { matchGlyphs, morphAt, planMorph } from './match';
 import { fontString } from './text';
 import type { Glyph, GlyphState, Thing } from './thing';
 import { clamp, hashString } from './util';
@@ -47,6 +49,43 @@ function grainPattern(ctx: Ctx2D): CanvasPattern | null {
 
 const TONES: Record<string, string> = { none: 'none', mono: 'grayscale(1) contrast(1.05)', faded: 'saturate(0.55) brightness(1.08) contrast(0.9)', warm: 'sepia(0.35) saturate(1.2)', cold: 'saturate(0.8) hue-rotate(12deg) brightness(0.98)' };
 
+/** From the sheet to pixels: flat (a plain matrix), or seen at an angle when the camera tilts. */
+interface Proj { affine?: Mat; at(q: Pt, z: number): Pt; scaleAt(q: Pt): number }
+
+function flatProj(m: Mat): Proj {
+  const k = Math.hypot(m[0], m[1]);
+  return { affine: m, at: (q) => apply(m, q), scaleAt: () => k };
+}
+
+/** The sheet seen by a camera `elevation` degrees above it (90 is flat on), turned by `angle`. */
+function tiltProj(view: View, W: number, H: number, frameH: number): Proj {
+  const k = (H / frameH) * view.zoom;
+  const phi = ((view.elevation ?? 90) * Math.PI) / 180, th = ((view.angle ?? 0) * Math.PI) / 180;
+  const dist = (frameH * 1.9) / view.zoom;
+  const F = k * dist;
+  const cphi = Math.cos(phi), sphi = Math.sin(phi), ct = Math.cos(th), st = Math.sin(th);
+  const at = (q: Pt, z: number): Pt => {
+    const dx = q[0] - view.cx, dy = q[1] - view.cy;
+    const x = dx * ct - dy * st, y = dx * st + dy * ct;
+    // Eye at (0, -dist cos φ, dist sin φ), looking at the middle.
+    const vy = y + dist * cphi, vz = z - dist * sphi;
+    const depth = Math.max(0.05 * dist, vy * cphi - vz * sphi);
+    const up = vy * sphi + vz * cphi;
+    return [W / 2 + (x * F) / depth, H / 2 - (up * F) / depth];
+  };
+  return {
+    at,
+    scaleAt: (q) => { const a = at(q, 0), b = at([q[0] + 0.01, q[1]], 0); return Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.01; },
+  };
+}
+
+/** The flat matrix that best matches a projection near one thing (for words and pictures). */
+function localMatrix(P: Proj, thM: Mat, lift: number): Mat {
+  if (P.affine) return mul(P.affine, thM);
+  const o = P.at(apply(thM, [0, 0]), lift), ex = P.at(apply(thM, [0.01, 0]), lift), ey = P.at(apply(thM, [0, 0.01]), lift);
+  return [(ex[0] - o[0]) / 0.01, (ex[1] - o[1]) / 0.01, (ey[0] - o[0]) / 0.01, (ey[1] - o[1]) / 0.01, o[0], o[1]];
+}
+
 export class Renderer {
   private ctx: Ctx2D;
   private spare?: { canvas: AnyCanvas; ctx: Ctx2D };
@@ -54,6 +93,8 @@ export class Renderer {
   captions = true;
   private hold?: { at: number; u: number };
   private lookOf: Look = 'vector';
+  /** Things left out of the next scene drawn (they are morphing). */
+  private skip?: Set<string>;
 
   constructor(public canvas: AnyCanvas, public movie: Movie) {
     canvas.width = movie.width;
@@ -80,6 +121,12 @@ export class Renderer {
     const { t, hold } = movie.toScript(T);
     this.hold = hold;
     const layers = movie.frame(t);
+    if (layers.some((l) => l.xf || l.page !== undefined)) {
+      // Behind pictures that move or turn: the sheet's own colour, a little darker.
+      const bg = layers[0].scene.world.theme.background;
+      ctx.fillStyle = mixColor(typeof bg === 'string' ? bg : bg[1] ?? bg[0], '#000000', 0.35);
+      ctx.fillRect(0, 0, W, H);
+    }
     layers.forEach((layer, i) => {
       if (i === 0 && layer.alpha >= 1 && !layer.slide && layer.wipe === undefined) {
         this.drawLayer(ctx, layer, t);
@@ -93,6 +140,7 @@ export class Renderer {
       b.ctx.setTransform(1, 0, 0, 1, 0, 0);
       b.ctx.clearRect(0, 0, W, H);
       this.drawLayer(b.ctx, layer, t);
+      if (layer.rub !== undefined) this.rubOut(b.ctx, layer.rub);
       ctx.save();
       ctx.globalAlpha = layer.alpha;
       if (layer.wipe !== undefined) {
@@ -104,6 +152,8 @@ export class Renderer {
       ctx.restore();
     });
     const scene = layers[layers.length - 1].scene;
+    const mo = layers[layers.length - 1].morph;
+    if (mo) this.drawMorph(ctx, mo.from, scene, t, mo.u);
     this.finishFrame(scene, T);
     if (this.captions && scene.world.captions) this.drawCaptions(ctx, t, scene);
   }
@@ -157,11 +207,100 @@ export class Renderer {
     ctx.restore();
   }
 
+  /** The old scene wiped off a board in strokes, left to right, row by row. */
+  private rubOut(ctx: Ctx2D, u: number) {
+    const W = this.movie.width, H = this.movie.height;
+    const rows = 5;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = (H / rows) * 1.35;
+    const total = u * rows;
+    ctx.beginPath();
+    for (let r = 0; r < rows && r < total; r++) {
+      const k = Math.min(1, total - r);
+      const y = (H * (r + 0.5)) / rows;
+      const leftToRight = r % 2 === 0;
+      const x0 = leftToRight ? -W * 0.1 : W * 1.1, x1 = leftToRight ? W * 1.1 : -W * 0.1;
+      ctx.moveTo(x0, y);
+      // A gentle wave, as an arm sweeps.
+      const n = 24;
+      for (let i = 1; i <= Math.round(n * k); i++) ctx.lineTo(x0 + ((x1 - x0) * i) / n, y + Math.sin(i * 0.9 + r) * H * 0.025);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** Things with the same id in both scenes glide and change shape. */
+  private drawMorph(ctx: Ctx2D, a: CompiledScene, b: CompiledScene, t: number, u: number) {
+    const m = b.morph;
+    if (!m) return;
+    const W = this.movie.width, H = this.movie.height, fh = this.movie.frameH;
+    const projOf = (v: View) => {
+      const k = (H / fh) * v.zoom;
+      const tilted = Math.abs((v.elevation ?? 90) - 90) > 0.05 || Math.abs(v.angle ?? 0) > 0.05;
+      return tilted ? tiltProj(v, W, H, fh) : flatProj([k, 0, 0, -k, W / 2 - v.cx * k, H / 2 + v.cy * k]);
+    };
+    const rest = flatProj([H / fh, 0, 0, -H / fh, W / 2, H / 2]);
+    // The old scene's things as they are now (it was just drawn at t).
+    a.applyState(t, this.hold);
+    const Pa = projOf(a.camera.viewAt(t));
+    const unit = Math.min(W, H) / 1080;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    for (const [id, sn] of m.snap) {
+      const ta = a.world.things.get(id)!, tb = b.world.things.get(id)!;
+      if (!ta.shown()) continue;
+      const toPx = (th: Thing, st: Thing['state'], P: Proj) => {
+        const saved = th.state;
+        th.state = st;
+        const M = th.matrix();
+        th.state = saved;
+        return st.glyphs.map((g) => ({ ...g, contours: g.contours.map((c) => ({ closed: c.closed, pts: c.pts.map((p) => P.at(apply(M, p), 0)) })) }));
+      };
+      const ga = toPx(ta, ta.state, ta.screen ? rest : Pa), gb = toPx(tb, sn.state, tb.screen ? rest : projOf(sn.view));
+      // Equations pair symbol with symbol (as in a step); other things part by part.
+      const pairs = ta.kind === 'math' && tb.kind === 'math' ? matchGlyphs(ta.state.glyphs, sn.state.glyphs) : Array.from({ length: Math.max(ga.length, gb.length) }, (_, i) => ({ from: i < ga.length ? i : undefined, to: i < gb.length ? i : undefined }));
+      const ca = centerOfGlyphs(ga), cb = centerOfGlyphs(gb);
+      const theme = b.world.theme;
+      const colA = resolve(ta.state.color ?? ta.base.color, a.world.theme.ink), colB = resolve(sn.state.color ?? tb.base.color, theme.ink);
+      ctx.globalAlpha = clamp(ta.opacity() * (1 - u) + sn.state.opacity * u);
+      for (const pr of pairs) {
+        const g1 = pr.from !== undefined ? ga[pr.from] : dotGlyph(cb), g2 = pr.to !== undefined ? gb[pr.to] : dotGlyph(ca);
+        const g = morphAt(g1, g2, planMorph(g1, g2), u);
+        const col = mixColor(resolve(g1.color, colA), resolve(g2.color, colB), u);
+        if (g.fill) { ctx.fillStyle = col; ctx.beginPath(); for (const c of g.contours) tracePts(ctx, c.pts, true); ctx.fill('nonzero'); }
+        if (g.stroke) { ctx.strokeStyle = col; ctx.lineWidth = (g.width ?? 4) * unit; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); for (const c of g.contours) tracePts(ctx, c.pts, c.closed); ctx.stroke(); }
+      }
+    }
+    ctx.restore();
+  }
+
   private drawLayer(ctx: Ctx2D, layer: Layer, t: number) {
     const W = this.movie.width, H = this.movie.height;
     ctx.save();
     if (layer.slide) ctx.translate(layer.slide[0] * W, -layer.slide[1] * H);
+    if (layer.xf) ctx.transform(layer.xf.z, 0, 0, layer.xf.z, layer.xf.tx, layer.xf.ty);
+    if (layer.page !== undefined) {
+      // Turning away about the left edge: narrower, lifting at the far edge, darkening.
+      const e = layer.page;
+      ctx.transform(Math.max(0.001, Math.cos((e * Math.PI) / 2)), -0.18 * Math.sin(e * Math.PI), 0, 1, 0, 0);
+    }
+    this.skip = layer.skip;
     this.drawScene(ctx, layer.scene, t);
+    this.skip = undefined;
+    if (layer.page !== undefined) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+      const w = W * Math.max(0.001, Math.cos((layer.page * Math.PI) / 2));
+      const g = ctx.createLinearGradient(0, 0, w, 0);
+      g.addColorStop(0, `rgba(0,0,0,${0.1 * layer.page})`);
+      g.addColorStop(1, `rgba(0,0,0,${0.55 * layer.page})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, H);
+    }
     if (layer.black) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = clamp(layer.black);
@@ -184,6 +323,8 @@ export class Renderer {
     const base = ctx.getTransform();
     const camera: Mat = [k, 0, 0, -k, W / 2 - view.cx * k, H / 2 + view.cy * k];
     const rest: Mat = [H / this.movie.frameH, 0, 0, -H / this.movie.frameH, W / 2, H / 2];
+    const tilted = Math.abs((view.elevation ?? 90) - 90) > 0.05 || Math.abs(view.angle ?? 0) > 0.05;
+    const camProj = tilted ? tiltProj(view, W, H, this.movie.frameH) : flatProj(camera);
     const unit = Math.min(W, H) / 1080;
 
     // Background.
@@ -210,14 +351,14 @@ export class Renderer {
         ctx.fillRect(0, 0, W, H);
       }
     }
-    this.drawPaper(ctx, scene, camera, k, unit);
+    this.drawPaper(ctx, scene, camera, k, unit, camProj, view);
 
-    const drawList = (list: Thing[], m: Mat) => {
-      const sorted = list.map((th, i) => ({ th, i })).sort((a, b) => a.th.layer - b.th.layer || a.i - b.i);
-      for (const { th } of sorted) this.drawThing(ctx, th, m, k, unit, scene);
+    const drawList = (list: Thing[], P: Proj) => {
+      const sorted = list.map((th, i) => ({ th, i })).sort((a, b) => a.th.layer - b.th.layer || (a.th.lift ?? 0) - (b.th.lift ?? 0) || a.i - b.i);
+      for (const { th } of sorted) if (!this.skip?.has(th.id)) this.drawThing(ctx, th, P, k, unit, scene);
     };
-    drawList(scene.world.order.filter((th) => !th.screen && th.kind !== 'group'), camera);
-    drawList(scene.world.order.filter((th) => th.screen && th.kind !== 'group'), rest);
+    drawList(scene.world.order.filter((th) => !th.screen && th.kind !== 'group'), camProj);
+    drawList(scene.world.order.filter((th) => th.screen && th.kind !== 'group'), flatProj(rest));
 
     if (theme.vignette > 0) {
       ctx.setTransform(base);
@@ -232,11 +373,30 @@ export class Renderer {
     ctx.globalAlpha = 1;
   }
 
-  private drawPaper(ctx: Ctx2D, scene: CompiledScene, camera: Mat, k: number, unit: number) {
+  private drawPaper(ctx: Ctx2D, scene: CompiledScene, camera: Mat, k: number, unit: number, P: Proj, view: View) {
     const style = scene.background.style;
     if (style === 'plain' || style === 'gradient' || style === 'image') return;
     const W = this.movie.width, H = this.movie.height;
     const step = scene.background.spacing;
+    if (!P.affine) {
+      // A tilted sheet: its lines seen in perspective, out to the distance.
+      const r = (this.movie.frameW * 1.6) / view.zoom;
+      const x0 = Math.floor((view.cx - r) / step) * step, y0 = Math.floor((view.cy - r) / step) * step;
+      ctx.save();
+      ctx.strokeStyle = scene.world.theme.grid;
+      ctx.fillStyle = scene.world.theme.grid;
+      ctx.lineWidth = Math.max(1, 1.3 * unit);
+      ctx.beginPath();
+      for (let x = x0; x <= view.cx + r; x += step) for (let y = y0; y <= view.cy + r; y += step) {
+        if (style === 'dots') { const p = P.at([x, y], 0); ctx.moveTo(p[0] + 2 * unit, p[1]); ctx.arc(p[0], p[1], 2 * unit, 0, Math.PI * 2); continue; }
+        const a = P.at([x, y], 0), bx = P.at([x + step, y], 0), by = P.at([x, y + step], 0);
+        ctx.moveTo(a[0], a[1]); ctx.lineTo(bx[0], bx[1]);
+        if (style === 'grid') { ctx.moveTo(a[0], a[1]); ctx.lineTo(by[0], by[1]); }
+      }
+      if (style === 'dots') ctx.fill(); else ctx.stroke();
+      ctx.restore();
+      return;
+    }
     const inv = (px: number, py: number): Pt => [(px - camera[4]) / camera[0], (py - camera[5]) / camera[3]];
     const [x0, y1] = inv(0, 0), [x1, y0] = inv(W, H);
     ctx.save();
@@ -263,13 +423,17 @@ export class Renderer {
     ctx.restore();
   }
 
-  private drawThing(ctx: Ctx2D, th: Thing, view: Mat, k: number, unit: number, scene: CompiledScene) {
+  private drawThing(ctx: Ctx2D, th: Thing, P: Proj, k: number, unit: number, scene: CompiledScene) {
     if (!th.shown()) return;
     const s = th.state;
     const alpha = th.opacity() * (1 - s.dim) * (th.parent ? 1 - th.parent.state.dim : 1);
     if (alpha <= 0.002) return;
-    const m = mul(view, th.matrix());
+    const thM = th.matrix();
+    const lift = th.lift ?? (th.parent?.lift ?? 0);
+    const z = lift * 0.3;
+    const m = localMatrix(P, thM, z);
     const pxPerUnit = Math.hypot(m[0], m[1]);
+    const px = (local: Mat | null, p: Pt): Pt => (P.affine ? apply(local ? mul(m, local) : m, p) : P.at(apply(local ? mul(thM, local) : thM, p), z));
     const theme = scene.world.theme;
     const own = s.color ?? th.base.color;
     const base = ctx.getTransform();
@@ -299,19 +463,20 @@ export class Renderer {
     const glyphs = s.glyphs;
     const states = s.glyphStates;
     const n = glyphs.length;
-    const zoomWidth = Math.sqrt(Math.max(0.2, k / (this.movie.height / this.movie.frameH))) * Math.sqrt(th.matrix()[0] ** 2 + th.matrix()[1] ** 2 || 1);
+    const kHere = P.affine ? k : P.scaleAt(apply(thM, [0, 0]));
+    const zoomWidth = Math.sqrt(Math.max(0.2, kHere / (this.movie.height / this.movie.frameH))) * Math.sqrt(thM[0] ** 2 + thM[1] ** 2 || 1);
     for (let i = 0; i < n; i++) {
       const g = glyphs[i];
       const gs: GlyphState | undefined = states?.[i];
       const ga = gs ? gs.opacity : 1;
       if (ga <= 0.002) continue;
-      let gm = m;
+      let local: Mat | null = null;
       if (gs && (gs.dx || gs.dy || gs.scale !== 1)) {
         const c = glyphCenter(g);
         const sc = gs.scale;
-        const local: Mat = [sc, 0, 0, sc, c[0] - c[0] * sc + gs.dx, c[1] - c[1] * sc + gs.dy];
-        gm = mul(m, local);
+        local = [sc, 0, 0, sc, c[0] - c[0] * sc + gs.dx, c[1] - c[1] * sc + gs.dy];
       }
+      const toPx = (p: Pt) => px(local, p);
       let col = resolve(g.color ?? own, theme.ink);
       if (own?.startsWith('mix:') && g.color) col = resolve(own, g.color);
       if (gs?.color) col = resolve(gs.color, col);
@@ -333,7 +498,7 @@ export class Renderer {
       if (reveal <= 0) continue;
       if (reveal < 1) {
         const box = thingBox(glyphs);
-        const p0 = apply(m, [box.x0, box.y0]), p1 = apply(m, [box.x0 + (box.x1 - box.x0) * reveal, box.y1]);
+        const p0 = px(null, [box.x0, box.y0]), p1 = px(null, [box.x0 + (box.x1 - box.x0) * reveal, box.y1]);
         ctx.save();
         ctx.beginPath();
         ctx.rect(Math.min(p0[0], p1[0]), Math.min(p0[1], p1[1]) - 4, Math.abs(p1[0] - p0[0]), Math.abs(p1[1] - p0[1]) + 8);
@@ -341,7 +506,7 @@ export class Renderer {
       }
 
       if (g.text) {
-        const at = apply(gm, g.text.at);
+        const at = toPx(g.text.at);
         ctx.fillStyle = col;
         ctx.font = fontString(400, true, 'serif', g.text.size * pxPerUnit);
         ctx.fillText(g.text.value, at[0], at[1]);
@@ -349,7 +514,17 @@ export class Renderer {
       if (g.fill && fillAlpha > 0) {
         ctx.save();
         ctx.globalAlpha = clamp(alpha * ga * fillAlpha * (g.fillOpacity ?? 1));
-        fillShape(ctx, g.contours.map((c) => c.pts.map((p) => apply(gm, p))), col, look, unit, seed + i);
+        if (lift > 0 && !P.affine) {
+          // Lifted off a tilted sheet: its shadow lies on the sheet below.
+          ctx.save();
+          ctx.globalAlpha *= 0.28;
+          ctx.fillStyle = '#000';
+          ctx.beginPath();
+          for (const c of g.contours) tracePts(ctx, c.pts.map((p) => P.at(apply(local ? mul(thM, local) : thM, p), 0)), true);
+          ctx.fill('nonzero');
+          ctx.restore();
+        }
+        fillShape(ctx, g.contours.map((c) => c.pts.map(toPx)), col, look, unit, seed + i);
         ctx.restore();
       }
       const outline = g.fill && !g.stroke && strokeFrac < 1 && fillAlpha < 1;
@@ -358,7 +533,7 @@ export class Renderer {
         const width = g.stroke ? (g.key === 'line' && th.kind === 'math' ? (g.width ?? 0.04) * pxPerUnit : (g.width ?? 4) * unit * zoomWidth) : 1.6 * unit;
         if (g.dash) ctx.setLineDash([14 * unit, 10 * unit]);
         if (outline) ctx.globalAlpha = clamp(alpha * ga * (1 - fillAlpha));
-        const lines = g.contours.map((c) => (strokeFrac >= 1 ? openPoints(c) : partial(c, strokeFrac)).map((p) => apply(gm, p))).filter((l) => l.length > 1);
+        const lines = g.contours.map((c) => (strokeFrac >= 1 ? openPoints(c) : partial(c, strokeFrac)).map(toPx)).filter((l) => l.length > 1);
         strokeLines(ctx, lines, lines.map(() => false), col, width, look, unit, seed + i);
         if (strokeFrac < 1 && lines.length) { const l = lines[lines.length - 1]; tip = l[l.length - 1]; }
         ctx.restore();
@@ -559,6 +734,14 @@ function resolve(c: string | undefined, under: string): string {
   }
   return c;
 }
+
+function centerOfGlyphs(gs: Glyph[]): Pt {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const g of gs) for (const c of g.contours) for (const [x, y] of c.pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  return Number.isFinite(x0) ? [(x0 + x1) / 2, (y0 + y1) / 2] : [0, 0];
+}
+
+const dotGlyph = (c: Pt): Glyph => ({ contours: [{ closed: true, pts: [[c[0], c[1]], [c[0] + 0.5, c[1]], [c[0], c[1] + 0.5]] }], fill: true, stroke: false, key: 'dot', parts: [] });
 
 function glyphCenter(g: Glyph): Pt {
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;

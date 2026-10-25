@@ -5,11 +5,12 @@ import { ScriptError, choice, clamp, ease, isObject } from './util';
 import type { SceneWorld } from './world';
 import type { Thing } from './thing';
 
-export interface View { cx: number; cy: number; zoom: number }
-export const REST: View = { cx: 0, cy: 0, zoom: 1 };
+/** Where the camera looks on a flat sheet. `elevation` 90 is flat on; less tilts the sheet away. */
+export interface View { cx: number; cy: number; zoom: number; elevation?: number; angle?: number }
+export const REST: View = { cx: 0, cy: 0, zoom: 1, elevation: 90, angle: 0 };
 
-export const SHOTS = ['rest', 'frame', 'zoom', 'pan', 'follow'] as const;
-export const SHOTS_LATER = ['tilt', 'fly', 'orbit', 'look'] as const;
+export const SHOTS = ['rest', 'frame', 'zoom', 'pan', 'follow', 'tilt', 'fly'] as const;
+export const SHOTS_LATER = ['orbit', 'look'] as const;
 export const SHOT_KEYS = ['shot', 'target', 'padding', 'blend', 'at', 'ease', 'to', 'style', 'elevation', 'angle', 'distance', 'turns', 'duration'] as const;
 
 const PADDING: Record<string, number> = { none: 0, small: 0.3, medium: 0.8, large: 1.6 };
@@ -19,13 +20,19 @@ export interface CameraShot {
   blend: number;
   ease: 'smooth' | 'linear';
   view(t: number): View;
+  /** Pulls back in the middle of the move, as if rising up and coming down (the "fly" shot). */
+  arc?: number;
 }
+
+const this_frameW = (p: CameraPlan) => p.frameWidth;
 
 export class CameraPlan {
   shots: CameraShot[] = [];
   private cache = new Map<number, View>();
 
   constructor(private frameW: number, private frameH: number) {}
+
+  get frameWidth() { return this.frameW; }
 
   add(shot: CameraShot) {
     this.shots.push(shot);
@@ -49,8 +56,11 @@ export class CameraPlan {
       const target = s.view(t);
       const u = s.blend <= 0 ? 1 : ease(s.ease, clamp((t - s.start) / s.blend));
       // Zoom blends in log space so zooming in and out feel even.
-      const z = Math.exp(Math.log(before.zoom) + (Math.log(target.zoom) - Math.log(before.zoom)) * u);
-      v = { cx: before.cx + (target.cx - before.cx) * u, cy: before.cy + (target.cy - before.cy) * u, zoom: z };
+      let z = Math.exp(Math.log(before.zoom) + (Math.log(target.zoom) - Math.log(before.zoom)) * u);
+      if (s.arc && s.blend > 0) z /= 1 + s.arc * Math.sin(Math.PI * clamp((t - s.start) / s.blend));
+      const e0 = before.elevation ?? 90, a0 = before.angle ?? 0;
+      const e1 = target.elevation ?? e0, a1 = target.angle ?? a0;
+      v = { cx: before.cx + (target.cx - before.cx) * u, cy: before.cy + (target.cy - before.cy) * u, zoom: z, elevation: e0 + (e1 - e0) * u, angle: a0 + (a1 - a0) * u };
     }
     return v;
   }
@@ -73,10 +83,7 @@ export function readCamera(spec: unknown, world: SceneWorld, plan: CameraPlan, s
     const s = typeof raw === 'string' ? { shot: raw } : raw;
     if (!isObject(s)) throw new ScriptError('must be a shot name or a shot.', w);
     const name = s.shot ?? (s.target !== undefined ? 'frame' : 'rest');
-    if (name === 'orbit' || name === 'look') throw new ScriptError(`the "${name}" shot works in space scenes; flat scenes use ${SHOTS.join(', ')}.`, `${w}.shot`);
-    if ((SHOTS_LATER as readonly string[]).includes(String(name))) {
-      throw new ScriptError(`the "${String(name)}" shot is not built yet. Shots that work now: ${SHOTS.join(', ')}.`, `${w}.shot`);
-    }
+    if ((SHOTS_LATER as readonly string[]).includes(String(name))) throw new ScriptError(`the "${String(name)}" shot works in space scenes; flat scenes use ${SHOTS.join(', ')}.`, `${w}.shot`);
     const kind = choice(name, SHOTS, `${w}.shot`);
     let at = start;
     if (typeof s.at === 'number') at = start + s.at;
@@ -89,7 +96,27 @@ export function readCamera(spec: unknown, world: SceneWorld, plan: CameraPlan, s
       return ts.map((r, k) => boxOfRef(world, r, `${w}.target${ts.length > 1 ? `[${k}]` : ''}`)).reduce(unionBox);
     };
     let view: (t: number) => View;
+    let arc: number | undefined;
     switch (kind) {
+      case 'tilt': {
+        const el = typeof s.elevation === 'number' ? s.elevation : 55;
+        if (el < 15 || el > 90) throw new ScriptError('must be from 15 (nearly edge on) to 90 (flat on).', `${w}.elevation`);
+        const an = typeof s.angle === 'number' ? s.angle : 0;
+        let held: View | undefined;
+        view = () => { held ??= plan.viewAt(at - 1e-6); return { ...held, elevation: el, angle: an }; };
+        break;
+      }
+      case 'fly': {
+        if (s.target === undefined) throw new ScriptError('needs a "target" to fly to.', w);
+        const v = plan.frameBox(targetBox(), pad);
+        const z = typeof s.to === 'number' ? s.to : undefined;
+        view = () => ({ ...v, zoom: z ?? v.zoom });
+        // High enough in the middle to see where it left and where it lands.
+        const from = plan.viewAt(at);
+        const dist = Math.hypot(v.cx - from.cx, v.cy - from.cy);
+        arc = clamp((dist * Math.max(from.zoom, z ?? v.zoom)) / (this_frameW(plan) * 0.6) - 0.6, 0.4, 6);
+        break;
+      }
       case 'rest': view = () => REST; break;
       case 'frame': {
         if (s.target === undefined) throw new ScriptError('needs a "target" to frame.', w);
@@ -117,7 +144,7 @@ export function readCamera(spec: unknown, world: SceneWorld, plan: CameraPlan, s
         break;
       }
     }
-    plan.add({ start: at, blend, ease: e, view });
+    plan.add({ start: at, blend: kind === 'fly' && s.blend === undefined ? 2.4 : blend, ease: e, view, arc });
   });
 }
 

@@ -401,6 +401,51 @@ for (const grade of ['warm', 'cold', 'faded', 'mono', 'vivid'] as const) {
 add({ id: 'look:glow', title: 'glow', showTop: true, top: { glow: 0.8 }, beats: [{ at: 0, do: 'write', tex: 'e^{i\\pi} + 1 = 0', size: 'huge', color: 'yellow' }], still: 2 });
 add({ id: 'scene:chapter-card', title: 'chapter card', showScene: true, scene: { chapter: 'Seeing it with squares', chapter_card: true }, beats: [], still: 1.3 });
 
+// ---- More transitions, tilting and flying ----
+for (const tr of ['fly', 'rub', 'page'] as const) {
+  ENTRIES.push({
+    id: `transition:${tr}`, title: `transition: ${tr}`, words: { start: 1.5, transition: tr },
+    script: {
+      captions: false, style: tr === 'rub' ? 'chalk' : undefined,
+      scenes: [
+        { world: 'board', paper: tr === 'page' ? 'lined' : 'plain', beats: [{ at: 0, do: 'write', tex: 'a^2 + b^2', size: 'large', appear: 'none' }] },
+        { world: 'board', paper: 'grid', start: 1.5, transition: tr, transition_duration: 1.2, beats: [{ at: 0, do: 'write', tex: 'c^2', size: 'large', appear: 'none' }] },
+      ],
+    },
+    still: 0.9,
+  });
+}
+ENTRIES.push({
+  id: 'transition:zoom', title: 'transition: zoom into a thing', words: { start: 2, transition: 'zoom', into: 'q' },
+  script: {
+    captions: false,
+    scenes: [
+      { world: 'board', beats: [{ at: 0, do: 'write', id: 'p', tex: 'x^2 + 3x', position: [-3, 0], appear: 'none' }, { at: 0, do: 'draw', id: 'q', shape: 'square', size: 0.8, position: [3, 0], appear: 'none' }] },
+      { world: 'board', paper: 'grid', start: 2, transition: 'zoom', into: 'q', beats: [{ at: 0, do: 'write', tex: 'x \\cdot x = x^2', size: 'large', appear: 'none' }] },
+    ],
+  },
+  still: 1.4,
+});
+ENTRIES.push({
+  id: 'transition:morph', title: 'transition: morph', words: { start: 2, transition: 'morph' },
+  script: {
+    captions: false,
+    scenes: [
+      { world: 'board', beats: [{ at: 0, do: 'write', id: 'eq', tex: '(a+b)^2', size: 'large', position: [-3, 1], appear: 'none' }, { at: 0, do: 'draw', id: 'sq', shape: 'square', size: 0.8, position: [3, -1.5], appear: 'none', color: 'blue' }] },
+      { world: 'graph', start: 2, transition: 'morph', beats: [{ at: 0, do: 'write', id: 'eq', tex: 'a^2 + 2ab + b^2', size: 'large', position: [0, 3], appear: 'none' }, { at: 0, do: 'draw', id: 'sq', shape: 'circle', size: 2, position: [-3, -1], appear: 'none', color: 'yellow' }] },
+    ],
+  },
+  still: 1.25,
+});
+add({ id: 'shot:tilt', title: 'tilt the sheet', scene: { paper: 'grid' }, beats: [eq('(a+b)^2 = a^2 + 2ab + b^2'), { at: 0.2, camera: { shot: 'tilt', elevation: 50, angle: -20, blend: 1 } }], still: 1.6 });
+add({ id: 'shot:tilt-lift', title: 'tilted, with things lifted', scene: { paper: 'dots' }, beats: [
+  { at: 0, do: 'draw', shape: 'square', size: 2, position: [-3, 0], fill: 'blue', appear: 'none' },
+  { at: 0, do: 'draw', shape: 'circle', size: 2, position: [0, 0], fill: 'yellow', lift: 2, appear: 'none' },
+  { at: 0, do: 'draw', shape: 'star', size: 2, position: [3, 0], fill: 'red', lift: 4, appear: 'none' },
+  { at: 0, camera: { shot: 'tilt', elevation: 40, angle: 25, blend: 'cut' } },
+], still: 0.5 });
+add({ id: 'shot:fly', title: 'fly to a far place', scene: { paper: 'grid' }, beats: [eq('x = 1'), { at: 0, do: 'write', id: 'far', tex: 'x = 1000', position: [24, -10], appear: 'none' }, { at: 0.2, camera: { shot: 'fly', target: 'far' } }], still: 1.4 });
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
