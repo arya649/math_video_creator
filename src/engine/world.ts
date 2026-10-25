@@ -9,6 +9,7 @@ import { findRun } from './match';
 import { ScriptError, didYouMean, isObject } from './util';
 import type { Axes, Graph } from './graph/axes';
 import type { Scope } from './graph/expr';
+import type { Space } from './space/space';
 
 export interface Value { start: number; now: number; decimals: number }
 
@@ -96,6 +97,8 @@ export class SceneWorld {
   waits: { at: number; length: number }[] = [];
   /** The question asked and not yet answered. */
   openQuestion?: { panel: Thing; choices: Thing[]; start: number; extra: Thing[] };
+  /** A space scene's 3D objects and camera. */
+  space?: Space;
   /** Number lines in a counting scene, by id. */
   numberLines = new Map<string, { toSheet(v: number, t?: number): Pt }>();
   /** Every beat built, for the teaching checks. */

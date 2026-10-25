@@ -386,6 +386,16 @@ registerAction('highlight', {
       for (const m of ctx.world.things.get(ctx.spec.who)!.members) done = ACTIONS.get('highlight')!.build({ ...ctx, spec: { ...ctx.spec, who: m.id } });
       return done;
     }
+    // A 3D object glows in the colour, then goes back (unless it stays).
+    const solid = typeof ctx.spec.who === 'string' && ctx.world.space?.objects.find((o) => o.thing.id === ctx.spec.who);
+    if (solid) {
+      const col = color(ctx, 'color', ctx.world.theme.accent)!;
+      const d = natural(ctx, 0.9);
+      const stay = ctx.spec.stay === true;
+      const th = solid.thing;
+      ctx.act({ start: ctx.start, duration: stay ? d : d * 2.5, apply(u) { const k = stay ? ease('smooth', u) : Math.sin(Math.PI * u); th.state.color = k >= 1 ? col : `mix:${k.toFixed(3)}:${col}`; } });
+      return { end: ctx.start + d };
+    }
     const { t, idx } = partOf(ctx);
     const how = choice(ctx.spec.how, HIGHLIGHTS, `${ctx.where}.how`, 'back');
     const col = color(ctx, 'color', ctx.world.theme.accent)!;

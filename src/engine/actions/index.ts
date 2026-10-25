@@ -8,3 +8,4 @@ import './geometry';
 import './panels';
 import './teaching';
 import './counting';
+import './space';

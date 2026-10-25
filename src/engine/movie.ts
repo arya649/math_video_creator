@@ -5,6 +5,7 @@ import './actions/index';
 import { makeWorldAxes } from './actions/graph';
 import { setupGeometryWorld } from './actions/geometry';
 import { setupCountingWorld } from './actions/counting';
+import { readCamera3d, setupSpaceWorld } from './actions/space';
 import { ACTIONS, BEAT_KEYS, type Ctx, type Done, SOUND_KINDS, type SoundKind, type Spec, findAction } from './actions';
 import { CameraPlan, SHOT_KEYS, readCamera } from './camera';
 import {
@@ -38,7 +39,7 @@ export const FORMATS: Record<string, { width: number; height: number }> = {
 };
 
 /** Worlds that can be used in a script now. */
-export const WORLDS_BUILT: readonly WorldKind[] = ['board', 'graph', 'geometry', 'counting'];
+export const WORLDS_BUILT: readonly WorldKind[] = ['board', 'graph', 'geometry', 'counting', 'space'];
 
 export interface Background {
   style: 'plain' | 'gradient' | 'grid' | 'dots' | 'lined';
@@ -495,6 +496,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     // A graph scene has its axes from the start.
     if (kind === 'graph') makeWorldAxes(makeCtx({}, `${where}.axes`, start, undefined, undefined), s.axes, `${where}.axes`);
     if (kind === 'geometry') setupGeometryWorld(makeCtx({}, where, start, undefined, undefined), s, where);
+    if (kind === 'space') setupSpaceWorld(makeCtx({}, where, start, undefined, undefined), s, where);
     if (kind === 'counting') setupCountingWorld(makeCtx({}, where, start, undefined, undefined), s, where);
 
     // Things there from the start.
@@ -522,7 +524,8 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       const endT = Math.max(Number.isFinite(done.end) ? done.end : time.start + 1, time.start + (time.duration ?? 0));
       if (b.camera !== undefined) {
         if (isObject(b.camera)) warnKeys(b.camera, SHOT_KEYS, `${w}.camera`);
-        readCamera(b.camera, world, camera, time.start, endT - time.start || 1.2, `${w}.camera`);
+        if (kind === 'space') readCamera3d(b.camera, world, time.start, endT - time.start || 1.2, `${w}.camera`);
+        else readCamera(b.camera, world, camera, time.start, endT - time.start || 1.2, `${w}.camera`);
       }
       if (typeof b.id === 'string') { ends.set(b.id, endT); begins.set(b.id, time.start); }
       prevEnd = endT;

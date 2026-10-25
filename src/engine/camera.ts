@@ -10,7 +10,7 @@ export const REST: View = { cx: 0, cy: 0, zoom: 1 };
 
 export const SHOTS = ['rest', 'frame', 'zoom', 'pan', 'follow'] as const;
 export const SHOTS_LATER = ['tilt', 'fly', 'orbit', 'look'] as const;
-export const SHOT_KEYS = ['shot', 'target', 'padding', 'blend', 'at', 'ease', 'to', 'style'] as const;
+export const SHOT_KEYS = ['shot', 'target', 'padding', 'blend', 'at', 'ease', 'to', 'style', 'elevation', 'angle', 'distance', 'turns', 'duration'] as const;
 
 const PADDING: Record<string, number> = { none: 0, small: 0.3, medium: 0.8, large: 1.6 };
 
@@ -73,6 +73,7 @@ export function readCamera(spec: unknown, world: SceneWorld, plan: CameraPlan, s
     const s = typeof raw === 'string' ? { shot: raw } : raw;
     if (!isObject(s)) throw new ScriptError('must be a shot name or a shot.', w);
     const name = s.shot ?? (s.target !== undefined ? 'frame' : 'rest');
+    if (name === 'orbit' || name === 'look') throw new ScriptError(`the "${name}" shot works in space scenes; flat scenes use ${SHOTS.join(', ')}.`, `${w}.shot`);
     if ((SHOTS_LATER as readonly string[]).includes(String(name))) {
       throw new ScriptError(`the "${String(name)}" shot is not built yet. Shots that work now: ${SHOTS.join(', ')}.`, `${w}.shot`);
     }

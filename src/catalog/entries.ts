@@ -359,9 +359,33 @@ Count('count:tree-highlight', 'one path lit', [{ at: 0, do: 'tree', id: 't', gro
 Count('count:sample-space', 'two dice: sums of 7', [{ at: 0, do: 'sample_space', rows: 6, columns: 6, cell: 'r + c', light: 'r + c == 7', size: 'small' }], 3.6);
 Count('count:table', 'a table-top', [{ at: 0, do: 'dice', count: 2, results: [[5, 2]] }], 1.8, { table: true });
 
+// ---- Space world ----
+const Space3 = (id: string, title: string, beats: Beat[], still: number, scene: Record<string, unknown> = {}) => add({ id, title, beats, still, scene: { world: 'space', ...scene } });
+Space3('space:axes', '3D axes', [{ at: 0, do: 'axes3d', x: [-3, 3], y: [-3, 3], z: [-1, 3], grid: true }], 2);
+Space3('space:surface', 'a surface z = f(x, y)', [{ at: 0, do: 'surface', math: 'z = 2 - (x^2 + y^2) / 4' }], 2.4, { axes: { z: [-3, 3] } });
+Space3('space:surface-saddle', 'a saddle, coloured by height', [{ at: 0, do: 'surface', math: '(x^2 - y^2) / 4', x: [-2.5, 2.5], y: [-2.5, 2.5] }], 2.4, { axes: { z: [-2, 2] }, light: 'studio' });
+Space3('space:surface-uv', 'a surface traced by u and v', [{ at: 0, do: 'surface', x_of_uv: '(2 + 0.7 cos(v)) cos(u)', y_of_uv: '(2 + 0.7 cos(v)) sin(u)', z_of_uv: '0.7 sin(v)', color: 'purple' }], 2.4);
+for (const shape of ['cube', 'cuboid', 'sphere', 'cylinder', 'cone', 'prism', 'pyramid', 'tetrahedron', 'octahedron', 'dodecahedron', 'icosahedron', 'torus'] as const) {
+  Space3(`space:solid-${shape}`, `solid: ${shape}`, [{ at: 0, do: 'solid', shape, size: 2.5 }], 1.6, { floor: true });
+}
+Space3('space:wire', 'a wire frame', [{ at: 0, do: 'solid', shape: 'icosahedron', size: 3, wire: true }], 1.6);
+Space3('space:see-through', 'see-through, with edges', [{ at: 0, do: 'solid', shape: 'cube', size: 2.5, opacity: 0.4, edges: true }, { at: 0, do: 'solid', shape: 'sphere', size: 1.6, position: [0, 0, 0.45], color: 'yellow' }], 1.6);
+Space3('space:revolve', 'a solid of revolution', [{ at: 0, do: 'revolve', math: 'sqrt(x)', x: [0, 4], duration: 3 }], 2.2, { axes: { x: [0, 4.5], y: [-2.5, 2.5], z: [-2.5, 2.5] } });
+Space3('space:revolve-done', 'revolved, all the way round', [{ at: 0, do: 'revolve', math: '1 + x^2 / 4', x: [-2, 2], duration: 2 }], 3, { axes: { x: [-3, 3], y: [-2.5, 2.5], z: [-2.5, 2.5] } });
+Space3('space:slice', 'a slice through a cone', [{ at: 0, do: 'solid', id: 'k', shape: 'cone', size: 3, height: 3 }, { at: 0.5, do: 'slice', who: 'k', plane: 'z = 1.2' }], 2.5);
+Space3('space:slice-apart', 'cut and moved apart', [{ at: 0, do: 'solid', id: 'k', shape: 'cube', size: 2.5 }, { at: 0.5, do: 'slice', who: 'k', plane: 'x = 0.3', show: 'apart' }], 2.6);
+Space3('space:stack-slices', 'a stack of slices', [{ at: 0, do: 'solid', id: 'k', shape: 'sphere', size: 3 }, { at: 0.3, do: 'stack_slices', who: 'k', count: 8 }], 2.8);
+Space3('space:net', 'a cube unfolds into its net', [{ at: 0, do: 'solid', id: 'k', shape: 'cube', size: 1.6 }, { at: 0.3, do: 'net', who: 'k', duration: 2.5 }], 1.8, { camera: { elevation: 50 } });
+Space3('space:net-flat', 'a net, flat', [{ at: 0, do: 'solid', id: 'k', shape: 'pyramid', size: 2 }, { at: 0.2, do: 'net', who: 'k', duration: 1 }], 1.6, { camera: { elevation: 65 } });
+Space3('space:vectors', 'vectors and a point', [{ at: 0, do: 'vector3d', to: [2, 1, 2], label: '\\vec{v}' }, { at: 0.3, do: 'point3d', position: [1, 2, 1.5], label: true, drop: true }], 1.8, { axes: { x: [0, 3], y: [0, 3], z: [0, 3] } });
+Space3('space:plane', 'a plane x + y + z = 3', [{ at: 0, do: 'plane3d', math: 'x + y + z = 3' }, { at: 0.4, do: 'line3d', through: [[0, 0, 0], [1, 1, 1]] }], 1.8, { axes: { x: [-1, 3], y: [-1, 3], z: [-1, 3] } });
+Space3('space:helix', 'a helix', [{ at: 0, do: 'curve3d', x_of_t: 'cos(t)', y_of_t: 'sin(t)', z_of_t: 't / 4', t: [0, 18] }], 2.5, { axes: { x: [-2, 2], y: [-2, 2], z: [0, 5] } });
+Space3('space:orbit', 'the camera circles round', [{ at: 0, do: 'solid', shape: 'octahedron', size: 3, appear: 'none', camera: { shot: 'orbit', turns: 0.5, duration: 3 } }], 1.5, { floor: true });
+Space3('space:light-dramatic', 'dramatic light', [{ at: 0, do: 'solid', shape: 'torus', size: 3 }], 1.6, { light: 'dramatic' });
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
   scene: 'Worlds and backgrounds', look: 'Look: themes and colours', voice: 'Narration and captions', eq: 'Equations',
-  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching', count: 'Counting, fractions and chance',
+  shape: 'Shapes', move: 'Moving and attention', text: 'On-screen graphics', shot: 'Camera', transition: 'Transitions', graph: 'Graphs', plane: 'Planes', sound: 'Sound', geo: 'Geometry', teach: 'Teaching', count: 'Counting, fractions and chance', space: 'Space (3D)',
 };

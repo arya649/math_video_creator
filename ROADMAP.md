@@ -117,11 +117,24 @@ yet are marked "(coming)" there. This file tracks the stages.
 - 37 more catalogue entries; a `counting` sample project in English and
   Hindi.
 
-## Stage 7: space world (next)
+## Stage 7: space world (built)
 
-3D axes, surfaces, solids, revolve, slices, nets.
+- The `space` world: an orbiting camera with perspective, four lights
+  (`soft`, `studio`, `dramatic`, `flat`), a floor grid, and a starting view
+  fitted to whatever is in the scene.
+- `axes3d`; `surface` (z = f(x, y) coloured by height, or traced by u and v;
+  rising, sweeping or fading in; changing with named values).
+- `solid`: cube, cuboid, sphere, cylinder, cone, prism, pyramid, the five
+  Platonic solids, torus; edges, wire frames, see-through.
+- `revolve` (the region under a graph sweeping round an axis), `slice`
+  (cut face lit, a moving cut, halves apart), `stack_slices` (slabs getting
+  thinner), `net` (unfolding and folding any flat-faced solid).
+- `vector3d`, `point3d` (with drop lines), `plane3d`, `line3d`, `curve3d`.
+- Camera shots in space: `orbit`, `look`, `frame`, `zoom`, `rest`.
+- Fades, colour changes and highlights work on 3D objects.
+- 30 more catalogue entries; a `space` sample project in English and Hindi.
 
-## Stage 8: styles, camera and wonders
+## Stage 8: styles, camera and wonders (next)
 
 Chalk, sketch, whiteboard, neon, blueprint, paper and solid styles; `tilt`,
 `fly`; `morph`, `fly`, `zoom`, `rub`, `page` transitions; fractals, domain
@@ -134,6 +147,8 @@ end screen, parallel rendering for long videos.
   not exact.
 - Browsers without an H.264 encoder (some Linux Chromium builds) make VP9
   video inside the MP4. Chrome and Edge on Windows and Mac make H.264.
-- Film clips in `image` are not built yet; pictures are.
+- Film clips in `image` and 3D models from files are not built yet.
+- Space scenes sort faces by their middles, as painters do; faces that cross
+  through each other can overlap wrongly where they meet.
 - Words (not maths) cannot be morphed; write them as `\text{...}` inside
   maths to morph them.

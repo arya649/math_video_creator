@@ -61,7 +61,9 @@ src/engine/
   actions.ts     The action registry and helpers every action uses
   actions/       The actions, by kind: equations, shapes, motion, graphics, graph,
                  geometry, panels (cards, counters, tables, charts, pictures),
-                 teaching (wait, question, mistake, recap...)
+                 teaching (wait, question, mistake, recap...), counting, space
+  space/         The space world: 3D maths and solids (geo3d.ts), the camera and
+                 the painter that sorts and shades faces each frame (space.ts)
   check.ts       Maths checks: is each step equal to the one before?
   teach-check.ts Teaching checks: pace and clarity warnings
   world.ts       SceneWorld: what exists in a scene; placing things by words

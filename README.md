@@ -10,7 +10,7 @@ npm run dev     # then open http://localhost:5190/?project=demo
 ```
 
 Sample projects: `demo`, `graphs`, `geometry`, `sound`, `teaching`,
-`counting` (open `/?project=<name>`).
+`counting`, `space` (open `/?project=<name>`).
 
 - Writing scripts: [`docs/SCRIPT_REFERENCE.md`](docs/SCRIPT_REFERENCE.md), and the catalogue page (`/catalog.html`).
 - Working on the engine: [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md).

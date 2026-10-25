@@ -58,7 +58,7 @@ their headings, and the engine says so plainly if a script uses them.
 
 | Built | Coming |
 | --- | --- |
-| The `board`, `graph`, `geometry` and `counting` worlds; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | The `space` world; drawing styles other than `vector`; pictures as backgrounds |
+| All five worlds: `board`, `graph`, `geometry`, `counting`, `space`; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | Drawing styles other than `vector`; pictures as backgrounds |
 | Narration `lines` in every language, cue marks, `@strings`; a voice made with ElevenLabs, or the creator's own recording (timed by a subtitle file, exactly with ElevenLabs, or by an estimate fitted to it) | Voice services other than ElevenLabs |
 | Captions (karaoke and plain, with the on/off switch), muted preview | |
 | Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed`; `wait` (the whole video holds still) | |
@@ -68,6 +68,7 @@ their headings, and the engine says so plainly if a script uses them.
 | Shapes: every shape of `draw` except drawing an svg file | `path` from an svg file |
 | Moving: `move`, `turn`, `scale`, `flip`, `wobble`, `morph`, `copy`, `group`, `show`, `hide`, `remove`, `focus` | `pointer`, `trace_path` |
 | Counting: number lines (`jump`, `interval`, `point_on_line`, `zoom_line`), `dots`, `group_items`, `count_items`, `tally`, `blocks`, `regroup`, `fraction`, `split`, `combine`, `line_up`, `coin`, `dice`, `spinner`, `cards`, `tree`, `sample_space` | Pictures from files as counted things |
+| Space: `axes3d`, `surface`, `solid` (12 shapes), `revolve`, `slice`, `stack_slices`, `net`, `vector3d`, `point3d`, `plane3d`, `line3d`, `curve3d`; four lights; the `orbit` and `look` shots | 3D models from files; `tilt` of flat scenes |
 | Teaching: `question` and `answer` (with the pause-and-try countdown), `mistake`, `tick`, `cross`, `definition`, `theorem`, `rule`, `formula`, `tip`, `step_counter`, `recap`, `compare` | |
 | On-screen graphics: `title`, `text`, `clear`, `card`, `image` (pictures), `counter`, `chips`, `table`, `chart`, `label`, `credits` | Film clips in `image` |
 | Camera: `rest`, `frame`, `zoom`, `pan`, `follow` | `tilt`, `fly`, `orbit`, `look`; `lift` |
@@ -96,7 +97,7 @@ Contents:
 18. Actions: graphs and planes
 19. Actions: geometry
 20. Actions: number lines, counting, fractions and chance
-21. Actions: 3D (coming)
+21. Actions: 3D
 22. Actions: wonders (fractals, flows, simulations) (coming)
 23. Actions: teaching
 24. The mascot (coming)
@@ -695,17 +696,22 @@ line use `line` unless they name another with `on`.
 ### space
 
 A 3D world, seen through a camera that can circle round. `x` runs to the
-right, `y` away from the viewer, `z` up, as in maths books.
+right, `y` away from the viewer, `z` up, as in maths books. Distances are in
+the script's own units.
+
+```json
+{ "world": "space", "axes": { "z": [0, 4] }, "light": "studio", "camera": { "elevation": 30, "angle": -40 }, "beats": [] }
+```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
 | `axes` | `false`, or the keys of `axes3d` (section 21) | 3D axes from the start, called `axes`. Default `false`. |
-| `light` | `"soft"`, `"studio"`, `"dramatic"`, `"flat"` | `soft`: even light from above. `studio`: a key light and a fill, gentle shadows. `dramatic`: one strong light, deep shadows. `flat`: no shading at all, colours as they are. Default `soft`. |
+| `light` | `"soft"`, `"studio"`, `"dramatic"`, `"flat"` | `soft`: even light from above with a gentle fill. `studio`: a key light and a fill. `dramatic`: one strong light, deep shade. `flat`: no shading at all, colours as they are. Default `soft`. |
 | `floor` | `true`, `false` | A faint floor grid under everything. Default `false`. |
-| `camera` | `{ "elevation", "angle", "distance" }` | Where the camera starts. |
+| `camera` | `{ "elevation", "angle", "distance", "target" }` | Where the camera starts: `elevation` in degrees above the floor (default 24), `angle` in degrees round from the front (default −32), `distance`, and `target` (`[x, y, z]`). Left out, the distance and target are chosen to show everything in the scene. |
 
-Flat things (equations, text, labels) placed in a space scene always turn to
-face the camera unless given `"face": false`.
+Flat things (equations, text, titles, cards) placed in a space scene sit
+on the screen in front of the 3D picture.
 
 ---
 
@@ -1912,71 +1918,109 @@ See section 25.
 
 ---
 
-## 21. Actions: 3D (coming)
+## 21. Actions: 3D
 
-These work in the `space` world. The world's own axes (if it has them) are
-called `axes`, and `on` can be left out wherever it would name them.
+These work in the `space` world. A 3D object is a thing like any other:
+`fade`, `remove`, `show`, `hide`, `color`, `highlight` and `stay` work on it,
+and `appear` chooses how it arrives (`grow` for solids by default, `draw`
+for the rest).
 
-### axes3d
+### axes3d (axes_3d, space_axes)
 
-`{ "do": "axes3d", "x": [-3, 3], "y": [-3, 3], "z": [0, 5] }`.
-Keys as for `axes`, with `z`.
+`{ "do": "axes3d", "x": [-3, 3], "y": [-3, 3], "z": [0, 5] }`: arrows for x,
+y and z with numbered ticks and their names. `numbers: false`, `names:
+false`, `grid: true` (a faint grid on the floor), `color`. The first is
+called `axes`; its box is where planes, lines and surfaces are cut off.
 
-### surface
+### surface (surface3d, graph3d)
 
 ```json
-{ "at_line": 2, "do": "surface", "id": "s", "math": "x^2 + y^2", "color": "by_height" }
+{ "at_line": 2, "do": "surface", "id": "s", "math": "z = x^2 - y^2" }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `math` | `z = f(x, y)` or an expression in `x`, `y` | The surface. Named values work, so it can change shape. |
-| `x_of_uv`, `y_of_uv`, `z_of_uv`, `u`, `v` | | A surface traced by `u` and `v` (a sphere, a torus, anything). |
-| `color` | a colour, or `"by_height"` | `by_height` shades from low to high in the theme's colours. |
-| `mesh` | `true` | Grid lines on the surface. |
+| `math` | `z = f(x, y)` or an expression in `x`, `y` | The surface, over `x` and `y` (default the axes' ranges, or −3 to 3). Named values work, so it can change shape with `set`. |
+| `x_of_uv`, `y_of_uv`, `z_of_uv`, `u`, `v` | | A surface traced by `u` and `v` (default 0 to 2π each): a sphere, a torus, anything. |
+| `color` | a colour, or `"by_height"` | `by_height` (the default for `math`) shades from low to high, blue to orange. |
+| `mesh` | `false` | No grid lines on it. |
 | `opacity` | 0 to 1 | See-through. |
-| `grow` | `rise`, `sweep`, `all` | How it arrives. `rise`: rises out of the flat floor. |
+| `grow` | `rise`, `sweep`, `all` | How it arrives. `rise`: rises out of the flat floor. `sweep`: drawn across. `all`: fades in. Default `rise`. |
+| `detail` | 6 to 60 | Grid squares each way. Default 30. |
 
-### solid
+### solid (shape3d, solid3d)
 
 `{ "do": "solid", "shape": "cube", "id": "k", "size": 2 }`. Shapes: `cube`,
-`cuboid` (`width`, `depth`, `height`), `sphere`, `cylinder`, `cone`, `prism`
-(`sides`), `pyramid` (`sides`), `tetrahedron`, `octahedron`,
-`dodecahedron`, `icosahedron`, `torus`. Or `model`: a name from `models`.
+`cuboid` (`width`, `depth`, `height`), `sphere`, `cylinder` and `cone`
+(`radius`, `height`), `prism` and `pyramid` (`sides`, default 6 and 4),
+`tetrahedron`, `octahedron`, `dodecahedron`, `icosahedron`, `torus`.
 
-`edges: true` draws the edges. `wire: true` draws edges only.
+`size`: a number or `small`, `medium`, `large`, `huge`. `position`: where it
+stands, `[x, y, z]` (the middle of its base). `color`, `opacity`. `edges`:
+drawn by default on flat-faced solids; `false` to hide, `true` on curved
+ones for grid lines. `wire: true` draws edges only. 3D models from files
+(`model`) are coming.
 
-### revolve (solid_of_revolution)
+### revolve (solid_of_revolution, spin_around)
 
-`{ "do": "revolve", "who": "f", "around": "x", "x": [0, 2], "duration": 4 }`:
-the area under a graph sweeps round an axis and becomes a solid. Give the
-graph with `math` (`"math": "sqrt(x)"`), or name one drawn on the world's
-axes with `who`.
+`{ "do": "revolve", "math": "sqrt(x)", "x": [0, 4], "around": "x", "duration": 4 }`:
+the graph is drawn upright, the area under it shades in, and it sweeps
+round the axis to become a solid. `around`: `x` (default) or `z` (the
+upright axis, so the graph's `x` becomes the radius). `region: false`
+leaves out the shaded area. `color`, `opacity`.
 
-### slice (cross_section)
+### slice (cross_section, cut3d)
 
-`{ "do": "slice", "who": "k", "plane": "z = 1", "show": "section" }`: a plane
-cuts the solid; `show`: `section` (only the cut face lit), `apart` (the two
-halves move apart). `"sweep": [0, 2]` moves the cutting plane through the
-solid over the beat.
+`{ "do": "slice", "who": "k", "plane": "z = 1", "show": "section" }`: a
+plane cuts the solid. `show`: `section` (the cut face lit, the part above
+see-through) or `apart` (the two halves move apart by `gap`). `"sweep": [0, 2]`
+moves the cutting plane through the solid over the beat. The plane is
+`x = …`, `y = …` or `z = …`. The cut face is worked out as the outline round
+every point where the plane crosses the solid, which is exact for solids
+without hollows.
 
-### stack_slices (volume_by_slices)
+### stack_slices (volume_by_slices, slabs)
 
-The solid is shown as a stack of thin discs or slabs, which can then
-`refine` to thinner and thinner ones, as with rectangles under a graph.
+`{ "do": "stack_slices", "who": "k", "count": 6, "refine": [12, 24] }`: the
+solid (shown faintly) is rebuilt as a stack of thin slabs, one by one, which
+then get thinner: 6, then 12, then 24, sharing the beat. `axis`: `z`
+(default), `x` or `y`. `color`; `"ghost": false` keeps the solid as it was.
 
 ### net (unfold, fold)
 
-`{ "do": "net", "who": "k", "duration": 3 }`: the solid unfolds flat into its
-net. `"fold": true` folds a net up into its solid.
+`{ "do": "net", "who": "k", "duration": 3 }`: a flat-faced solid unfolds
+flat into its net, face by face round their edges, lying on its bottom
+face. `"fold": true` starts flat and folds up. Works for the cube, cuboid,
+prisms, pyramids and the Platonic solids.
 
-### vector3d, plane3d, line3d
+### vector3d (arrow3d)
 
-`{ "do": "vector3d", "to": [1, 2, 2] }`.
-`{ "do": "plane3d", "math": "x + y + z = 3" }`.
-`{ "do": "line3d", "through": [[0, 0, 0], [1, 1, 2]] }`.
+`{ "do": "vector3d", "to": [1, 2, 2], "label": "\\vec{v}" }`. `from`
+(default the origin), `color`, `width`.
 
-### Models
+### point3d (dot3d)
+
+`{ "do": "point3d", "position": [1, 2, 1.5], "label": true, "drop": true }`:
+a dot; `label: true` writes its coordinates (or any maths); `drop` draws
+dashed lines down to the floor and across to the axes.
+
+### plane3d (plane)
+
+`{ "do": "plane3d", "math": "x + y + z = 3" }`: a flat plane, cut to the
+axes' box, see-through (`opacity`, default 0.5). `color`.
+
+### line3d (line_3d)
+
+`{ "do": "line3d", "through": [[0, 0, 0], [1, 1, 2]] }`: a line through two
+points, across the axes' box; `"segment": true` only between them. `color`,
+`width`, `dash`.
+
+### curve3d (space_curve, helix)
+
+`{ "do": "curve3d", "x_of_t": "cos(t)", "y_of_t": "sin(t)", "z_of_t": "t / 4", "t": [0, 18] }`:
+a curve traced as `t` runs (default 0 to 2π). `color`, `width`.
+
+### Models (coming)
 
 ```json
 "models": [ { "name": "bridge", "file": "bridge.glb", "width": 40 } ]
@@ -2362,8 +2406,8 @@ shots that follow one another.
 | `follow` | Keeps a moving thing in the middle. |
 | `tilt` (coming) | Tilts the sheet away, so it is seen at an angle, with depth: `elevation` (degrees; 90 is flat on, 30 nearly edge-on) and `angle` (turning round). Things lifted off the sheet stand out. |
 | `fly` (coming) | Flies the camera across the sheet to the `target`, rising up and coming down, rather than sliding. |
-| `orbit` (coming) | Space scenes: circles the `target`. `turns`: how far round. |
-| `look` (coming) | Space scenes: stands still and looks at the `target`, from `elevation`, `angle`, `distance`. |
+| `orbit` | Space scenes: circles round, `turns` times (default 1), over the beat (or `duration`). `elevation`, `distance`, `target` can change as it goes. |
+| `look` | Space scenes: moves to look at the `target` (a 3D object or `[x, y, z]`) from `elevation`, `angle` (degrees) and `distance`; anything left out stays as it was. In space, `frame` fits a 3D object in view, `zoom` comes closer by `to` times, `rest` goes back to the scene's starting view. |
 
 | Key | Values | Meaning |
 | --- | --- | --- |
