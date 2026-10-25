@@ -6,7 +6,8 @@ import type { CompiledScene, Layer, Movie } from './movie';
 import { captionText } from './narration';
 import { fontString } from './text';
 import type { Glyph, GlyphState, Thing } from './thing';
-import { clamp } from './util';
+import { clamp, hashString } from './util';
+import { type Look, drawMarker, fillShape, strokeLines, textPaint } from './styles';
 
 type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 type AnyCanvas = HTMLCanvasElement | OffscreenCanvas;
@@ -22,6 +23,28 @@ function makeCanvas(w: number, h: number): AnyCanvas {
 /** Pictures opened with the script, decoded, by file name. */
 export const pictures = new Map<string, CanvasImageSource & { width: number; height: number }>();
 
+const GRADES: Record<string, string> = {
+  warm: 'sepia(0.22) saturate(1.15) brightness(1.02)', cold: 'hue-rotate(-12deg) saturate(0.85) brightness(1.02)',
+  faded: 'saturate(0.7) contrast(0.86) brightness(1.06)', mono: 'grayscale(1) contrast(1.05)', vivid: 'saturate(1.4) contrast(1.08)', none: 'none',
+};
+
+let grainPat: CanvasPattern | null | undefined;
+function grainPattern(ctx: Ctx2D): CanvasPattern | null {
+  if (grainPat !== undefined) return grainPat;
+  const c = makeCanvas(96, 96);
+  const g = c.getContext('2d') as Ctx2D;
+  const img = g.createImageData(96, 96);
+  let seed = 7;
+  for (let i = 0; i < img.data.length; i += 4) {
+    seed = (seed * 16807) % 2147483647;
+    const v = seed % 2 ? 255 : 0;
+    img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = (seed >> 3) % 22;
+  }
+  g.putImageData(img, 0, 0);
+  grainPat = ctx.createPattern(c as CanvasImageSource, 'repeat');
+  return grainPat;
+}
+
 const TONES: Record<string, string> = { none: 'none', mono: 'grayscale(1) contrast(1.05)', faded: 'saturate(0.55) brightness(1.08) contrast(0.9)', warm: 'sepia(0.35) saturate(1.2)', cold: 'saturate(0.8) hue-rotate(12deg) brightness(0.98)' };
 
 export class Renderer {
@@ -30,6 +53,7 @@ export class Renderer {
   /** Captions drawn or not (the page's switch can change it). */
   captions = true;
   private hold?: { at: number; u: number };
+  private lookOf: Look = 'vector';
 
   constructor(public canvas: AnyCanvas, public movie: Movie) {
     canvas.width = movie.width;
@@ -80,7 +104,57 @@ export class Renderer {
       ctx.restore();
     });
     const scene = layers[layers.length - 1].scene;
+    this.finishFrame(scene, T);
     if (this.captions && scene.world.captions) this.drawCaptions(ctx, t, scene);
+  }
+
+  private post?: { canvas: AnyCanvas; ctx: Ctx2D };
+
+  /** The whole picture's look: colour grade, glow, film grain. */
+  private finishFrame(scene: CompiledScene, T: number) {
+    const { ctx, movie } = this;
+    const W = movie.width, H = movie.height;
+    const f = scene.world.finish;
+    const grain = scene.world.theme.grain ?? 0;
+    if (f.grade === 'none' && f.glow <= 0 && grain <= 0) return;
+    if (!this.post) { const c = makeCanvas(W, H); this.post = { canvas: c, ctx: c.getContext('2d') as Ctx2D }; }
+    const p = this.post;
+    const unit = Math.min(W, H) / 1080;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (f.grade !== 'none' && 'filter' in ctx) {
+      p.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      p.ctx.clearRect(0, 0, W, H);
+      p.ctx.drawImage(this.canvas as CanvasImageSource, 0, 0);
+      ctx.filter = GRADES[f.grade];
+      ctx.drawImage(p.canvas as CanvasImageSource, 0, 0);
+      ctx.filter = 'none';
+    }
+    if (f.glow > 0 && 'filter' in p.ctx) {
+      // Bloom: a blurred copy of the bright picture added on top.
+      p.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      p.ctx.clearRect(0, 0, W, H);
+      p.ctx.filter = `blur(${(14 * unit).toFixed(1)}px) contrast(2.2) brightness(0.95)`;
+      p.ctx.drawImage(this.canvas as CanvasImageSource, 0, 0);
+      p.ctx.filter = 'none';
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.55 * f.glow;
+      ctx.drawImage(p.canvas as CanvasImageSource, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+    }
+    if (grain > 0) {
+      // Grain that moves each frame, the same in every render.
+      const pat = grainPattern(ctx);
+      if (pat) {
+        const k = Math.floor(T * movie.fps);
+        ctx.translate((k * 37) % 96, (k * 53) % 96);
+        ctx.globalAlpha = Math.min(1, grain * 2.5);
+        ctx.fillStyle = pat;
+        ctx.fillRect(-96, -96, W + 192, H + 192);
+      }
+    }
+    ctx.restore();
   }
 
   private drawLayer(ctx: Ctx2D, layer: Layer, t: number) {
@@ -102,7 +176,10 @@ export class Renderer {
     const W = this.movie.width, H = this.movie.height;
     const theme = scene.world.theme;
     scene.applyState(t, this.hold);
-    const view = scene.camera.viewAt(t);
+    const view = { ...scene.camera.viewAt(t) };
+    const cs = scene.world.finish.cameraStyle;
+    if (cs === 'drift') { view.cx += 0.12 * Math.sin(t * 0.21); view.cy += 0.07 * Math.sin(t * 0.17 + 1); }
+    else if (cs === 'breathe') view.zoom *= 1 + 0.018 * Math.sin(t * 0.45);
     const k = (H / this.movie.frameH) * view.zoom;
     const base = ctx.getTransform();
     const camera: Mat = [k, 0, 0, -k, W / 2 - view.cx * k, H / 2 + view.cy * k];
@@ -119,6 +196,20 @@ export class Renderer {
       ctx.fillStyle = g;
     } else ctx.fillStyle = bg[0];
     ctx.fillRect(0, 0, W, H);
+    const bgImage = scene.background.image;
+    if (bgImage) {
+      const pic = pictures.get(bgImage.file);
+      if (pic) {
+        // Covering the frame, keeping its shape.
+        const z = Math.max(W / pic.width, H / pic.height) * (1 + bgImage.blur * 0.06);
+        ctx.save();
+        if ('filter' in ctx && bgImage.blur > 0) ctx.filter = `blur(${(bgImage.blur * 24 * unit).toFixed(1)}px)`;
+        ctx.drawImage(pic, (W - pic.width * z) / 2, (H - pic.height * z) / 2, pic.width * z, pic.height * z);
+        ctx.restore();
+        ctx.fillStyle = `rgba(0,0,0,${bgImage.dim})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
     this.drawPaper(ctx, scene, camera, k, unit);
 
     const drawList = (list: Thing[], m: Mat) => {
@@ -143,7 +234,7 @@ export class Renderer {
 
   private drawPaper(ctx: Ctx2D, scene: CompiledScene, camera: Mat, k: number, unit: number) {
     const style = scene.background.style;
-    if (style === 'plain' || style === 'gradient') return;
+    if (style === 'plain' || style === 'gradient' || style === 'image') return;
     const W = this.movie.width, H = this.movie.height;
     const step = scene.background.spacing;
     const inv = (px: number, py: number): Pt => [(px - camera[4]) / camera[0], (py - camera[5]) / camera[3]];
@@ -195,12 +286,16 @@ export class Renderer {
       return;
     }
 
+    this.lookOf = scene.world.look;
     if (th.text) {
       this.drawText(ctx, th, m, pxPerUnit, resolve(own, theme.ink), base);
       ctx.restore();
       return;
     }
 
+    const look: Look = th.look ?? scene.world.look;
+    const seed = hashString(th.id) % 1000;
+    let tip: Pt | undefined;
     const glyphs = s.glyphs;
     const states = s.glyphStates;
     const n = glyphs.length;
@@ -254,30 +349,23 @@ export class Renderer {
       if (g.fill && fillAlpha > 0) {
         ctx.save();
         ctx.globalAlpha = clamp(alpha * ga * fillAlpha * (g.fillOpacity ?? 1));
-        ctx.fillStyle = col;
-        ctx.beginPath();
-        for (const c of g.contours) tracePts(ctx, c.pts.map((p) => apply(gm, p)), true);
-        ctx.fill('nonzero');
+        fillShape(ctx, g.contours.map((c) => c.pts.map((p) => apply(gm, p))), col, look, unit, seed + i);
         ctx.restore();
       }
       const outline = g.fill && !g.stroke && strokeFrac < 1 && fillAlpha < 1;
       if ((g.stroke || outline) && strokeFrac > 0) {
-        ctx.strokeStyle = col;
-        ctx.lineWidth = g.stroke ? (g.key === 'line' && th.kind === 'math' ? (g.width ?? 0.04) * pxPerUnit : (g.width ?? 4) * unit * zoomWidth) : 1.6 * unit;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        ctx.save();
+        const width = g.stroke ? (g.key === 'line' && th.kind === 'math' ? (g.width ?? 0.04) * pxPerUnit : (g.width ?? 4) * unit * zoomWidth) : 1.6 * unit;
         if (g.dash) ctx.setLineDash([14 * unit, 10 * unit]);
         if (outline) ctx.globalAlpha = clamp(alpha * ga * (1 - fillAlpha));
-        ctx.beginPath();
-        for (const c of g.contours) {
-          const pts = strokeFrac >= 1 ? openPoints(c) : partial(c, strokeFrac);
-          if (pts.length > 1) tracePts(ctx, pts.map((p) => apply(gm, p)), false);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
+        const lines = g.contours.map((c) => (strokeFrac >= 1 ? openPoints(c) : partial(c, strokeFrac)).map((p) => apply(gm, p))).filter((l) => l.length > 1);
+        strokeLines(ctx, lines, lines.map(() => false), col, width, look, unit, seed + i);
+        if (strokeFrac < 1 && lines.length) { const l = lines[lines.length - 1]; tip = l[l.length - 1]; }
+        ctx.restore();
       }
       if (reveal < 1) ctx.restore();
     }
+    if (tip && look === 'whiteboard' && s.drawn < 1) drawMarker(ctx, tip, resolve(own, theme.ink), unit);
     ctx.restore();
   }
 
@@ -354,7 +442,7 @@ export class Renderer {
       ctx.clip();
     }
     ctx.font = fontString(L.weight, L.italic, L.font, fontPx);
-    ctx.fillStyle = col;
+    textPaint(ctx, col, th.look ?? this.lookOf, Math.min(this.movie.width, this.movie.height) / 1080);
     ctx.textBaseline = 'alphabetic';
     for (const line of L.lines) {
       // Words next to each other are drawn together, so letters keep their spacing.

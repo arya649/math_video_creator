@@ -83,6 +83,10 @@ export class SceneWorld {
   allWorlds: SceneWorld[] = [];
   /** Whether steps are checked as maths. */
   checkMaths = true;
+  /** The finished picture's look: colour grade, glow, fading with distance, and the camera's manner. */
+  finish: { grade: 'none' | 'warm' | 'cold' | 'faded' | 'mono' | 'vivid'; glow: number; depth: number; cameraStyle: 'steady' | 'drift' | 'breathe' } = { grade: 'none', glow: 0, depth: 0, cameraStyle: 'steady' };
+  /** The drawing style of the scene. */
+  look: import('./styles').Look = 'vector';
   /** The language being made. */
   lang = 'en';
   /** The chapter this scene is in (the last one named). */

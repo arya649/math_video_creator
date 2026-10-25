@@ -383,6 +383,24 @@ Space3('space:helix', 'a helix', [{ at: 0, do: 'curve3d', x_of_t: 'cos(t)', y_of
 Space3('space:orbit', 'the camera circles round', [{ at: 0, do: 'solid', shape: 'octahedron', size: 3, appear: 'none', camera: { shot: 'orbit', turns: 0.5, duration: 3 } }], 1.5, { floor: true });
 Space3('space:light-dramatic', 'dramatic light', [{ at: 0, do: 'solid', shape: 'torus', size: 3 }], 1.6, { light: 'dramatic' });
 
+// ---- Drawing styles and looks ----
+const styleBeats: Beat[] = [
+  { at: 0, do: 'write', id: 'e', tex: 'e^{i\\pi} + 1 = 0', size: 'large', position: [0, 1.2] },
+  { at: 0.3, do: 'draw', shape: 'circle', size: 'medium', position: [-3, -1.8], color: 'blue' },
+  { at: 0.5, do: 'draw', shape: 'star', size: 'medium', position: [0, -1.8], fill: 'yellow' },
+  { at: 0.7, do: 'text', text: 'Euler', position: [3, -1.8], size: 'large' },
+];
+for (const style of ['chalk', 'sketch', 'whiteboard', 'neon', 'blueprint', 'paper', 'solid'] as const) {
+  add({ id: `look:style-${style}`, title: `style: ${style}`, showTop: true, top: { style }, beats: styleBeats, still: 3 });
+}
+add({ id: 'look:style-whiteboard-pen', title: 'whiteboard: the marker drawing', showTop: true, top: { style: 'whiteboard' }, beats: [{ at: 0, do: 'write', tex: 'a^2 + b^2 = c^2', size: 'huge', duration: 2 }], still: 1.2 });
+add({ id: 'look:style-one-beat', title: 'one beat in its own style', beats: [{ at: 0, do: 'write', tex: 'e^{i\\pi} + 1 = 0', size: 'huge', style: 'neon', color: 'blue' }], still: 2 });
+for (const grade of ['warm', 'cold', 'faded', 'mono', 'vivid'] as const) {
+  add({ id: `look:grade-${grade}`, title: `grade: ${grade}`, showTop: true, top: { grade }, beats: [{ at: 0, do: 'chart', kind: 'bar', items: [{ label: 'a', value: 3 }, { label: 'b', value: 5 }, { label: 'c', value: 2 }, { label: 'd', value: 4 }], duration: 3 }], still: 2 });
+}
+add({ id: 'look:glow', title: 'glow', showTop: true, top: { glow: 0.8 }, beats: [{ at: 0, do: 'write', tex: 'e^{i\\pi} + 1 = 0', size: 'huge', color: 'yellow' }], still: 2 });
+add({ id: 'scene:chapter-card', title: 'chapter card', showScene: true, scene: { chapter: 'Seeing it with squares', chapter_card: true }, beats: [], still: 1.3 });
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {

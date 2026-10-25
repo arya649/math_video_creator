@@ -44,6 +44,9 @@ export class Space {
   objects: Obj3D[] = [];
   shots: Shot[] = [];
   light: Light = 'soft';
+  /** How much far things fade (the "depth" look), and the colour they fade to. */
+  depth = 0;
+  background = '#000000';
   floor = false;
   /** The scene's own starting camera; anything left out is fitted to what is in the scene. */
   startCam: Partial<Cam> = {};
@@ -135,7 +138,10 @@ export class Space {
 
   /** The whole space at time t, as outlines on the sheet. */
   paint(t: number, ink: string, gridColor: string): Glyph[] {
-    const e = eyeOf(this.camAt(t), this.frameH);
+    const cam = this.camAt(t);
+    const e = eyeOf(cam, this.frameH);
+    // Depth: things beyond what the camera looks at fade towards the background.
+    const fog = (z: number) => (this.depth > 0 ? this.depth * clamp((z - cam.distance) / (cam.distance * 0.9)) * 0.85 : 0);
     type Item = { depth: number; glyphs: () => Glyph[] };
     const items: Item[] = [];
     const P = (p: V3) => project(e, p);
@@ -181,7 +187,8 @@ export class Space {
             if (!facing && !pr.twoSided && opacity >= 0.999) break;
             if (!facing) n = mul(n, -1);
             const base = tinted(pr.color, tint);
-            const col = pr.shade ? this.lit(base, n) : base;
+            const lit = pr.shade ? this.lit(base, n) : base;
+            const col = this.depth > 0 ? mixColor(lit, this.background, fog(pp.reduce((a, q) => a + q[2], 0) / pp.length)) : lit;
             const depth = pp.reduce((a, q) => a + q[2], 0) / pp.length;
             const solid = opacity >= 0.999;
             items.push({ depth, glyphs: () => [{ contours: [{ closed: true, pts: pp.map((q) => [q[0], q[1]] as Pt) }], fill: true, stroke: solid, width: 0.8, key: 'face', parts: [], color: col, fillOpacity: solid ? undefined : opacity }] });

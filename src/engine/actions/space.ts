@@ -747,6 +747,9 @@ export function setupSpaceWorld(ctx: Ctx, s: Record<string, unknown>, where: str
   world.space = S;
   S.light = choice(s.light, SPACE_LIGHTS, `${where}.light`, 'soft') as Light;
   S.floor = s.floor === true;
+  S.depth = world.finish.depth;
+  const bg = world.theme.background;
+  S.background = typeof bg === 'string' ? bg : bg[1] ?? bg[0];
   if (s.camera !== undefined) {
     if (!isObject(s.camera)) throw new ScriptError('must be { "elevation", "angle", "distance", "target" }.', `${where}.camera`);
     const c = s.camera;

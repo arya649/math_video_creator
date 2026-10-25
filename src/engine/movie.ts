@@ -12,6 +12,8 @@ import {
   type Narration, type VoiceTimes, estimateNarration, narrationFromSrt, narrationFromVoice, parseSrt, readLines, scaledNarration,
 } from './narration';
 import { type Theme, readTheme, colorOf } from './themes';
+import { Thing } from './thing';
+import { LOOKS, LOOK_THEMES, type Look } from './styles';
 import { ScriptError, choice, clamp, didYouMean, isObject } from './util';
 import { type Action, SceneWorld, type SoundEvent, WORLDS, type WorldKind } from './world';
 
@@ -42,9 +44,11 @@ export const FORMATS: Record<string, { width: number; height: number }> = {
 export const WORLDS_BUILT: readonly WorldKind[] = ['board', 'graph', 'geometry', 'counting', 'space'];
 
 export interface Background {
-  style: 'plain' | 'gradient' | 'grid' | 'dots' | 'lined';
+  style: 'plain' | 'gradient' | 'grid' | 'dots' | 'lined' | 'image';
   colors?: string[];
   spacing: number;
+  /** A picture behind everything, darkened and blurred so the maths reads over it. */
+  image?: { file: string; dim: number; blur: number };
 }
 
 /** A moment the whole video holds still (voice included) for the viewer. */
@@ -264,7 +268,8 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
   if (!languages.includes(lang)) throw new ScriptError(`"${lang}" is not one of the script's languages (${languages.join(', ')}).`, 'languages');
   const strings = isObject(script.strings) ? script.strings : {};
 
-  const theme = readTheme(script.theme, 'theme');
+  const topLook = choice(script.style, LOOKS, 'style', 'vector') as Look;
+  const theme = readTheme(script.theme ?? LOOK_THEMES[topLook], 'theme');
   const format = choice(script.format, Object.keys(FORMATS) as ('landscape' | 'landscape_4k' | 'square' | 'reel')[], 'format', 'landscape');
   const full = FORMATS[format];
   const width = Math.round(full.width * (opts.scale ?? 1)), height = Math.round(full.height * (opts.scale ?? 1));
@@ -365,6 +370,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
   const scenes: CompiledScene[] = [];
   const allWorlds: SceneWorld[] = [];
   let chapterNow: string | undefined;
+  let chapterCount = 0;
   let lastEnd = 0;
   const checks = isObject(script.checks) ? script.checks : {};
   if (script.checks !== undefined && !isObject(script.checks)) throw new ScriptError('must be { "maths": false } or { "teaching": false }, or name teaching checks to turn off.', 'checks');
@@ -376,7 +382,8 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     if (!WORLDS_BUILT.includes(kind)) {
       throw new ScriptError(`the ${kind} world is not built yet. Worlds that work now: ${WORLDS_BUILT.join(', ')}.`, `${where}.world`);
     }
-    const sceneTheme = s.theme !== undefined ? readTheme(s.theme, `${where}.theme`) : theme;
+    const look = (s.style !== undefined ? choice(s.style, LOOKS, `${where}.style`) : topLook) as Look;
+    const sceneTheme = s.theme !== undefined ? readTheme(s.theme, `${where}.theme`) : script.theme === undefined && s.style !== undefined && LOOK_THEMES[look] ? readTheme(LOOK_THEMES[look], `${where}.style`) : theme;
     const start = starts[i];
     const end = i + 1 < starts.length ? starts[i + 1] : Infinity;
     const world = new SceneWorld(kind, sceneTheme, start, end, sheet.w, sheet.h);
@@ -384,6 +391,15 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     world.allWorlds = allWorlds;
     world.checkMaths = checkMaths;
     world.lang = lang;
+    world.look = look;
+    const fin = (k: string) => (s[k] !== undefined ? { v: s[k], w: `${where}.${k}` } : { v: script[k], w: k });
+    const unitNum = (k: string) => { const { v, w } = fin(k); if (v === undefined) return 0; if (typeof v !== 'number' || v < 0 || v > 1) throw new ScriptError('must be a number from 0 to 1.', w); return v; };
+    world.finish = {
+      grade: choice(fin('grade').v, ['none', 'warm', 'cold', 'faded', 'mono', 'vivid'] as const, fin('grade').w, 'none'),
+      glow: Math.max(unitNum('glow'), sceneTheme.glow ?? 0),
+      depth: unitNum('depth'),
+      cameraStyle: choice(fin('camera_style').v, ['steady', 'drift', 'breathe'] as const, fin('camera_style').w, 'steady'),
+    };
     if (typeof s.chapter === 'string') chapterNow = s.chapter;
     world.chapter = chapterNow;
     world.imageSizes = opts.imageSizes ?? {};
@@ -399,6 +415,7 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     }
     const tdur = typeof s.transition_duration === 'number' ? s.transition_duration : 1;
     const background = readBackground(s, sceneTheme, where);
+    if (look === 'blueprint' && s.background === undefined && s.paper === undefined) background.style = 'grid';
 
     // Beats are built in the order written.
     const ends = new Map<string, number>();
@@ -485,8 +502,13 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
       } else if (b.sound !== undefined && b.sound !== false) {
         throw new ScriptError(`must be false (silent) or one of ${SOUND_KINDS.join(', ')}.`, `${w}.sound`);
       }
+      // A beat's own drawing style goes onto everything it makes.
+      const beatLook = b.style !== undefined && !def.params.includes('style') ? (choice(b.style, LOOKS, `${w}.style`) as Look) : undefined;
+      const before = world.order.length;
       try {
-        return def.build(ctx);
+        const done = def.build(ctx);
+        if (beatLook) for (const th of world.order.slice(before)) th.look = beatLook;
+        return done;
       } catch (err) {
         if (err instanceof ScriptError && !err.where) throw new ScriptError(err.message, w);
         throw err;
@@ -498,6 +520,46 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     if (kind === 'geometry') setupGeometryWorld(makeCtx({}, where, start, undefined, undefined), s, where);
     if (kind === 'space') setupSpaceWorld(makeCtx({}, where, start, undefined, undefined), s, where);
     if (kind === 'counting') setupCountingWorld(makeCtx({}, where, start, undefined, undefined), s, where);
+
+    // Things carried over from the scene before, exactly as they were left.
+    if (s.keep !== undefined && s.keep !== false) {
+      const prev = scenes[scenes.length - 1];
+      if (!prev) throw new ScriptError('the first scene has nothing before it to keep.', `${where}.keep`);
+      if (s.keep !== 'all' && !(Array.isArray(s.keep) && s.keep.every((x) => typeof x === 'string'))) throw new ScriptError('must be "all" or a list of ids.', `${where}.keep`);
+      prev.applyState(start - 1e-3);
+      const wanted = s.keep === 'all' ? null : new Set(s.keep as string[]);
+      if (wanted) for (const id of wanted) if (!prev.world.things.has(id)) throw new ScriptError(`there is nothing called "${id}" in the scene before.${didYouMean(id, [...prev.world.things.keys()].filter((k) => !k.startsWith('_')))}`, `${where}.keep`);
+      const carried = new Map<Thing, Thing>();
+      for (const old of prev.world.order) {
+        if (old.kind === 'group' || old.id.startsWith('_')) continue;
+        const named = wanted ? wanted.has(old.id) || (old.parent && wanted.has(old.parent.id)) || [...wanted].some((w) => prev.world.things.get(w)?.kind === 'group' && prev.world.things.get(w)!.members.includes(old)) : true;
+        if (!named || !old.shown() || old.opacity() < 0.02) continue;
+        if (prev.world.space?.objects.some((o) => o.thing === old)) { warnings.push(`${where}.keep: "${old.id}" is a 3D object; 3D objects are not carried into the next scene.`); continue; }
+        const st = old.state;
+        const th = new Thing(old.id, old.kind, st.glyphs, [st.x, st.y]);
+        th.base.scale = st.scale; th.base.rotation = st.rotation; th.base.sx = st.sx; th.base.sy = st.sy;
+        th.base.opacity = st.opacity; th.base.color = st.color ?? old.base.color; th.base.visible = true;
+        th.build = { x: st.x, y: st.y, scale: st.scale, glyphs: st.glyphs, visible: true };
+        Object.assign(th, { text: old.text, tex: old.tex, size: old.size, equalsX: old.equalsX, screen: old.screen, layer: old.layer, image: old.image, look: old.look, key: old.key, keyText: old.keyText, spots: old.spots });
+        if (world.things.has(th.id)) continue;
+        world.add(th, `${where}.keep`);
+        carried.set(old, th);
+      }
+      for (const [old, th] of carried) if (old.parent && carried.has(old.parent)) th.parent = carried.get(old.parent);
+      // Groups whose members all came too.
+      for (const g of prev.world.order) if (g.kind === 'group' && g.members.length && g.members.every((m) => carried.has(m)) && !world.things.has(g.id)) {
+        const ng = new Thing(g.id, 'group', [], [0, 0]);
+        ng.members = g.members.map((m) => carried.get(m)!);
+        world.add(ng, `${where}.keep`);
+      }
+      world.last = [...carried.values()].filter((t) => !t.screen).pop();
+    }
+    // The chapter's name on screen as the scene opens.
+    if (s.chapter_card === true) {
+      if (typeof s.chapter !== 'string') throw new ScriptError('needs the scene to start a "chapter".', `${where}.chapter_card`);
+      chapterCount++;
+      buildBeat({ do: 'title', kicker: `${chapterWord(lang)} ${chapterCount}`, text: s.chapter, duration: 2.6, sound: 'swell' }, `${where}.chapter_card`, start, 2.6, undefined);
+    } else if (typeof s.chapter === 'string') chapterCount++;
 
     // Things there from the start.
     if (s.place !== undefined) {
@@ -601,11 +663,22 @@ function readBackground(s: Spec, theme: Theme, where: string): Background {
     return out;
   }
   if (!isObject(bg)) throw new ScriptError('must be a style name or an object.', `${where}.background`);
-  if (bg.image !== undefined) throw new ScriptError('pictures as backgrounds are not built yet.', `${where}.background.image`);
-  out.style = choice(bg.style, ['plain', 'gradient', 'grid', 'dots'] as const, `${where}.background.style`, 'plain');
+  if (bg.image !== undefined) {
+    if (typeof bg.image !== 'string') throw new ScriptError('must be a picture file name.', `${where}.background.image`);
+    if (/\.(mp4|webm)$/i.test(bg.image)) throw new ScriptError('film clips as backgrounds are not built yet; use a picture.', `${where}.background.image`);
+    const k = (key: string, d: number) => { const v = bg[key]; if (v === undefined) return d; if (typeof v !== 'number' || v < 0 || v > 1) throw new ScriptError('must be a number from 0 to 1.', `${where}.background.${key}`); return v; };
+    out.image = { file: bg.image, dim: k('dim', 0.5), blur: k('blur', 0) };
+  }
+  out.style = choice(bg.style ?? (bg.image !== undefined ? 'image' : undefined), ['plain', 'gradient', 'grid', 'dots', 'image'] as const, `${where}.background.style`, 'plain') as Background['style'];
   if (Array.isArray(bg.colors)) out.colors = bg.colors.map((c, i) => colorOf(c, theme, `${where}.background.colors[${i}]`));
   if (typeof bg.spacing === 'number') out.spacing = bg.spacing;
   return out;
+}
+
+/** "Chapter" in the language being made (the word above the chapter's name). */
+function chapterWord(lang: string): string {
+  const words: Record<string, string> = { en: 'Chapter', hi: 'अध्याय', mr: 'प्रकरण', bn: 'অধ্যায়', te: 'అధ్యాయం', ta: 'அத்தியாயம்', gu: 'પ્રકરણ', kn: 'ಅಧ್ಯಾಯ', ml: 'അധ്യായം', pa: 'ਅਧਿਆਇ', ur: 'باب', es: 'Capítulo', fr: 'Chapitre', de: 'Kapitel', pt: 'Capítulo', ru: 'Глава', id: 'Bab', ar: 'الفصل', zh: '章节', ja: '章', ko: '장' };
+  return words[lang] ?? 'Chapter';
 }
 
 /** For the checker and tests: every action name. */

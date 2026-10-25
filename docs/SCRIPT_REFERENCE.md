@@ -256,13 +256,18 @@ can be made in any style; nothing else needs to change.
 | Style | Look |
 | --- | --- |
 | `vector` | Clean, smooth lines and solid letters, drawn on as if by an invisible pen. The classic look of a maths explainer. Default. |
-| `chalk` (coming) | Chalk on a blackboard: grainy strokes, a little dust as they are drawn, smudged when rubbed out. |
-| `sketch` (coming) | Pencil and pen on paper: lines a little rough, as if drawn by hand, each slightly different. |
-| `whiteboard` (coming) | Marker on a whiteboard, with a hand that draws each line as it appears. |
-| `neon` (coming) | Glowing tubes of light on black. |
-| `blueprint` (coming) | White lines on blue paper, with faint grid and construction marks. |
-| `paper` (coming) | Shapes cut from coloured paper, with soft shadows and paper grain. |
-| `solid` (coming) | Letters and shapes as solid raised objects, lit, casting shadows, seen with depth. |
+| `chalk` | Chalk on a blackboard: grainy strokes, a little dust as they are drawn, smudged when rubbed out. |
+| `sketch` | Pencil and pen on paper: lines a little rough, as if drawn by hand, each slightly different. |
+| `whiteboard` | Marker on a whiteboard, with a marker pen that draws each line as it appears. |
+| `neon` | Glowing tubes of light on black. |
+| `blueprint` | White lines on blue paper, with faint grid and construction marks. |
+| `paper` | Shapes cut from coloured paper, with soft shadows and paper grain. |
+| `solid` | Letters and shapes as solid raised objects, lit, casting shadows, seen with depth. |
+
+A style brings a theme that suits it when the script does not choose one:
+`chalk` the blackboard, `whiteboard` white, `sketch` and `paper` paper,
+`neon` a deeper black, `blueprint` its own blue with a grid. A theme given in
+the script always wins.
 
 A scene can have its own `style`, and one object can too:
 
@@ -311,13 +316,13 @@ Colours are names (section 30), hex (`"#58c4dd"`) or CSS colours.
 
 ### Looks: grade and lens
 
-These change the finished picture, as in a film. (They are coming.)
+These change the finished picture, as in a film.
 
 | Key | Values | Meaning |
 | --- | --- | --- |
 | `grade` | `none`, `warm`, `cold`, `faded`, `mono`, `vivid` | Colour of the whole picture. |
 | `glow` | 0 to 1 | Bright parts glow. |
-| `depth` | 0 to 1 | Things the camera is not looking at go out of focus (when the camera tilts or in space). |
+| `depth` | 0 to 1 | In space scenes, things beyond what the camera looks at fade into the background, as distance does. |
 | `camera_style` | `steady`, `drift`, `breathe` | The manner of every camera move. `steady`: exactly as asked. `drift`: a very slow sideways float. `breathe`: a very slow push in and out. Default `steady`. |
 
 They can be set at the top of the script or on a scene.
@@ -549,13 +554,13 @@ captions can be left off the picture and still offered to viewers.
 | `world` | `"board"`, `"graph"`, `"geometry"`, `"counting"`, `"space"` | Which of the five worlds (section 10). Default `board`. |
 | `name` | text | Used in messages and the preview's list of scenes. |
 | `chapter` | text, or text per language | Starts a new YouTube chapter here (section 28). |
-| `chapter_card` (coming) | `true` | Show the chapter's name on screen as the scene starts. |
+| `chapter_card` | `true` | Show the chapter's name on screen as the scene starts, with "Chapter 2" above it in the video's language. |
 | `start_line` | a line number or id | The scene begins when this line begins. |
 | `start_cue` | a cue name | The scene begins at this cue. |
 | `start` | seconds | The scene begins at this time. Only for videos with no narration. |
 | `transition` | see below | How this scene arrives. Default `cut`. Ignored on the first scene. |
 | `transition_duration` | seconds | Default 1. |
-| `keep` (coming) | list of ids, or `"all"` | Things from the scene before that carry over into this one, in the same place. Equations, words and shapes carry into any world; graphs, figures and counted things only into a scene of the same world. |
+| `keep` | list of ids, or `"all"` | Things from the scene before that carry over into this one, exactly as they were left (place, size, colour), so the next scene can go on working with them. Graphs, figures and counted things come as pictures of how they were left. 3D objects are not carried. |
 | `style`, `theme`, `symbols`, `captions` | as at the top | For this scene only. |
 | `grade`, `glow`, `depth`, `camera_style` | section 5 | For this scene only. |
 | `background` | see below | What is behind everything. |
@@ -593,7 +598,7 @@ Each scene is a fresh sheet unless `keep` says otherwise.
 | `style` | `plain`, `gradient`, `grid`, `dots`, `image` | `plain`: the theme's background. `grid`: faint squares. `dots`: a faint dot grid. Default `plain`. |
 | `colors` | list | For `gradient`: middle and edge. |
 | `spacing` | a number | Size of grid squares, in sheet units (section 12). |
-| `image` (coming) | file | A picture or clip behind everything. |
+| `image` | file | A picture behind everything, filling the frame (film clips are coming). |
 | `dim`, `blur` | 0 to 1 | Darken or blur the picture so the maths reads over it. |
 
 ---
@@ -2491,7 +2496,7 @@ YouTube needs the first chapter to start at 0:00, at least three chapters,
 and each at least 10 seconds long. The checker warns when these are not met.
 
 A scene can also show its chapter title on screen as it starts with
-`"chapter_card": true` (coming).
+`"chapter_card": true`.
 
 ### Subtitle files for YouTube
 

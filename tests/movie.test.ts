@@ -51,3 +51,20 @@ describe('the catalogue', () => {
     }
   });
 });
+
+describe('carrying things between scenes', () => {
+  it('keeps what was on screen, where it was', () => {
+    const m = compileMovie({ scenes: [
+      { beats: [{ at: 0, do: 'write', id: 'eq', tex: 'x + 1 = 3' }, { at: 1, do: 'move', who: 'eq', to: 'top' }] },
+      { start: 3, keep: ['eq'], chapter: 'Two', chapter_card: true, beats: [{ at: 4, do: 'steps', who: 'eq', to: 'x = 2' }] },
+    ] });
+    expect(m.warnings.filter((w) => !/chapter/i.test(w))).toEqual([]);
+    const w0 = m.scenes[0].world, w1 = m.scenes[1].world;
+    m.scenes[0].applyState(2.9);
+    const before = w0.things.get('eq')!.state.y;
+    m.scenes[1].applyState(3.01);
+    expect(w1.things.get('eq')!.state.y).toBeCloseTo(before, 5);
+    expect(w1.things.get('eq')!.shown()).toBe(true);
+    expect([...w1.things.keys()].some((k) => k.startsWith('_title'))).toBe(true);
+  });
+});
