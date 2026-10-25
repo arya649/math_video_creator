@@ -7,7 +7,7 @@ import { setupGeometryWorld } from './actions/geometry';
 import { setupCountingWorld } from './actions/counting';
 import { readCamera3d, setupSpaceWorld } from './actions/space';
 import { readCharacters } from './actions/mascot';
-import { ACTIONS, BEAT_KEYS, type Ctx, type Done, SOUND_KINDS, type SoundKind, type Spec, findAction } from './actions';
+import { ACTIONS, BEAT_KEYS, type Ctx, type Done, SOUND_KINDS, type SoundKind, type Spec, findAction, sizeOf } from './actions';
 import { CameraPlan, SHOT_KEYS, type View, readCamera } from './camera';
 import {
   type Narration, type VoiceTimes, estimateNarration, narrationFromSrt, narrationFromVoice, parseSrt, readLines, scaledNarration,
@@ -134,6 +134,12 @@ export interface Layer {
 }
 
 export class Movie {
+  /** 0 to 1: blur on fast movement in the exported video. */
+  motionBlur = 0;
+  /** The picture YouTube shows before the video plays. */
+  thumbnail?: { t: number; text?: string; kicker?: string; position: 'left' | 'right' | 'center'; size: number; file?: string };
+  /** The last seconds kept clear for YouTube's end-screen buttons. */
+  endScreen = 0;
   constructor(
     public title: string,
     public lang: string,
@@ -265,6 +271,8 @@ export interface CompileOptions {
   captions?: boolean;
   /** Draw smaller than the format's size (previews, the catalogue). Keeps the shape. */
   scale?: number;
+  /** Every file opened with the script (models), by name. */
+  binaries?: Map<string, ArrayBuffer>;
   /** Widths and heights of pictures opened with the script, by name. */
   imageSizes?: Record<string, [number, number]>;
 }
@@ -416,6 +424,14 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
   const scenes: CompiledScene[] = [];
   const allWorlds: SceneWorld[] = [];
   const characters = readCharacters(script.characters, 'characters');
+  const models = script.models === undefined ? [] : Array.isArray(script.models) ? script.models.map((m, i) => {
+    const w = `models[${i}]`;
+    if (!isObject(m) || typeof m.name !== 'string' || typeof m.file !== 'string') throw new ScriptError('must be { "name", "file", and one of "width", "height", "length" }.', w);
+    if (!/\.(glb|gltf)$/i.test(m.file)) throw new ScriptError('must be a .glb or .gltf file.', `${w}.file`);
+    warnKeys(m, ['name', 'file', 'width', 'height', 'length'], w);
+    const n = (k: string) => (m[k] === undefined ? undefined : typeof m[k] === 'number' && (m[k] as number) > 0 ? m[k] as number : (() => { throw new ScriptError('must be a number above 0.', `${w}.${k}`); })());
+    return { name: m.name, file: m.file, width: n('width'), height: n('height'), length: n('length') };
+  }) : (() => { throw new ScriptError('must be a list of models.', 'models'); })();
   let chapterNow: string | undefined;
   let chapterCount = 0;
   let lastEnd = 0;
@@ -440,6 +456,8 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     world.lang = lang;
     world.texts = opts.texts ?? {};
     world.characters = characters;
+    world.models = models;
+    world.binaries = opts.binaries ?? new Map();
     world.words = narration.lines.flatMap((l) => l.words);
     world.look = look;
     const fin = (k: string) => (s[k] !== undefined ? { v: s[k], w: `${where}.${k}` } : { v: script[k], w: k });
@@ -660,9 +678,16 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
     scenes[scenes.length - 1].zoomInto = zoomInto;
   });
 
+  // The end screen: seconds after everything else, kept clear for YouTube's buttons.
+  let endScreen = 0;
+  if (script.end_screen !== undefined) {
+    if (typeof script.end_screen !== 'number' || script.end_screen < 5 || script.end_screen > 20) throw new ScriptError('must be from 5 to 20 seconds (YouTube allows 5 to 20).', 'end_screen');
+    endScreen = script.end_screen;
+  }
+  const contentEnd = Math.max(narration.end + 1, lastEnd + 1, scenes[scenes.length - 1].start + 2, opts.audioLengths?.[audio ?? ''] ?? 0);
   const duration = typeof script.duration === 'number'
     ? script.duration
-    : Math.max(narration.end + 1, lastEnd + 1, scenes[scenes.length - 1].start + 2, opts.audioLengths?.[audio ?? ''] ?? 0);
+    : endScreen ? Math.max(contentEnd - 1 + endScreen, narration.end + endScreen) : contentEnd;
   const last = scenes[scenes.length - 1];
   last.end = duration;
   last.world.end = duration;
@@ -730,7 +755,31 @@ export function compileMovie(script: unknown, opts: CompileOptions = {}): Movie 
 
   const waits = scenes.flatMap((sc) => sc.world.waits).sort((a, b) => a.at - b.at);
   if (checks.teaching !== false) warnings.push(...teachingChecks(scenes.map((sc) => sc.world), narration, duration));
-  return new Movie(title, lang, languages, theme, width, height, sheet.w, sheet.h, Number(fps), duration, narration, cap, scenes, warnings, audio, music, sounds.sort((a, b) => a.at - b.at), waits);
+  const movie = new Movie(title, lang, languages, theme, width, height, sheet.w, sheet.h, Number(fps), duration, narration, cap, scenes, warnings, audio, music, sounds.sort((a, b) => a.at - b.at), waits);
+  if (script.motion_blur !== undefined) {
+    if (typeof script.motion_blur !== 'number' || script.motion_blur < 0 || script.motion_blur > 1) throw new ScriptError('must be a number from 0 to 1.', 'motion_blur');
+    movie.motionBlur = script.motion_blur;
+  }
+  movie.endScreen = endScreen;
+  if (endScreen) warnings.push(...endScreenCheck(movie));
+  // The thumbnail: a moment of the video with big words over it.
+  if (script.thumbnail !== undefined) {
+    const th = localize(script.thumbnail, lang, languages, strings, "thumbnail");
+    if (!isObject(th)) throw new ScriptError('must be { "at_line" (or "at_cue" or "at"), "text", ... }.', 'thumbnail');
+    warnKeys(th, ['at_line', 'at_cue', 'at', 'text', 'kicker', 'position', 'size', 'file'], 'thumbnail');
+    let t = Math.min(duration - 0.1, 2);
+    if (th.at_line !== undefined) { const l = lineByRef(th.at_line, 'thumbnail.at_line'); t = Math.max(l.start, l.end - 0.2); }
+    else if (th.at_cue !== undefined) t = cueTime(th.at_cue, 'thumbnail.at_cue') + 1;
+    else if (typeof th.at === 'number') t = th.at;
+    if (th.text !== undefined && typeof th.text !== 'string') throw new ScriptError('must be words.', 'thumbnail.text');
+    movie.thumbnail = {
+      t: movie.toVideo(t), text: th.text as string | undefined, kicker: typeof th.kicker === 'string' ? th.kicker : undefined,
+      position: choice(th.position, ['left', 'right', 'center'] as const, 'thumbnail.position', 'left'),
+      size: sizeOf(th.size, { medium: 0.11, large: 0.14, huge: 0.18 }, 'thumbnail.size', 'large'),
+      file: typeof th.file === 'string' ? th.file : undefined,
+    };
+  }
+  return movie;
 }
 
 function readBackground(s: Spec, theme: Theme, where: string): Background {
@@ -756,6 +805,42 @@ function readBackground(s: Spec, theme: Theme, where: string): Background {
   if (Array.isArray(bg.colors)) out.colors = bg.colors.map((c, i) => colorOf(c, theme, `${where}.background.colors[${i}]`));
   if (typeof bg.spacing === 'number') out.spacing = bg.spacing;
   return out;
+}
+
+/** YouTube's end-screen places (fractions of the frame): two video tiles and the subscribe button. */
+export const END_SCREEN_ZONES = [
+  { name: 'the left video tile', x0: 0.06, y0: 0.27, x1: 0.46, y1: 0.73 },
+  { name: 'the right video tile', x0: 0.54, y0: 0.27, x1: 0.94, y1: 0.73 },
+  { name: 'the subscribe button', x0: 0.43, y0: 0.76, x1: 0.57, y1: 0.95 },
+];
+
+/** Warnings for anything drawn where the end-screen buttons go. */
+function endScreenCheck(movie: Movie): string[] {
+  const out: string[] = [];
+  const t0 = movie.duration - movie.endScreen + 0.5;
+  const sc = movie.scenes[movie.sceneAt(movie.toScript(t0).t)];
+  for (const t of [t0, movie.duration - 0.1]) {
+    const st = movie.toScript(t).t;
+    sc.applyState(st);
+    const v = sc.camera.viewAt(st);
+    const k = v.zoom;
+    // 3D objects fill the middle of the frame, where the tiles go.
+    for (const o of sc.world.space?.objects ?? []) if (o.thing.shown() && o.thing.opacity() > 0.05) out.push(`end_screen: the 3D object "${o.thing.id}" is on screen in the last ${movie.endScreen} seconds, where YouTube puts its video tiles; remove it before then.`);
+    for (const th of sc.world.order) {
+      if (th.kind === 'group' || th.id.startsWith('_') || !th.shown() || th.opacity() < 0.05) continue;
+      if (sc.world.space?.objects.some((o) => o.thing === th)) continue;
+      const b = th.buildBox();
+      // Where it is on screen, as fractions of the frame.
+      const toF = (x: number, y: number): [number, number] => th.screen
+        ? [(x + movie.frameW / 2) / movie.frameW, (movie.frameH / 2 - y) / movie.frameH]
+        : [((x - v.cx) * k + movie.frameW / 2) / movie.frameW, (movie.frameH / 2 - (y - v.cy) * k) / movie.frameH];
+      const [ax, ay] = toF(b.x0, b.y1), [bx, by] = toF(b.x1, b.y0);
+      for (const z of END_SCREEN_ZONES) {
+        if (ax < z.x1 && bx > z.x0 && ay < z.y1 && by > z.y0) out.push(`end_screen: "${th.id}" is on screen at ${t.toFixed(1)} s where YouTube puts ${z.name}; clear it (with "remove" or "clear") before the last ${movie.endScreen} seconds.`);
+      }
+    }
+  }
+  return [...new Set(out)];
 }
 
 /** "Chapter" in the language being made (the word above the chapter's name). */

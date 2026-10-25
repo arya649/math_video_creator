@@ -9,6 +9,7 @@ import '@fontsource/noto-sans-devanagari/600.css';
 import { type Movie, compileMovie } from './engine/movie';
 import { Renderer, pictures } from './engine/render';
 import { exportMp4 } from './engine/export';
+import { makeThumbnail } from './engine/thumbnail';
 import { mixAudio } from './engine/mix';
 import { encodeWav } from './engine/wav';
 import { ScriptError, isObject } from './engine/util';
@@ -114,7 +115,7 @@ async function decodePictures() {
 }
 
 function compile(lang?: string): Movie {
-  return compileMovie(script, { lang, texts, voices, audioLengths, imageSizes, captions: captionsBox.checked });
+  return compileMovie(script, { lang, texts, voices, audioLengths, imageSizes, binaries: files, captions: captionsBox.checked });
 }
 
 async function build() {
@@ -141,6 +142,7 @@ async function build() {
   }
   renderer = new Renderer(canvas, movie);
   renderer.captions = captionsBox.checked && !mutedBox.checked;
+  renderer.guides = true;
   for (const b of [exportBtn, playBtn]) b.disabled = false;
   exportAllBtn.disabled = movie.languages.length < 2;
   scrub.disabled = false;
@@ -452,9 +454,36 @@ if (project) {
 
 // ---- Export ----
 
+let lastNote = '';
+
+/**
+ * What each scene's frames depend on: its own part of the script, the scene before (for
+ * transitions and kept things), the whole script's settings, the words spoken in it (relative
+ * to its start), the language and the files. An unchanged fingerprint means an unchanged scene.
+ */
+function sceneFingerprints(m: Movie): string[] {
+  if (!isObject(script) || !Array.isArray(script.scenes)) return [];
+  const { scenes: _s, lines: _l, ...top } = script as Record<string, unknown>;
+  const fileList = [...files].map(([n, b]) => `${n}:${b.byteLength}`).sort().join(',');
+  const out: string[] = [];
+  m.scenes.forEach((sc, k) => {
+    const from = k === 0 ? 0 : m.toVideo(sc.start) - (sc.transition !== 'cut' ? sc.transitionDuration : 0);
+    const to = k + 1 < m.scenes.length ? m.toVideo(m.scenes[k + 1].start) : m.duration;
+    const spoken = m.narration.lines.filter((l) => m.toVideo(l.end) > from && m.toVideo(l.start) < to).map((l) => [l.text, (m.toVideo(l.start) - from).toFixed(3), (m.toVideo(l.end) - from).toFixed(3), l.words.map((w) => `${w.text}@${(m.toVideo(w.start) - from).toFixed(3)}`).join(' ')]);
+    const spec = ((script as Record<string, unknown>).scenes as unknown[])[k] as Record<string, unknown> | undefined;
+    // Transitions, kept things, recaps and chapter numbers look back at earlier scenes.
+    const needsPrev = k > 0 && (sc.transition !== 'cut' || (spec && (spec.keep !== undefined || spec.chapter_card !== undefined || /"recap"|"summary"|"sum_up"/.test(JSON.stringify(spec)))));
+    out.push(JSON.stringify([top, spec, needsPrev ? out[k - 1] : null, spoken, m.lang, fileList, (to - from).toFixed(3), m.waits.filter((w) => w.at >= sc.start && w.at < (m.scenes[k + 1]?.start ?? Infinity)).map((w) => [w.at - sc.start, w.length])]));
+  });
+  return out;
+}
+
 async function exportOne(m: Movie) {
+  let scenesNote = '';
   const blob = await exportMp4(m, {
     files, captions: captionsBox.checked,
+    fingerprints: sceneFingerprints(m),
+    onScenes: (madeNow, reused) => { scenesNote = reused ? ` (${madeNow} scene${madeNow === 1 ? '' : 's'} made, ${reused} unchanged and reused)` : ''; },
     onProgress: (u) => { status.textContent = `Exporting "${m.lang}": ${Math.round(u * 100)}%`; },
   });
   const base = `${m.title.replace(/[^\w\- ]/g, '').trim() || 'video'}_${m.lang}`;
@@ -463,6 +492,8 @@ async function exportOne(m: Movie) {
   if (m.narration.lines.length) out.push([`${base}.srt`, new Blob([toSrt(m.narration, (t) => m.toVideo(t))], { type: 'text/plain' })]);
   const chapters = chapterList(m);
   if (chapters.text) out.push([`chapters_${m.lang}.txt`, new Blob([chapters.text], { type: 'text/plain' })]);
+  if (m.thumbnail) out.push([`thumbnail_${m.lang}.png`, await makeThumbnail(m)]);
+  lastNote = scenesNote;
   for (const [name, b] of out) {
     if (import.meta.env.DEV) await fetch(`/__save?name=${encodeURIComponent(name)}`, { method: 'POST', body: b });
     const a = document.createElement('a');
@@ -482,7 +513,7 @@ async function runExport(all: boolean) {
   try {
     const list = all ? movie.languages.map((l) => compile(l)) : [movie];
     for (const m of list) saved.push(...(await exportOne(m)));
-    status.textContent = `Saved ${saved.join(', ')}`;
+    status.textContent = `Saved ${saved.join(', ')}${lastNote}`;
   } catch (err) {
     status.textContent = `Export failed: ${(err as Error).message}`;
     console.error(err);
@@ -507,4 +538,6 @@ window.engine = {
     return `${name}.jpg`;
   },
   load: loadProject,
+  fingerprints: () => (movie ? sceneFingerprints(movie) : []),
+  thumbnail: () => (movie ? makeThumbnail(movie) : null),
 };

@@ -61,7 +61,12 @@ src/engine/
   actions.ts     The action registry and helpers every action uses
   actions/       The actions, by kind: equations, shapes, motion, graphics, graph,
                  geometry, panels (cards, counters, tables, charts, pictures),
-                 teaching (wait, question, mistake, recap...), counting, space
+                 teaching (wait, question, mistake, recap...), counting, space,
+                 extras (solve, evaluate, pointer, trace_path, sonify), fractals,
+                 wonders (fourier, simulations, particles), mascot
+  styles.ts      Drawing styles: how a filled shape or a line is painted (chalk, neon...)
+  thumbnail.ts   The thumbnail picture
+  space/gltf.ts  Reading .glb 3D models
   space/         The space world: 3D maths and solids (geo3d.ts), the camera and
                  the painter that sorts and shades faces each frame (space.ts)
   check.ts       Maths checks: is each step equal to the one before?
@@ -76,7 +81,8 @@ src/engine/
   narration.ts   Lines, cues and word times: estimated, from subtitles, or a made voice
   camera.ts      The 2D camera: shots, blending
   render.ts      Renderer: draws one frame on a canvas (Canvas 2D)
-  export.ts      MP4 export (WebCodecs + mediabunny), sound mixing
+  export.ts      MP4 export: scenes encoded separately and kept by fingerprint, then joined
+                 (WebCodecs + mediabunny); motion blur
   chapters.ts    The YouTube chapter list
   themes.ts      Themes and colour names
   color.ts       Mixing colours
@@ -142,6 +148,19 @@ includes waits; `Movie.toScript(T)` turns a video time into a script time
 world in video time (the renderer, sound mixing, subtitles, chapters, the
 scene list) maps through these. Actions read `world.hold` to animate during
 a wait (the countdown ring).
+
+**Drawing styles.** The renderer never calls `fill` or `stroke` itself for
+outlines: it hands pixels to `fillShape` and `strokeLines` in `styles.ts`,
+which paint them in the scene's (or the thing's) style.
+
+**Tilted sheets.** A flat scene's camera can tilt. The renderer then maps
+sheet points through a perspective projection (`tiltProj`) instead of a
+matrix; words and pictures use the nearest flat matrix (`localMatrix`).
+
+**Scenes kept between exports.** `main.ts` gives each scene a fingerprint of
+everything its frames depend on; `export.ts` encodes each scene from a key
+frame and keeps its packets under that fingerprint, joining unchanged scenes
+in as they were. If encoder settings ever differ, everything is made afresh.
 
 **Sheet units.** The frame at rest is 9 units on its short side (16 x 9 in
 landscape). Line widths are in design pixels for a 1080-pixel short side.

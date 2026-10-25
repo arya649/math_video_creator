@@ -58,22 +58,24 @@ their headings, and the engine says so plainly if a script uses them.
 
 | Built | Coming |
 | --- | --- |
-| All five worlds: `board`, `graph`, `geometry`, `counting`, `space`; themes; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined) | Drawing styles other than `vector`; pictures as backgrounds |
+| All five worlds: `board`, `graph`, `geometry`, `counting`, `space`; seven themes; eight drawing styles; colours tied to symbols; backgrounds (plain, gradient, grid, dots, lined, a picture); grade, glow, grain, depth, camera manner | |
 | Narration `lines` in every language, cue marks, `@strings`; a voice made with ElevenLabs, or the creator's own recording (timed by a subtitle file, exactly with ElevenLabs, or by an estimate fitted to it) | Voice services other than ElevenLabs |
 | Captions (karaoke and plain, with the on/off switch), muted preview | |
 | Timing: `at_line`, `at_word`, `at_cue`, `then`, `after`, `with`, `at`, `offset`, `duration`, `until_line`, `until_cue`, `speed`; `wait` (the whole video holds still) | |
-| Equations: `write`, `steps`, `rearrange`, `work`, `highlight`, `box`, `cancel`, `brace`, `label_part`, `substitute`, `pull_out`, `color`, `swap`; every step checked | `solve`, `evaluate` |
-| Graphs: axes, number planes, `plot` (functions, parametric, polar, implicit, inequalities), values and sliders, points, `mark`, `tangent`, `secant`, `area`, `refine`, `asymptote`, `limit`, `shift_graph`, `table_of_values`, vectors, fields, `transform_plane`, `rescale` | |
+| Equations: `write`, `steps`, `rearrange`, `work`, `solve`, `evaluate`, `highlight`, `box`, `cancel`, `brace`, `label_part`, `substitute`, `pull_out`, `color`, `swap`; every step checked | |
+| Graphs: axes, number planes, `plot` (functions, parametric, polar, implicit, inequalities), values and sliders, points, `mark`, `tangent`, `secant`, `area`, `refine`, `asymptote`, `limit`, `shift_graph`, `table_of_values`, vectors, fields, `transform_plane`, `rescale`, `sonify` | |
 | Geometry: points, segments, lines, rays, circles, polygons, triangles; 15 constructions (with compass steps); angles, equal marks, measurements; `drag`; `translate`, `rotate`, `reflect`, `enlarge`; `cut` and `rearrange_pieces` | |
-| Shapes: every shape of `draw` except drawing an svg file | `path` from an svg file |
-| Moving: `move`, `turn`, `scale`, `flip`, `wobble`, `morph`, `copy`, `group`, `show`, `hide`, `remove`, `focus` | `pointer`, `trace_path` |
+| Shapes: every shape of `draw`, drawings from SVG files | |
+| Moving: `move`, `turn`, `scale`, `flip`, `wobble`, `morph`, `copy`, `group`, `show`, `hide`, `remove`, `focus`, `pointer`, `trace_path` | |
 | Counting: number lines (`jump`, `interval`, `point_on_line`, `zoom_line`), `dots`, `group_items`, `count_items`, `tally`, `blocks`, `regroup`, `fraction`, `split`, `combine`, `line_up`, `coin`, `dice`, `spinner`, `cards`, `tree`, `sample_space` | Pictures from files as counted things |
-| Space: `axes3d`, `surface`, `solid` (12 shapes), `revolve`, `slice`, `stack_slices`, `net`, `vector3d`, `point3d`, `plane3d`, `line3d`, `curve3d`; four lights; the `orbit` and `look` shots | 3D models from files; `tilt` of flat scenes |
+| Space: `axes3d`, `surface`, `solid` (12 shapes, or a `.glb` model), `revolve`, `slice`, `stack_slices`, `net`, `vector3d`, `point3d`, `plane3d`, `line3d`, `curve3d`; four lights | |
+| Wonders: fractals (fills that zoom, and line fractals), domain colouring, Fourier circles, eleven simulations, particles | |
 | Teaching: `question` and `answer` (with the pause-and-try countdown), `mistake`, `tick`, `cross`, `definition`, `theorem`, `rule`, `formula`, `tip`, `step_counter`, `recap`, `compare` | |
-| On-screen graphics: `title`, `text`, `clear`, `card`, `image` (pictures), `counter`, `chips`, `table`, `chart`, `label`, `credits` | Film clips in `image` |
-| Camera: `rest`, `frame`, `zoom`, `pan`, `follow` | `tilt`, `fly`, `orbit`, `look`; `lift` |
-| Transitions: `cut`, `fade`, `black`, `slide` (all four ways), `wipe` | `morph`, `fly`, `zoom`, `rub`, `page`; `keep` |
-| Export to MP4 (one language, or all) with narration, music, sound files and the engine's own sounds, with its `.srt` subtitle file and YouTube chapter list; script problems and warnings; maths and teaching checks | `sonify`; thumbnail and end screen |
+| The mascot: four built-in characters or your own cut-outs; `enter`, `look`, `react`, `say`, `talk`, `gesture`, `leave` | |
+| On-screen graphics: `title`, `text`, `clear`, `card`, `image` (pictures), `counter`, `chips`, `table`, `chart`, `label`, `credits` | Film clips in `image` and backgrounds |
+| Camera: `rest`, `frame`, `zoom`, `pan`, `follow`, `tilt` (with `lift`), `fly`; in space `orbit` and `look` | |
+| Transitions: `cut`, `fade`, `black`, `slide` (all four ways), `wipe`, `morph`, `fly`, `zoom`, `rub`, `page`; `keep`; chapter cards | |
+| Export to MP4 (one language, or all) with narration, music, sound files and the engine's own sounds, motion blur, its `.srt` subtitle file, YouTube chapter list and thumbnail; end screen; unchanged scenes reused; script problems and warnings; maths and teaching checks | Several scenes made at once (workers) |
 
 Contents:
 
@@ -104,7 +106,7 @@ Contents:
 25. On-screen graphics
 26. Camera
 27. Sound
-28. Long videos: chapters, thumbnail, end screen (thumbnail and end screen coming)
+28. Long videos: chapters, thumbnail, end screen
 29. Checks: maths, teaching, muted viewing
 30. Names you can use
 31. Rules
@@ -1175,7 +1177,7 @@ Draws a shape on the sheet.
 | `regular` | `sides`, `position`, `radius`. A regular polygon. |
 | `star` | `points`, `position`, `radius`. |
 | `brace` | `from`, `to`, `text`. A curly bracket between two points. |
-| `path` | `points`: a smooth curve through them. (`file`: an svg drawing, drawn on stroke by stroke, is coming.) |
+| `path` | `points`: a smooth curve through them. Or `file`: an SVG drawing (its paths and polygons), drawn on stroke by stroke, `size` its height (default 3); `fill` fills it. |
 | `grid` | `position`, `rows`, `columns`, `size`. |
 | `cross`, `tick` | `position`, `size`. |
 
@@ -2034,14 +2036,24 @@ points, across the axes' box; `"segment": true` only between them. `color`,
 `{ "do": "curve3d", "x_of_t": "cos(t)", "y_of_t": "sin(t)", "z_of_t": "t / 4", "t": [0, 18] }`:
 a curve traced as `t` runs (default 0 to 2π). `color`, `width`.
 
-### Models (coming)
+### Models
 
 ```json
-"models": [ { "name": "bridge", "file": "bridge.glb", "width": 40 } ]
+"models": [ { "name": "bridge", "file": "bridge.glb", "width": 6 } ]
+{ "do": "solid", "model": "bridge", "position": [0, 0, 0] }
 ```
 
 | Key | Meaning |
 | --- | --- |
+| `name` | The name used with `solid`'s `model`. |
+| `file` | A `.glb` file (or a `.gltf` file with its data inside it), beside the script. |
+| `height`, `width` or `length` | One size, in the space's units; the model is scaled to it (`length`: its longest side). Default: 3 units at its longest. |
+
+The model's shape and base colours are used (`color` on the `solid` paints
+it one colour instead). It stands on `position` like any solid. Very
+detailed models are thinned to 6,000 triangles so the picture stays quick.
+
+--- | --- |
 | `name` | The name used with `solid`'s `model`. |
 | `file` | `.glb`, `.gltf` or `.fbx`. |
 | `height`, `width` or `length` | One real size; the model is scaled to it. |
@@ -2557,28 +2569,37 @@ A scene can also show its chapter title on screen as it starts with
 Each language's video is exported with an `.srt` subtitle file of its
 narration, to upload to YouTube, whatever `captions` says.
 
-### Thumbnail (coming)
+### Thumbnail
 
 ```json
-"thumbnail": { "at_line": 6, "text": { "en": "The missing piece", "hi": "छूटा हुआ हिस्सा" }, "position": "left", "size": "huge" }
+"thumbnail": { "at_line": 6, "text": { "en": "The missing piece", "hi": "छूटा हुआ हिस्सा" }, "kicker": "Algebra", "position": "left", "size": "huge" }
 ```
 
-The frame at that moment, with big words over it, saved as a 1280×720
-picture for each language. Or `"file"` to use your own picture with the
-words over it.
+The frame at that moment (`at_line`: as the line ends; `at_cue`; or `at`
+in seconds), with big words over it on a soft shade, saved as a 1280×720
+picture (`thumbnail_<language>.png`) with each language's export. Or `"file"`
+to use your own picture under the words. `position`: `left` (default),
+`right`, `center`; `size`: `medium`, `large` (default), `huge`; `kicker`: a
+small line above in the accent colour.
 
-### End screen (coming)
+### End screen
 
-`"end_screen": 20` keeps the last 20 seconds clear in the places where
-YouTube puts its end-screen buttons, and the checker warns if anything is
-drawn there.
+`"end_screen": 20` adds 20 seconds (5 to 20) at the end, after the
+narration, kept clear where YouTube puts its end-screen buttons: two video
+tiles and the subscribe button. The preview shows those places with dashed
+outlines during the end screen, and the checker warns about anything on
+screen there (remove or clear it before the end).
 
-### Making a long video (coming)
+### Making a long video
 
-The engine page shows the scenes in a list, with chapters. Scenes are made
-separately and joined, so a change to one scene only makes that scene again.
-The engine can make several scenes at once, one per worker, to finish a long
-video faster.
+The engine page shows the scenes in a list, with chapters. Each scene is
+encoded separately and kept: export again after changing one scene, and only
+that scene (and any that depend on it: the one after a transition, a recap,
+a kept thing) is made again; the rest are joined in as they were. The status
+line says how many scenes were made and how many reused. Kept scenes last
+while the page is open.
+
+Making several scenes at once, one per worker, is coming.
 
 ---
 

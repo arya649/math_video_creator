@@ -1,25 +1,90 @@
 {
   "title": "Shapes in space",
-  "languages": ["en", "hi"],
+  "languages": [
+    "en",
+    "hi"
+  ],
   "lines": [
-    { "en": "Here is the surface z equals x squared minus y squared: a saddle.", "hi": "यह सतह z बराबर x वर्ग घटा y वर्ग है: एक काठी।" },
-    { "en": "Flatten it, and {turn}walk round it.", "hi": "इसे चपटा करें, और {turn}इसके चारों ओर घूमें।" },
-    { "en": "A cube unfolds into its net: six squares.", "hi": "एक घन खुलकर अपना जाल बनाता है: छह वर्ग।" },
-    { "en": "Turn the curve root x around the x axis, and you get a solid.", "hi": "वक्र root x को x अक्ष के चारों ओर घुमाइए, और एक ठोस बनता है।" },
-    { "en": "Cut a cone across, and the cut is a {cut}circle.", "hi": "शंकु को आर-पार काटिए, और कटा भाग एक {cut}वृत्त है।" },
-    { "en": "Thin slices add up to its volume.", "hi": "पतले टुकड़े मिलकर उसका आयतन बनाते हैं।" }
+    {
+      "en": "Here is the surface z equals x squared minus y squared: a saddle.",
+      "hi": "यह सतह z बराबर x वर्ग घटा y वर्ग है: एक काठी।"
+    },
+    {
+      "en": "Flatten it, and {turn}walk round it.",
+      "hi": "इसे चपटा करें, और {turn}इसके चारों ओर घूमें।"
+    },
+    {
+      "en": "A cube unfolds into its net: six squares.",
+      "hi": "एक घन खुलकर अपना जाल बनाता है: छह वर्ग।"
+    },
+    {
+      "en": "Turn the curve root x around the x axis, and you get a solid.",
+      "hi": "वक्र root x को x अक्ष के चारों ओर घुमाइए, और एक ठोस बनता है।"
+    },
+    {
+      "en": "Cut a cone across, and the cut is a {cut}circle.",
+      "hi": "शंकु को आर-पार काटिए, और कटा भाग एक {cut}वृत्त है।"
+    },
+    {
+      "en": "Thin slices add up to its volume.",
+      "hi": "पतले टुकड़े मिलकर उसका आयतन बनाते हैं।"
+    }
   ],
   "scenes": [
     {
       "name": "Saddle",
       "world": "space",
-      "axes": { "x": [-2.5, 2.5], "y": [-2.5, 2.5], "z": [-2, 2] },
+      "axes": {
+        "x": [
+          -2.5,
+          2.5
+        ],
+        "y": [
+          -2.5,
+          2.5
+        ],
+        "z": [
+          -2,
+          2
+        ]
+      },
       "light": "studio",
       "beats": [
-        { "at_line": 1, "do": "value", "name": "a", "start": 0.25 },
-        { "at_line": 1, "do": "surface", "id": "s", "math": "a * (x^2 - y^2)", "x": [-2.5, 2.5], "y": [-2.5, 2.5] },
-        { "at_line": 2, "do": "set", "name": "a", "to": 0.05, "duration": 2 },
-        { "at_cue": "turn", "camera": { "shot": "orbit", "turns": 0.5, "duration": 4 } }
+        {
+          "at_line": 1,
+          "do": "value",
+          "name": "a",
+          "start": 0.25
+        },
+        {
+          "at_line": 1,
+          "do": "surface",
+          "id": "s",
+          "math": "a * (x^2 - y^2)",
+          "x": [
+            -2.5,
+            2.5
+          ],
+          "y": [
+            -2.5,
+            2.5
+          ]
+        },
+        {
+          "at_line": 2,
+          "do": "set",
+          "name": "a",
+          "to": 0.05,
+          "duration": 2
+        },
+        {
+          "at_cue": "turn",
+          "camera": {
+            "shot": "orbit",
+            "turns": 0.5,
+            "duration": 4
+          }
+        }
       ]
     },
     {
@@ -27,19 +92,54 @@
       "world": "space",
       "start_line": 3,
       "floor": true,
-      "camera": { "elevation": 45 },
+      "camera": {
+        "elevation": 45
+      },
       "beats": [
-        { "at_line": 3, "do": "solid", "id": "k", "shape": "cube", "size": 1.6 },
-        { "then": true, "do": "net", "who": "k", "duration": 3 }
+        {
+          "at_line": 3,
+          "do": "solid",
+          "id": "k",
+          "shape": "cube",
+          "size": 1.6
+        },
+        {
+          "then": true,
+          "do": "net",
+          "who": "k",
+          "duration": 3
+        }
       ]
     },
     {
       "name": "Revolve",
       "world": "space",
       "start_line": 4,
-      "axes": { "x": [0, 4.5], "y": [-2.5, 2.5], "z": [-2.5, 2.5] },
+      "axes": {
+        "x": [
+          0,
+          4.5
+        ],
+        "y": [
+          -2.5,
+          2.5
+        ],
+        "z": [
+          -2.5,
+          2.5
+        ]
+      },
       "beats": [
-        { "at_line": 4, "do": "revolve", "math": "sqrt(x)", "x": [0, 4], "duration": 4 }
+        {
+          "at_line": 4,
+          "do": "revolve",
+          "math": "sqrt(x)",
+          "x": [
+            0,
+            4
+          ],
+          "duration": 4
+        }
       ]
     },
     {
@@ -48,11 +148,64 @@
       "start_line": 5,
       "light": "studio",
       "beats": [
-        { "at_line": 5, "do": "solid", "id": "c", "shape": "cone", "size": 3, "height": 3 },
-        { "at_cue": "cut", "do": "slice", "id": "cut", "who": "c", "plane": "z = 1.2", "sweep": [0.4, 1.8], "duration": 2 },
-        { "at_line": 6, "do": "remove", "who": "cut" },
-        { "at_line": 6, "do": "stack_slices", "who": "c", "count": 5, "refine": [10, 30], "duration": 4 }
+        {
+          "at_line": 5,
+          "do": "solid",
+          "id": "c",
+          "shape": "cone",
+          "size": 3,
+          "height": 3
+        },
+        {
+          "at_cue": "cut",
+          "do": "slice",
+          "id": "cut",
+          "who": "c",
+          "plane": "z = 1.2",
+          "sweep": [
+            0.4,
+            1.8
+          ],
+          "duration": 2
+        },
+        {
+          "at_line": 6,
+          "do": "remove",
+          "who": "cut"
+        },
+        {
+          "at_line": 6,
+          "do": "stack_slices",
+          "who": "c",
+          "count": 5,
+          "refine": [
+            10,
+            30
+          ],
+          "duration": 4,
+          "id": "slabs"
+        },
+        {
+          "at_line": 6,
+          "offset": 3,
+          "do": "remove",
+          "who": [
+            "slabs",
+            "c"
+          ]
+        }
       ]
     }
-  ]
+  ],
+  "thumbnail": {
+    "at_line": 1,
+    "text": {
+      "en": "Shapes you can walk around",
+      "hi": "ऐसे आकार जिनके चारों ओर घूम सकें"
+    },
+    "kicker": "3D maths",
+    "position": "right",
+    "size": "large"
+  },
+  "end_screen": 8
 }

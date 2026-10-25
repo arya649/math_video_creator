@@ -24,7 +24,7 @@ describe('compiling a script', () => {
   it('explains mistakes in plain English', () => {
     const bad = (s: unknown) => { try { compileMovie(s); return ''; } catch (e) { expect(e).toBeInstanceOf(ScriptError); return (e as Error).message; } };
     expect(bad({ scenes: [{ beats: [{ at: 0, do: 'wrtie', tex: 'x' }] }] })).toContain('Did you mean "write"');
-    expect(bad({ scenes: [{ world: 'space', beats: [{ at: 0, do: 'solid', shape: 'cube', model: 'bridge' }] }] })).toContain('not built yet');
+    expect(bad({ scenes: [{ beats: [{ at: 0, do: 'image', file: 'clip.mp4' }] }] })).toContain('not built yet');
     expect(bad({ scenes: [{ beats: [{ at: 0, do: 'write', tex: 'x' }, { at: 1, do: 'highlight', who: 'eq9' }] }] })).toContain('nothing called "eq9"');
     expect(bad({ lines: ['hello'], scenes: [{ beats: [{ at_line: 3, do: 'write', tex: 'x' }] }] })).toContain('there is no line 3');
   });
@@ -66,5 +66,33 @@ describe('carrying things between scenes', () => {
     expect(w1.things.get('eq')!.state.y).toBeCloseTo(before, 5);
     expect(w1.things.get('eq')!.shown()).toBe(true);
     expect([...w1.things.keys()].some((k) => k.startsWith('_title'))).toBe(true);
+  });
+});
+
+describe('the end screen', () => {
+  it('adds the seconds at the end and warns about anything in the way', () => {
+    const base = { lines: ['One short line.'], end_screen: 10 };
+    const busy = compileMovie({ ...base, scenes: [{ beats: [{ at: 0, do: 'write', id: 'eq', tex: 'x = 1', position: 'left' }] }] });
+    expect(busy.duration).toBeGreaterThan(10);
+    expect(busy.warnings.some((w) => /end_screen: "eq"/.test(w))).toBe(true);
+    const clear = compileMovie({ ...base, scenes: [{ beats: [{ at: 0, do: 'write', id: 'eq', tex: 'x = 1', position: 'left' }, { at_line: 1, offset: 2, do: 'remove', who: 'eq' }] }] });
+    expect(clear.warnings).toEqual([]);
+    const solid = compileMovie({ ...base, scenes: [{ world: 'space', beats: [{ at: 0, do: 'solid', shape: 'cube' }] }] });
+    expect(solid.warnings.some((w) => /3D object/.test(w))).toBe(true);
+  });
+  it('places the thumbnail moment and reads its words per language', () => {
+    const m = compileMovie({ languages: ['en', 'hi'], lines: [{ en: 'One.', hi: 'एक।' }, { en: 'Two.', hi: 'दो।' }], thumbnail: { at_line: 2, text: { en: 'Big idea', hi: 'बड़ा विचार' } }, scenes: [{ beats: [] }] }, { lang: 'hi' });
+    expect(m.thumbnail!.text).toBe('बड़ा विचार');
+    expect(m.thumbnail!.t).toBeGreaterThan(m.narration.lines[1].start);
+  });
+});
+
+describe('drawings from SVG files', () => {
+  it('draws the paths, sized to their height', () => {
+    const svg = '<svg viewBox="0 0 10 10"><path d="M0 0 L10 0 L10 10 Z"/><polygon points="0,0 5,5 0,10"/></svg>';
+    const m = compileMovie({ scenes: [{ beats: [{ at: 0, do: 'draw', id: 'd', shape: 'path', file: 'tri.svg', size: 4, fill: 'blue' }] }] }, { texts: { 'tri.svg': svg } });
+    expect(m.warnings).toEqual([]);
+    const b = m.scenes[0].world.boxOf('d', 'test');
+    expect(b.y1 - b.y0).toBeCloseTo(4, 3);
   });
 });

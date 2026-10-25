@@ -134,12 +134,31 @@ yet are marked "(coming)" there. This file tracks the stages.
 - Fades, colour changes and highlights work on 3D objects.
 - 30 more catalogue entries; a `space` sample project in English and Hindi.
 
-## Stage 8: styles, camera and wonders (next)
+## Stage 8: styles, camera and wonders (built)
 
-Chalk, sketch, whiteboard, neon, blueprint, paper and solid styles; `tilt`,
-`fly`; `morph`, `fly`, `zoom`, `rub`, `page` transitions; fractals, domain
-colouring, Fourier drawings, simulations, particles; the mascot; thumbnail,
-end screen, parallel rendering for long videos.
+- Drawing styles: chalk, sketch, whiteboard (with a marker pen drawing),
+  neon, blueprint, paper, solid; per video, scene or beat, each with a
+  suitable theme. Looks: grade, glow, film grain, depth in space, a drifting
+  or breathing camera. Pictures as backgrounds.
+- Camera: `tilt` (the sheet in perspective, with `lift` and shadows), `fly`.
+  Transitions: `morph`, `fly`, `zoom`, `rub`, `page`; `keep`; chapter cards.
+- `solve` (steps and reasons found by the engine), `evaluate`, `pointer`,
+  `trace_path`, `sonify`, drawings from SVG files.
+- Wonders: Mandelbrot, Julia, burning ship and Newton fractals with deep
+  zooms; Sierpinski, Koch, tree, dragon; domain colouring; Fourier circles;
+  eleven simulations; particles.
+- The mascot: blob, pebble, owl, robot, or your own cut-outs; it watches,
+  reacts, talks with the voice, speaks in bubbles and gestures.
+- Thumbnails, the end screen with its checks, motion blur, 3D models from
+  .glb files, and exports that reuse every unchanged scene.
+
+## Still to come
+
+- Several scenes made at once in workers (unchanged scenes are already
+  reused, which is where most of the time goes when iterating).
+- Film clips in `image` and backgrounds; pictures as counted things.
+- Voice services other than ElevenLabs.
+- Hosting on Vercel.
 
 ## Limits worth knowing
 
@@ -147,7 +166,6 @@ end screen, parallel rendering for long videos.
   not exact.
 - Browsers without an H.264 encoder (some Linux Chromium builds) make VP9
   video inside the MP4. Chrome and Edge on Windows and Mac make H.264.
-- Film clips in `image` and 3D models from files are not built yet.
 - Space scenes sort faces by their middles, as painters do; faces that cross
   through each other can overlap wrongly where they meet.
 - Words (not maths) cannot be morphed; write them as `\text{...}` inside

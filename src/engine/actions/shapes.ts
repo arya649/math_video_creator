@@ -1,5 +1,6 @@
 // Drawing shapes on the sheet.
 
+import { parsePath } from '../geom';
 import { type Ctx, type Spec, arrive, color, num, positionSpec, readAppear, registerAction, sheetText, str, TEXT_SIZES, natural } from '../actions';
 import { type Contour, type Pt, boundsOf, centerOf } from '../geom';
 import { arrowHead, bracePts, circle, circlePts, fillGlyph, line, regular, roundedRect, star, strokeGlyph } from '../shapes';
@@ -130,7 +131,24 @@ function make(ctx: Ctx, shape: ShapeName): Made {
       return { glyphs: [strokeGlyph([{ closed: false, pts: [[-s, 0], [-s * 0.25, -s * 0.7], [s, s * 0.8]] }], lw * 1.5, 'tick', { color: spec.color ? ink : world.theme.good })], spots: {}, fixed: false };
     }
     case 'path': {
-      if (!Array.isArray(spec.points)) throw new ScriptError('needs "points": positions to draw a smooth curve through. (Drawings from svg files come later.)', `${ctx.where}.points`);
+      if (typeof spec.file === 'string') {
+        // A drawing from an SVG file: its paths and polygons, sized to "size" (its height).
+        const text = world.texts[spec.file];
+        if (!text) throw new ScriptError(`"${spec.file}" has not been opened with the script (put it beside script.json).`, `${ctx.where}.file`);
+        const ds = [...text.matchAll(/<path[^>]*\sd\s*=\s*"([^"]+)"/g)].map((m) => m[1]);
+        const polys = [...text.matchAll(/<poly(gon|line)[^>]*\spoints\s*=\s*"([^"]+)"/g)].map((m) => `M ${m[2]}${m[1] === 'gon' ? ' Z' : ''}`);
+        const contours = [...ds, ...polys].flatMap((d) => parsePath(d, 0.5));
+        if (!contours.length) throw new ScriptError('has no <path> or <polygon> to draw.', `${ctx.where}.file`);
+        const all = contours.flatMap((c) => c.pts);
+        const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+        const h = typeof spec.size === 'number' ? spec.size : 3;
+        const k = h / Math.max(1e-9, Math.max(...ys) - Math.min(...ys));
+        const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+        // SVG's y runs down; ours runs up.
+        const scaled = contours.map((c) => ({ closed: c.closed, pts: c.pts.map(([x, y]) => [(x - cx) * k, -(y - cy) * k] as Pt) }));
+        return { glyphs: outline(scaled, 'path'), spots: {}, fixed: false };
+      }
+      if (!Array.isArray(spec.points)) throw new ScriptError('needs "points" (positions to draw a smooth curve through) or "file" (an SVG drawing).', `${ctx.where}.points`);
       const pts = readPts(ctx, 'points');
       return { glyphs: [strokeGlyph([{ closed: false, pts: smoothThrough(pts) }], lw, 'path', { color: ink, dash })], spots: { start: pts[0], end: pts[pts.length - 1] }, fixed: true };
     }

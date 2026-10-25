@@ -93,6 +93,9 @@ export class SceneWorld {
   characters: import('./actions/mascot').CharacterDef[] = [];
   /** Every spoken word with its time, for mouths that move with the voice. */
   words: { text: string; start: number; end: number }[] = [];
+  /** 3D models listed at the top of the script, and the files opened with it. */
+  models: { name: string; file: string; width?: number; height?: number; length?: number }[] = [];
+  binaries = new Map<string, ArrayBuffer>();
   /** Text files opened with the script (subtitles, SVG outlines), by name. */
   texts: Record<string, string> = {};
   /** The language being made. */

@@ -2,7 +2,7 @@
 
 import { mixColor, withAlpha } from './color';
 import { type Mat, type Pt, apply, contourLength, mul, openPoints, partial } from './geom';
-import type { CompiledScene, Layer, Movie } from './movie';
+import { type CompiledScene, END_SCREEN_ZONES, type Layer, type Movie } from './movie';
 import type { View } from './camera';
 import { captionText } from './narration';
 import { matchGlyphs, morphAt, planMorph } from './match';
@@ -91,6 +91,8 @@ export class Renderer {
   private spare?: { canvas: AnyCanvas; ctx: Ctx2D };
   /** Captions drawn or not (the page's switch can change it). */
   captions = true;
+  /** Guides that only the preview shows (where the end-screen buttons go). */
+  guides = false;
   private hold?: { at: number; u: number };
   private lookOf: Look = 'vector';
   /** Things left out of the next scene drawn (they are morphing). */
@@ -156,6 +158,16 @@ export class Renderer {
     if (mo) this.drawMorph(ctx, mo.from, scene, t, mo.u);
     this.finishFrame(scene, T);
     if (this.captions && scene.world.captions) this.drawCaptions(ctx, t, scene);
+    if (this.guides && movie.endScreen && T >= movie.duration - movie.endScreen) {
+      // Where YouTube's end-screen buttons will go (shown in the preview only).
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.setLineDash([10, 8]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+      for (const z of END_SCREEN_ZONES) ctx.strokeRect(z.x0 * W, z.y0 * H, (z.x1 - z.x0) * W, (z.y1 - z.y0) * H);
+      ctx.restore();
+    }
   }
 
   private post?: { canvas: AnyCanvas; ctx: Ctx2D };

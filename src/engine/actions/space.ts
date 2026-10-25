@@ -16,6 +16,7 @@ import {
   platonic, prismMesh, section, sphereMesh, sub, torusMesh,
 } from '../space/geo3d';
 import { type Light, type Obj3D, type Prim, Space, heightColor } from '../space/space';
+import { readModel } from '../space/gltf';
 
 const SPACE: ['space'] = ['space'];
 
@@ -246,7 +247,7 @@ function meshFor(ctx: Ctx, shape: (typeof SHAPES)[number], s: number): Mesh {
 }
 
 /** A solid from flat faces: drawn by its painter, it can be cut, sliced and unfolded. */
-function solidObject(ctx: Ctx, id: string, faces: () => V3[][], opts: { flat: boolean; lines?: V3[][]; color: string; opacity: number; edges: boolean; wire: boolean; closed: boolean }): Obj3D {
+function solidObject(ctx: Ctx, id: string, faces: () => V3[][], opts: { flat: boolean; lines?: V3[][]; color: string; opacity: number; edges: boolean; wire: boolean; closed: boolean; faceColors?: (string | undefined)[] }): Obj3D {
   const { world } = ctx;
   const edge = withAlpha(world.theme.ink, 0.75);
   const fs = faces();
@@ -260,7 +261,7 @@ function solidObject(ctx: Ctx, id: string, faces: () => V3[][], opts: { flat: bo
       const out: Prim[] = [];
       const u = ease('smooth', drawn);
       const list = faces();
-      if (!opts.wire) for (const f of list) out.push({ kind: 'face', pts: f, color: opts.color, opacity: opts.opacity * u, twoSided: !opts.closed || opts.opacity < 1, shade: true });
+      if (!opts.wire) list.forEach((f, i) => out.push({ kind: 'face', pts: f, color: opts.faceColors?.[i] ?? opts.color, opacity: opts.opacity * u, twoSided: !opts.closed || opts.opacity < 1, shade: true }));
       if (opts.edges || opts.wire) {
         if (opts.flat) out.push(...faceLines(list, opts.wire ? opts.color : edge, opts.wire ? 2.5 : 2).map((p) => ({ ...p, color: withAlpha((p as { color: string }).color, u) }) as Prim));
         else for (const l of opts.lines ?? []) for (let k = 0; k + 1 < l.length; k++) out.push({ kind: 'line', a: l[k], b: l[k + 1], color: withAlpha(opts.wire ? opts.color : edge, u), width: opts.wire ? 2 : 1.5, front: true });
@@ -277,7 +278,7 @@ registerAction('solid', {
   params: ['shape', 'size', 'width', 'depth', 'height', 'radius', 'sides', 'position', 'color', 'opacity', 'edges', 'wire', 'model', 'appear'],
   build(ctx) {
     const { world, spec } = ctx;
-    if (spec.model !== undefined) throw new ScriptError('3D models from files are not built yet; use one of the shapes.', `${ctx.where}.model`);
+    if (spec.model !== undefined) return modelSolid(ctx);
     const shape = choice(spec.shape, SHAPES, `${ctx.where}.shape`);
     const s = typeof spec.size === 'number' ? spec.size : sizeOf(spec.size, { small: 1.2, medium: 2, large: 3, huge: 4.5 }, `${ctx.where}.size`, 'medium');
     const mesh = meshFor(ctx, shape, s);
@@ -294,6 +295,30 @@ registerAction('solid', {
     return { end: ctx.start + d, thing: o.thing };
   },
 }, ['shape3d', 'solid3d']);
+
+/** A model from a file, sized and stood at its place. */
+function modelSolid(ctx: Ctx) {
+  const { world, spec } = ctx;
+  const def = world.models.find((m) => m.name === spec.model);
+  if (!def) throw new ScriptError(`there is no model called "${String(spec.model)}"; list it at the top of the script under "models".${world.models.length ? ` Models: ${world.models.map((m) => m.name).join(', ')}.` : ''}`, `${ctx.where}.model`);
+  const data = world.binaries.get(def.file);
+  if (!data) throw new ScriptError(`"${def.file}" has not been opened with the script (put it beside script.json).`, `${ctx.where}.model`);
+  const mesh = readModel(data, def.file, `${ctx.where}.model`);
+  const [lo, hi] = boundsOf(mesh.faces.flat());
+  const ext = [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]];
+  const k = def.width ? def.width / (ext[0] || 1) : def.height ? def.height / (ext[2] || 1) : def.length ? def.length / (Math.max(...ext) || 1) : 3 / (Math.max(...ext) || 1);
+  const at = spec.position !== undefined ? v3(spec.position, `${ctx.where}.position`) : [0, 0, 0] as V3;
+  const c: V3 = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]];
+  const faces = mesh.faces.map((f) => f.map((p) => add(mul(sub(p, c), k), at)));
+  const o = solidObject(ctx, str(ctx, 'id') ?? world.newId(def.name), () => faces, {
+    flat: false, color: color(ctx, 'color', world.theme.colors[0])!, opacity: typeof spec.opacity === 'number' ? clamp(spec.opacity) : 1,
+    edges: false, wire: spec.wire === true, closed: false, faceColors: spec.color !== undefined ? undefined : mesh.colors,
+  });
+  const { how } = readAppear(ctx, 'grow');
+  const d = natural(ctx, 1.2);
+  arrive(ctx, o.thing, how === 'write' ? 'draw' : how, ctx.start, d);
+  return { end: ctx.start + d, thing: o.thing };
+}
 
 // ---- Solids of revolution ----
 
