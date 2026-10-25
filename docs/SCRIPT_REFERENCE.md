@@ -1038,26 +1038,28 @@ A whole column of working at once: each line arrives in turn, lined up on
 
 Each line is `w.1`, `w.2` ... afterwards.
 
-### solve (auto_steps) (coming)
+### solve (auto_steps)
 
 Like `work`, but the engine works out the steps itself and writes each
-reason.
+reason, in the language of the video (English and Hindi now; other
+languages use English reasons until they are added).
 
 ```json
-{ "at_line": 4, "do": "solve", "id": "w", "math": "3x + 5 = 20", "for": "x" }
-{ "at_line": 9, "do": "solve", "math": "x^2 - 5x + 6 = 0", "for": "x", "method": "factor" }
+{ "at_line": 4, "do": "solve", "id": "w", "math": "3x + 5 = 20" }
+{ "at_line": 9, "do": "solve", "math": "x^2 - 5x + 6 = 0", "method": "factor" }
 ```
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `tex` or `math` | text | Required. An equation, an inequality, or an expression. |
-| `for` | a letter | What to solve for. |
-| `method` | `auto`, `factor`, `formula`, `complete_square`, `expand`, `simplify`, `differentiate`, `integrate` | How. Default `auto`. |
+| `math` (or `tex`) | text | Required. An equation, an inequality, or an expression. |
+| `for` | a letter | What to solve for. Left out when there is only one letter. |
+| `method` | `auto`, `factor`, `formula`, `complete_square`, `expand`, `simplify`, `differentiate`, `integrate` | How. Default `auto`: straight working for linear equations and inequalities (the sign turns round when dividing by a negative), factorising for quadratics that factorise neatly, otherwise the formula, with exact answers such as $-1 \pm \sqrt{2}$; `simplify` for an expression. `integrate` works on polynomials. |
 | `max_steps` | number | Stop after this many. |
-| `language` | | The reasons are written in each language of the video. |
+| `id`, `position`, `size`, `color`, `numbered`, `fade_old` | | As for `work`. |
 
-When the script is opened the engine shows the steps it found. Copy them
-into a `work` beat to change any of them.
+It handles equations up to $x^2$ in one letter. The engine page shows the
+steps it found ("solve found: …"); copy them into a `work` beat to change
+any of them. Every step it writes passes the maths check.
 
 ### highlight (indicate, emphasise, emphasize)
 
@@ -1113,11 +1115,13 @@ The letters lift out and fade, the values drop into their places, and the
 expression spaces itself again. `"keep": true` makes a new line below
 instead of changing the old one.
 
-### evaluate (calculate, simplify) (coming)
+### evaluate (calculate)
 
-Works the expression out to its value, step by step or at once:
-`"steps": true` shows each sum on the way, otherwise the expression melts
-straight into its answer.
+`{ "do": "evaluate", "math": "2 + 3 * (4 + 1)", "steps": true }`: works a sum of
+numbers out to its value. `"steps": true` writes each sum on the way, in the
+right order (brackets first), with the sum just done as its reason;
+otherwise the expression melts straight into its answer. `position`,
+`size`, `color`.
 
 ### swap, rearrange
 
@@ -1257,15 +1261,19 @@ Everything except the things named fades back, so the eye goes to them.
 
 `dim`: how far the rest fades, 0 to 1. Default 0.75.
 
-### pointer (tap) (coming)
+### pointer (tap)
 
-A pointer moves to a thing and taps it: `"on"`, and `"as"` `arrow` (default),
-`hand`, `chalk`, `dot`. A list of `on` points at each in turn.
+A pointer moves to a thing and taps it: `"on"` (a thing, a part such as
+`"eq.2ab"`, or any position), and `"as"` `arrow` (default), `hand`, `chalk`,
+`dot`. A list of `on` points at each in turn. It leaves at the end of the
+beat unless `"stay": true`. `color`.
 
-### trace_path (trail) (coming)
+### trace_path (trail)
 
-Something moving leaves a fading trail behind it: `"who"`, `"length"`
-(seconds of trail), `"color"`.
+From this beat on, something moving leaves a fading trail behind it:
+`"who"`, `"length"` (seconds of trail, default 1.5), `"color"`, `"width"`.
+It works with anything that moves: `move`, a dragged geometry point, a
+point sliding along a graph.
 
 ### spring, wobble
 
@@ -2473,10 +2481,12 @@ plays a sound file once. `volume` 0 to 4 (default 1), `fade_in`, `fade_out`
 The preview plays the same mix as the export: narration, music, sound files
 and the engine's sounds.
 
-### sonify (hear_graph) (coming)
+### sonify (hear_graph)
 
-`{ "do": "sonify", "who": "f", "x": [-3, 3], "duration": 4 }`: a dot runs
-along the graph while a tone rises and falls with its height.
+`{ "do": "sonify", "who": "f", "x": [-3, 3], "duration": 4 }`: in a graph
+scene, a dot runs along the graph while a tone rises and falls with its
+height. `low` and `high`: the lowest and highest notes in Hz (default 220
+and 880). `color`.
 
 ---
 

@@ -22,6 +22,8 @@ export interface SoundEvent {
   volume: number;
   fadeIn?: number;
   fadeOut?: number;
+  /** For a tone that follows a graph: its pitch (Hz) evenly over the duration. */
+  tone?: number[];
 }
 
 export const WORLDS = ['board', 'graph', 'geometry', 'counting', 'space'] as const;
@@ -105,6 +107,11 @@ export class SceneWorld {
   space?: Space;
   /** Number lines in a counting scene, by id. */
   numberLines = new Map<string, { toSheet(v: number, t?: number): Pt }>();
+  /** Steps that solve found by itself, to show the creator. */
+  found: string[] = [];
+  /** Put the whole scene at another moment (for trails), and whether that is happening now. */
+  applyAt?: (t: number, hold?: { at: number; u: number }) => void;
+  sampling = false;
   /** Every beat built, for the teaching checks. */
   beats: { name: string; at: number; where: string; spec: Record<string, unknown> }[] = [];
   /** The step counter showing now, so the next one takes its place. */

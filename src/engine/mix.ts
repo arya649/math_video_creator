@@ -169,7 +169,21 @@ export async function mixAudio(movie: Movie, files: Map<string, ArrayBuffer>, mi
     if (sAt >= movie.duration) continue;
     let buf: AudioBuffer | null;
     if (s.file) buf = await get(s.file);
-    else {
+    else if (s.kind === 'tone' && s.tone) {
+      // A tone that follows a graph's height, its pitch changing smoothly.
+      const d = s.duration ?? 4, n = Math.max(1, Math.round(d * RATE));
+      const data = new Float32Array(n);
+      let phase = 0;
+      for (let i = 0; i < n; i++) {
+        const x = (i / n) * (s.tone.length - 1), k = Math.floor(x);
+        const f = s.tone[k] + ((s.tone[Math.min(k + 1, s.tone.length - 1)] ?? s.tone[k]) - s.tone[k]) * (x - k);
+        phase += (2 * Math.PI * f) / RATE;
+        const env = Math.min(1, i / (RATE * 0.05), (n - i) / (RATE * 0.1));
+        data[i] = f > 0 ? (Math.sin(phase) * 0.6 + Math.sin(phase * 2) * 0.15) * env : 0;
+      }
+      buf = ctx.createBuffer(1, n, RATE);
+      buf.copyToChannel(data as Float32Array<ArrayBuffer>, 0);
+    } else {
       const data = synth(s.kind ?? 'pop', s.duration, seed++);
       buf = ctx.createBuffer(1, data.length, RATE);
       buf.copyToChannel(data as Float32Array<ArrayBuffer>, 0);

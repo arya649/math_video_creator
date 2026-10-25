@@ -52,13 +52,18 @@ let mixRun = 0;
 const fmt = (t: number) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
 const project = new URLSearchParams(location.search).get('project');
 
-function showProblems(errors: string[], warnings: string[]) {
+function showProblems(errors: string[], warnings: string[], found: string[] = []) {
   problems.innerHTML = '';
   problems.classList.remove('muted');
-  if (!errors.length && !warnings.length) {
-    problems.innerHTML = '<span class="ok">No problems found.</span>';
-    return;
+  if (!errors.length && !warnings.length) problems.innerHTML = '<span class="ok">No problems found.</span>';
+  // Steps that solve worked out, to copy into a work beat.
+  for (const f of found) {
+    const d = document.createElement('div');
+    d.className = 'muted';
+    d.textContent = `solve found: ${f}`;
+    problems.append(d);
   }
+  if (!errors.length && !warnings.length) return;
   for (const [list, cls] of [[errors, 'problem'], [warnings, 'warning']] as const) {
     for (const e of list) {
       const d = document.createElement('div');
@@ -162,7 +167,7 @@ function refreshProblems() {
   if (isObject(script.voice) && typeof script.voice.api_key === 'string' && script.voice.api_key) {
     extra.push('voice.api_key: the ElevenLabs key is inside the script. Anyone you share the script with can use it; a key file or the key box keeps it out.');
   }
-  showProblems([], [...movie.warnings, ...chapterList(movie).warnings, ...soundWarnings, ...extra]);
+  showProblems([], [...movie.warnings, ...chapterList(movie).warnings, ...soundWarnings, ...extra], movie.scenes.flatMap((sc) => sc.world.found));
 }
 
 const escape = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);

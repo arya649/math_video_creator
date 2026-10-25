@@ -49,7 +49,7 @@ describe('the catalogue', () => {
       expect(m.warnings, e.id).toEqual([]);
       for (let t = 0; t < m.duration; t += 0.5) m.scenes[m.sceneAt(t)].applyState(t);
     }
-  });
+  }, 60000);
 });
 
 describe('carrying things between scenes', () => {

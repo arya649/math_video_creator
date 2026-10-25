@@ -86,7 +86,9 @@ export class CompiledScene {
     public transitionDuration: number,
     public background: Background,
     public chapter?: string,
-  ) {}
+  ) {
+    world.applyAt = (t, hold) => this.applyState(t, hold);
+  }
 
   /** For the "zoom" transition: the box (on the scene before's sheet) it dives into. */
   zoomInto?: Box;

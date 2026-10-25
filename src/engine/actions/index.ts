@@ -9,3 +9,4 @@ import './panels';
 import './teaching';
 import './counting';
 import './space';
+import './extras';

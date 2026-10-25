@@ -446,6 +446,20 @@ add({ id: 'shot:tilt-lift', title: 'tilted, with things lifted', scene: { paper:
 ], still: 0.5 });
 add({ id: 'shot:fly', title: 'fly to a far place', scene: { paper: 'grid' }, beats: [eq('x = 1'), { at: 0, do: 'write', id: 'far', tex: 'x = 1000', position: [24, -10], appear: 'none' }, { at: 0.2, camera: { shot: 'fly', target: 'far' } }], still: 1.4 });
 
+// ---- Solving, evaluating, pointing, trails, sound ----
+add({ id: 'eq:solve', title: 'solve: steps found by the engine', beats: [{ at: 0, do: 'solve', math: '3x + 5 = 20', position: [-2, 2] }], still: 6 });
+add({ id: 'eq:solve-inequality', title: 'solve an inequality', beats: [{ at: 0, do: 'solve', math: '-2x + 1 < 7', position: [-2, 2] }], still: 5 });
+add({ id: 'eq:solve-factor', title: 'solve by factorising', beats: [{ at: 0, do: 'solve', math: 'x^2 - 5x + 6 = 0', position: [-2.5, 2] }], still: 6 });
+add({ id: 'eq:solve-formula', title: 'solve with the formula', beats: [{ at: 0, do: 'solve', math: 'x^2 + 2x - 1 = 0', method: 'formula', position: [-2.5, 2.5] }], still: 7.5 });
+add({ id: 'eq:solve-square', title: 'complete the square', beats: [{ at: 0, do: 'solve', math: 'x^2 + 6x + 4 = 0', method: 'complete_square', size: 'small', position: [-2.5, 3] }], still: 8 });
+add({ id: 'eq:solve-differentiate', title: 'differentiate', beats: [{ at: 0, do: 'solve', math: 'x^3 + 2x', method: 'differentiate', position: [-1, 1] }], still: 3.5 });
+add({ id: 'eq:evaluate', title: 'evaluate, step by step', beats: [{ at: 0, do: 'evaluate', math: '2 + 3 * (4 + 1)', steps: true, position: [-1, 2] }], still: 5 });
+add({ id: 'eq:evaluate-melt', title: 'evaluate into the answer', beats: [{ at: 0, do: 'evaluate', math: '12 * 12' }], still: 3.5 });
+add({ id: 'move:pointer', title: 'pointer taps each in turn', beats: [eq('(a+b)^2 = a^2 + 2ab + b^2'), { at: 1, do: 'pointer', on: ['eq.2ab', 'eq.b^2'] }], still: 2.2 });
+add({ id: 'move:pointer-hand', title: 'a hand pointer', beats: [eq('E = mc^2'), { at: 0.5, do: 'pointer', on: 'eq', as: 'hand' }], still: 1.4 });
+add({ id: 'move:trace-path', title: 'a trail behind a moving thing', beats: [{ at: 0, do: 'draw', id: 'b', shape: 'dot', position: [-5, -1], color: 'yellow' }, { at: 0.3, do: 'trace_path', who: 'b', length: 1.2 }, { at: 0.3, do: 'move', who: 'b', to: [-2, 2], duration: 0.8 }, { at: 1.1, do: 'move', who: 'b', to: [1, -1], duration: 0.8 }, { at: 1.9, do: 'move', who: 'b', to: [4, 2], duration: 0.8 }], still: 2.3 });
+add({ id: 'graph:sonify', title: 'sonify: hear the graph', scene: { world: 'graph' }, beats: [{ at: 0, do: 'plot', id: 'f', math: 'sin(x) * 2', appear: 'none' }, { at: 0.2, do: 'sonify', who: 'f', duration: 3 }], still: 1.8 });
+
 export const entries = ENTRIES;
 
 export const GROUPS: Record<string, string> = {
