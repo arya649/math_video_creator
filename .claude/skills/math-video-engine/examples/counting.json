@@ -1,0 +1,187 @@
+{
+  "title": "Counting, fractions and chance",
+  "languages": [
+    "en",
+    "hi"
+  ],
+  "lines": [
+    {
+      "en": "Start at minus two, and {hop}jump five to the right.",
+      "hi": "माइनस दो से शुरू करें, और {hop}पाँच कदम दाईं ओर कूदें।"
+    },
+    {
+      "en": "Four jumps of three land on {land}twelve.",
+      "hi": "तीन-तीन की चार छलाँगें {land}बारह पर पहुँचती हैं।"
+    },
+    {
+      "en": "Now zoom in between zero and one.",
+      "hi": "अब शून्य और एक के बीच ज़ूम करें।"
+    },
+    {
+      "en": "Three rows of four: twelve apples.",
+      "hi": "चार-चार की तीन पंक्तियाँ: बारह सेब।"
+    },
+    {
+      "en": "Three quarters is the same as {split}six eighths.",
+      "hi": "तीन चौथाई {split}छह आठवें के बराबर है।"
+    },
+    {
+      "en": "Flip a coin fifty times.",
+      "hi": "एक सिक्का पचास बार उछालें।"
+    },
+    {
+      "en": "Two dice: six ways out of thirty-six to make seven.",
+      "hi": "दो पासे: छत्तीस में से छह तरीके सात बनाने के।"
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Number line",
+      "world": "counting",
+      "number_line": {
+        "x": [
+          -5,
+          13
+        ]
+      },
+      "beats": [
+        {
+          "at_cue": "hop",
+          "do": "jump",
+          "from": -2,
+          "by": 5
+        },
+        {
+          "at_line": 2,
+          "do": "jump",
+          "from": 0,
+          "by": 3,
+          "count": 4,
+          "side": "below",
+          "color": "green"
+        },
+        {
+          "at_cue": "land",
+          "do": "point_on_line",
+          "x": 12,
+          "label": true,
+          "color": "green"
+        },
+        {
+          "at_line": 3,
+          "do": "zoom_line",
+          "x": [
+            0,
+            1
+          ],
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Arrays",
+      "world": "counting",
+      "start_line": 4,
+      "beats": [
+        {
+          "at_line": 4,
+          "do": "dots",
+          "id": "a",
+          "rows": 3,
+          "columns": 4,
+          "shape": "apple",
+          "size": "large"
+        },
+        {
+          "then": true,
+          "do": "group_items",
+          "who": "a",
+          "by": "row"
+        },
+        {
+          "then": true,
+          "do": "write",
+          "tex": "3 \\times 4 = 12",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "name": "Fractions",
+      "world": "counting",
+      "start_line": 5,
+      "beats": [
+        {
+          "at_line": 5,
+          "do": "fraction",
+          "id": "f",
+          "parts": 4,
+          "shade": 3,
+          "label": true,
+          "position": [
+            -1,
+            1.5
+          ]
+        },
+        {
+          "with": "f",
+          "do": "fraction",
+          "id": "p",
+          "as": "pie",
+          "parts": 4,
+          "shade": 3,
+          "position": [
+            -1,
+            -2
+          ],
+          "size": "small"
+        },
+        {
+          "at_cue": "split",
+          "do": "split",
+          "who": "f",
+          "into": 8
+        },
+        {
+          "with": "f",
+          "do": "split",
+          "who": "p",
+          "into": 8
+        }
+      ]
+    },
+    {
+      "name": "Chance",
+      "world": "counting",
+      "start_line": 6,
+      "table": true,
+      "beats": [
+        {
+          "at_line": 6,
+          "do": "coin",
+          "random": 50
+        }
+      ]
+    },
+    {
+      "name": "Two dice",
+      "world": "counting",
+      "start_line": 7,
+      "beats": [
+        {
+          "at_line": 7,
+          "do": "sample_space",
+          "rows": 6,
+          "columns": 6,
+          "cell": "r + c",
+          "light": "r + c == 7",
+          "size": "small",
+          "position": [
+            0,
+            0.5
+          ]
+        }
+      ]
+    }
+  ]
+}

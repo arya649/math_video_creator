@@ -1,0 +1,15 @@
+{
+  "title": "Wonders",
+  "lines": [
+    "Circles on circles can draw a heart.",
+    "Dive into the Mandelbrot set.",
+    "Throw darts at a square, and count: pi appears."
+  ],
+  "scenes": [
+    { "name": "Fourier", "beats": [ { "at_line": 1, "do": "fourier", "file": "heart.svg", "circles": 40, "size": 6, "duration": 6 } ] },
+    { "name": "Mandelbrot", "world": "graph", "start_line": 2, "transition": "zoom", "into": "_fourier1", "axes": { "x": [-2.6, 1.4], "y": [-1.15, 1.15] },
+      "beats": [ { "at_line": 2, "do": "fractal", "kind": "mandelbrot", "zoom_to": [-0.7436, 0.1318], "zoom": 2000, "duration": 6 } ] },
+    { "name": "Darts", "start_line": 3, "transition": "fade",
+      "beats": [ { "at_line": 3, "do": "simulation", "kind": "monte_carlo_pi", "points": 3000, "duration": 6 }, { "at_line": 3, "offset": 6, "do": "particles", "kind": "confetti" } ] }
+  ]
+}

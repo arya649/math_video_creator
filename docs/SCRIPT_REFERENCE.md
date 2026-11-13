@@ -164,7 +164,7 @@ A video is a script plus the files it names:
 | Subtitles | `subtitles` per language | Only when you supply your own recording instead of a made voice. |
 | Music, sound effects | `music` at the top, or `"file"` in a `sound` action | mp3, wav, m4a, ogg. |
 | Pictures | `"file"` in an `image` action, or `"image"` in a background | png, jpg, webp or svg. |
-| Film clips | the same places as pictures | mp4 or webm. Played silently. |
+| Film clips | (coming) | mp4 or webm, in `image` and backgrounds. Not built yet. |
 | Drawings to trace | `"file"` in `fourier` or `draw` | svg. |
 | 3D models | `"models"` at the top (section 21) | `.glb` files. |
 | Fonts | `"fonts"` at the top | ttf, otf, woff2. Only for a font not included. |
